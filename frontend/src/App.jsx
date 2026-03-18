@@ -1,5 +1,5 @@
 import { BarChart3, FileText, Info, MessageSquare, Settings, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import NavItem from './components/NavItem';
 import ChatTab from './components/tabs/ChatTab';
 import DocumentsTab from './components/tabs/DocumentsTab';
@@ -15,12 +15,101 @@ const TAB_TITLES = {
   settings: 'Infrastructure Config',
 };
 
+const AI_CONFIG_STORAGE_KEY = 'xrag-ai-config-v1';
+const PROMPT_PRESET_STORAGE_KEY = 'xrag-prompt-presets-v1';
+const SAVED_ANSWERS_STORAGE_KEY = 'xrag-saved-answers-v1';
+
+const DEFAULT_AI_CONFIG = {
+  model: 'GPT-4o',
+  temperature: 0.7,
+  systemPrompt:
+    'You are a professional research assistant. Always cite your sources and clearly separate verified context from assumptions.',
+  strictMode: true,
+};
+
+const readStoredJson = (key, fallbackValue) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      return fallbackValue;
+    }
+
+    return JSON.parse(raw);
+  } catch {
+    return fallbackValue;
+  }
+};
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('chat');
   const [selectedDB, setSelectedDB] = useState(VECTOR_PROVIDERS[0]);
   const [documents] = useState(INITIAL_DOCS);
+  const [aiConfig, setAiConfig] = useState(() => ({ ...DEFAULT_AI_CONFIG, ...readStoredJson(AI_CONFIG_STORAGE_KEY, {}) }));
+  const [savedPromptPresets, setSavedPromptPresets] = useState(() => readStoredJson(PROMPT_PRESET_STORAGE_KEY, []));
+  const [savedAnswers, setSavedAnswers] = useState(() => readStoredJson(SAVED_ANSWERS_STORAGE_KEY, []));
 
-  const { messages, inputValue, isTyping, chatEndRef, setInputValue, handleSendMessage } = useChat(selectedDB.name);
+  const { messages, inputValue, isTyping, chatEndRef, setInputValue, handleSendMessage } = useChat(selectedDB.name, aiConfig);
+
+  useEffect(() => {
+    localStorage.setItem(AI_CONFIG_STORAGE_KEY, JSON.stringify(aiConfig));
+  }, [aiConfig]);
+
+  useEffect(() => {
+    localStorage.setItem(PROMPT_PRESET_STORAGE_KEY, JSON.stringify(savedPromptPresets));
+  }, [savedPromptPresets]);
+
+  useEffect(() => {
+    localStorage.setItem(SAVED_ANSWERS_STORAGE_KEY, JSON.stringify(savedAnswers));
+  }, [savedAnswers]);
+
+  const handleSavePromptPreset = (name) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      return null;
+    }
+
+    const preset = {
+      id: `preset-${Date.now()}`,
+      name: trimmedName,
+      createdAt: Date.now(),
+      config: {
+        ...aiConfig,
+      },
+    };
+
+    setSavedPromptPresets((previousPresets) => [preset, ...previousPresets]);
+    return preset;
+  };
+
+  const handleSaveAnswer = (answerPayload) => {
+    if (!answerPayload?.content?.trim()) {
+      return false;
+    }
+
+    const normalizedContent = answerPayload.content.trim();
+    let wasAdded = false;
+
+    setSavedAnswers((previousAnswers) => {
+      const exists = previousAnswers.some((item) => item.content === normalizedContent);
+      if (exists) {
+        return previousAnswers;
+      }
+
+      wasAdded = true;
+      const nextItem = {
+        id: `answer-${Date.now()}`,
+        content: normalizedContent,
+        reasoning: answerPayload.reasoning || '',
+        sources: answerPayload.sources || [],
+        promptReference: answerPayload.promptReference || null,
+        createdAt: Date.now(),
+      };
+
+      return [nextItem, ...previousAnswers].slice(0, 100);
+    });
+
+    return wasAdded;
+  };
 
   const renderTabContent = () => {
     if (activeTab === 'chat') {
@@ -32,6 +121,11 @@ const App = () => {
           inputValue={inputValue}
           setInputValue={setInputValue}
           onSendMessage={handleSendMessage}
+          aiConfig={aiConfig}
+          savedPromptPresets={savedPromptPresets}
+          onSavePromptPreset={handleSavePromptPreset}
+          savedAnswers={savedAnswers}
+          onSaveAnswer={handleSaveAnswer}
         />
       );
     }
@@ -45,7 +139,7 @@ const App = () => {
     }
 
     if (activeTab === 'settings') {
-      return <SettingsTab selectedDB={selectedDB} onSelectDB={setSelectedDB} />;
+      return <SettingsTab selectedDB={selectedDB} onSelectDB={setSelectedDB} aiConfig={aiConfig} onAiConfigChange={setAiConfig} />;
     }
 
     return null;

@@ -1,7 +1,8 @@
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { SafeDatabase, VECTOR_PROVIDERS } from '../../data/constants';
+import DataStrategyPanel from '../settings/DataStrategyPanel';
 
-const SettingsTab = ({ selectedDB, onSelectDB }) => {
+const SettingsTab = ({ selectedDB, onSelectDB, aiConfig, onAiConfigChange }) => {
   return (
     <div className="p-4 md:p-8 overflow-y-auto h-full space-y-8 bg-slate-50">
       <header>
@@ -70,6 +71,8 @@ const SettingsTab = ({ selectedDB, onSelectDB }) => {
           </div>
         </div>
       </section>
+
+      <DataStrategyPanel aiConfig={aiConfig} onAiConfigChange={onAiConfigChange} />
     </div>
   );
 };

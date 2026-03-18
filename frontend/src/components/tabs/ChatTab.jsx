@@ -1,4 +1,4 @@
-import { CheckCircle2, FileSearch, ImagePlus, Mic, Paperclip, Send, ThumbsDown, ThumbsUp, User, X, Zap } from 'lucide-react';
+import { BookmarkPlus, CheckCircle2, FileSearch, ImagePlus, Link2, Mic, Paperclip, Send, ThumbsDown, ThumbsUp, User, X, Zap } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import ReasoningGraph from '../chat/ReasoningGraph';
 
@@ -47,11 +47,20 @@ const normalizeSource = (source) => {
   };
 };
 
-const ChatTab = ({ messages, isTyping, chatEndRef, inputValue, setInputValue, onSendMessage }) => {
+const ChatTab = ({
+  messages,
+  isTyping,
+  chatEndRef,
+  inputValue,
+  setInputValue,
+  onSendMessage,
+  onSaveAnswer,
+}) => {
   const [activeCitation, setActiveCitation] = useState(null);
   const [feedbackDraftByMessage, setFeedbackDraftByMessage] = useState({});
   const [submittedFeedbackByMessage, setSubmittedFeedbackByMessage] = useState({});
   const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [savedStateByMessage, setSavedStateByMessage] = useState({});
   const audioInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -240,6 +249,20 @@ const ChatTab = ({ messages, isTyping, chatEndRef, inputValue, setInputValue, on
     resetFileInputs();
   };
 
+  const saveAnswerToDatabase = (messageIndex, message) => {
+    const wasAdded = onSaveAnswer({
+      content: message.content,
+      reasoning: message.reasoning,
+      sources: message.sources,
+      promptReference: message.promptReference,
+    });
+
+    setSavedStateByMessage((previousStates) => ({
+      ...previousStates,
+      [messageIndex]: wasAdded ? 'saved' : 'exists',
+    }));
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50">
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
@@ -272,6 +295,11 @@ const ChatTab = ({ messages, isTyping, chatEndRef, inputValue, setInputValue, on
                   }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
+                  {message.promptReference && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                      <Link2 size={11} /> Prompt ref: {message.promptReference}
+                    </div>
+                  )}
                   {message.attachments?.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {message.attachments.map((attachment) => (
@@ -335,6 +363,22 @@ const ChatTab = ({ messages, isTyping, chatEndRef, inputValue, setInputValue, on
 
                   {message.role === 'assistant' && (
                     <div className="mt-4 pt-3 border-t border-slate-100/90">
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          onClick={() => saveAnswerToDatabase(messageIndex, message)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-wider hover:bg-indigo-100 transition-colors"
+                        >
+                          <BookmarkPlus size={12} /> Save answer to database
+                        </button>
+                        {savedStateByMessage[messageIndex] === 'saved' && (
+                          <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-emerald-700">Saved</span>
+                        )}
+                        {savedStateByMessage[messageIndex] === 'exists' && (
+                          <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Already saved</span>
+                        )}
+                      </div>
+
                       {!submittedFeedbackByMessage[messageIndex] && (
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Human feedback</span>

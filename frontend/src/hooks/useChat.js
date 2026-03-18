@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useChat = (selectedDBName) => {
+export const useChat = (selectedDBName, aiConfig) => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -44,7 +44,7 @@ export const useChat = (selectedDBName) => {
     });
   }, [selectedDBName]);
 
-  const handleSendMessage = (event, attachments = []) => {
+  const handleSendMessage = (event, attachments = [], options = {}) => {
     event.preventDefault();
 
     if (!inputValue.trim() && attachments.length === 0) {
@@ -55,6 +55,7 @@ export const useChat = (selectedDBName) => {
       role: 'user',
       content: inputValue.trim() || 'Please analyze these uploaded attachments.',
       attachments,
+      promptReference: options.promptReference || null,
     };
     setMessages((previousMessages) => [...previousMessages, userMessage]);
     setInputValue('');
@@ -68,7 +69,9 @@ export const useChat = (selectedDBName) => {
             ? `I processed the uploaded attachments and cross-checked them with ${selectedDBName}. The answer is grounded and consistent with the indexed policy context.`
             : `Based on the analyzed documents, the answer is supported. According to ${selectedDBName} vector search, the BCP 2024 plan is authoritative, which means the requested operation can be executed after the security audit.`,
         reasoning:
-          '1. Search: Semantic similarity analysis. 2. Filter: Relevant context extraction (Score > 0.88). 3. Explainability: Cross-checking the supporting paragraphs.',
+          `1. Search: Semantic similarity analysis. 2. Filter: Relevant context extraction (Score > 0.88). 3. Explainability: Cross-checking the supporting paragraphs. 4. Runtime: model=${aiConfig?.model || 'GPT-4o'}, temp=${aiConfig?.temperature ?? 0.7}, strict=${
+            aiConfig?.strictMode ? 'ON' : 'OFF'
+          }${options.promptReference ? `, preset=${options.promptReference}` : ''}.`,
         traceSteps: [
           { label: 'Search', duration: '132 ms' },
           { label: 'Filter', duration: '95 ms' },
