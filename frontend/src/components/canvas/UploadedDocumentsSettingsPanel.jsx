@@ -1,0 +1,773 @@
+/**
+ * UploadedDocumentsSettingsPanel — pick documents and folders that have
+ * already been ingested through the Knowledge Base page.
+ *
+ * Replaces the previous generic "Document Upload" form. The node is a
+ * SOURCE node: it doesn't accept files in the canvas, it selects from the
+ * server-side knowledge store and emits a typed `documents` payload.
+ *
+ * UX contract:
+ *   • Loads the live document list from `/api/knowledge/documents` on mount.
+ *   • Builds an in-memory folder tree from each doc's `relative_path`
+ *     (e.g. "policies/security/handbook.pdf" → policies/security).
+ *   • Three scope modes:
+ *       - `all`        → emit every indexed document
+ *       - `folders`    → emit docs whose path starts with any selected prefix
+ *       - `documents`  → emit explicitly checked document IDs
+ *   • Status & content-type filters apply on top of the chosen scope.
+ *   • Compact preprocessing section preserves the legacy fields (OCR,
+ *     header strip, normalization) so downstream chunking sees the same
+ *     payload shape.
+ *   • Read-only summary: how many docs match, total size, total chunks.
+ *
+ * The panel intentionally does NOT support uploading from the canvas —
+ * uploading lives on the dedicated Knowledge Base page, this node only
+ * REFERENCES already-uploaded artifacts.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  CircleHelp,
+  Filter,
+  FileText,
+  Folder,
+  FolderOpen,
+  Layers,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
+
+import { xragApi } from '../../services/xragApi';
+
+// ─────────────────────────────────────────────────────────────────────────
+// Default config — used by canvasConfig and as merge base when older
+// payloads are loaded.
+// ─────────────────────────────────────────────────────────────────────────
+export const DEFAULT_UPLOADED_DOCUMENTS_CONFIG = {
+  // Selection
+  scope: 'all', // 'all' | 'folders' | 'documents'
+  selectedFolders: [], // string[] — path prefixes ("policies/security")
+  selectedDocumentIds: [], // string[] — explicit doc IDs
+  // Filters (always applied on top of the scope)
+  statusFilter: 'indexed', // 'all' | 'indexed' | 'pending' | 'error'
+  contentTypeFilter: 'all', // 'all' | 'pdf' | 'docx' | 'txt' | 'md' | 'html'
+  // Pre-processing (preserved from legacy DocumentSettingsPanel — these
+  // travel with the documents into Chunking).
+  remove_headers_footers: true,
+  normalize_whitespace: true,
+  ocr_enabled: false,
+  ocr_dpi: 300,
+  page_range: '',
+  image_handling: 'ignore',
+  auto_tagging: false,
+  source_label: 'knowledge_base',
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// UI primitives
+// ─────────────────────────────────────────────────────────────────────────
+const inputClass =
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-sky-400';
+
+const FieldLabel = ({ title, help }) => (
+  <div className="mb-1 flex items-center gap-1">
+    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
+      {title}
+    </label>
+    {help && (
+      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
+        <CircleHelp size={11} />
+      </button>
+    )}
+  </div>
+);
+
+const ScopeChip = ({ active, onClick, icon: Icon, label, hint }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex flex-col items-start gap-0.5 rounded-lg border px-2 py-1.5 text-left transition ${
+      active
+        ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-300'
+        : 'border-slate-200 bg-white hover:border-sky-300'
+    }`}
+  >
+    <div className="flex w-full items-center gap-1">
+      <Icon size={12} className={active ? 'text-sky-600' : 'text-slate-400'} />
+      <span className="text-[11px] font-bold text-slate-800">{label}</span>
+    </div>
+    <span className="text-[9.5px] leading-snug text-slate-500">{hint}</span>
+  </button>
+);
+
+// ─────────────────────────────────────────────────────────────────────────
+// Helpers — folder tree building & filter evaluation
+// ─────────────────────────────────────────────────────────────────────────
+
+// Derive the parent folder of a relative_path (everything except the
+// filename). Top-level docs return '' (root).
+const folderOf = (relativePath, name) => {
+  const path = relativePath || name || '';
+  const slash = path.lastIndexOf('/');
+  return slash === -1 ? '' : path.slice(0, slash);
+};
+
+// All ancestor folder prefixes for a given folder. Used for the "select
+// a folder selects everything below" semantic.
+const ancestorChain = (folder) => {
+  if (!folder) return [''];
+  const parts = folder.split('/').filter(Boolean);
+  const chain = [''];
+  for (let i = 0; i < parts.length; i += 1) {
+    chain.push(parts.slice(0, i + 1).join('/'));
+  }
+  return chain;
+};
+
+// True if a doc lives inside any of the selected folder prefixes (or root '').
+const isInsideAnyFolder = (docFolder, selectedFolders) => {
+  if (!selectedFolders.length) return false;
+  return selectedFolders.some((prefix) => {
+    if (prefix === '') return true; // '' = root + everything
+    return docFolder === prefix || docFolder.startsWith(`${prefix}/`);
+  });
+};
+
+// Detect content type from filename / mime — coarse buckets matching
+// the filter dropdown.
+const contentBucket = (doc) => {
+  const ct = (doc.content_type || '').toLowerCase();
+  const name = (doc.name || '').toLowerCase();
+  if (ct.includes('pdf') || name.endsWith('.pdf')) return 'pdf';
+  if (ct.includes('word') || name.endsWith('.docx') || name.endsWith('.doc')) return 'docx';
+  if (ct.includes('markdown') || name.endsWith('.md')) return 'md';
+  if (ct.includes('html') || name.endsWith('.html') || name.endsWith('.htm')) return 'html';
+  if (ct.startsWith('text/') || name.endsWith('.txt')) return 'txt';
+  return 'other';
+};
+
+const formatBytes = (bytes) => {
+  if (!bytes) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+};
+
+// Build a recursive tree: { name, path, children: { …subfolders }, docs: [...] }
+const buildFolderTree = (documents) => {
+  const root = { name: '/', path: '', children: {}, docs: [] };
+  for (const doc of documents) {
+    const folder = folderOf(doc.relative_path, doc.name);
+    if (!folder) {
+      root.docs.push(doc);
+      continue;
+    }
+    const parts = folder.split('/').filter(Boolean);
+    let cursor = root;
+    let cumulative = '';
+    for (const part of parts) {
+      cumulative = cumulative ? `${cumulative}/${part}` : part;
+      if (!cursor.children[part]) {
+        cursor.children[part] = { name: part, path: cumulative, children: {}, docs: [] };
+      }
+      cursor = cursor.children[part];
+    }
+    cursor.docs.push(doc);
+  }
+  return root;
+};
+
+// Resolve the effective document set given the current config + the live
+// list. Returns the matching docs (after scope + filters).
+const resolveSelection = (documents, config) => {
+  const statusOk = (doc) =>
+    config.statusFilter === 'all' || (doc.status || '').toLowerCase() === config.statusFilter;
+  const typeOk = (doc) =>
+    config.contentTypeFilter === 'all' || contentBucket(doc) === config.contentTypeFilter;
+
+  let scoped;
+  if (config.scope === 'all') {
+    scoped = documents;
+  } else if (config.scope === 'folders') {
+    scoped = documents.filter((doc) =>
+      isInsideAnyFolder(folderOf(doc.relative_path, doc.name), config.selectedFolders),
+    );
+  } else {
+    const idSet = new Set(config.selectedDocumentIds);
+    scoped = documents.filter((doc) => idSet.has(doc.id));
+  }
+  return scoped.filter((doc) => statusOk(doc) && typeOk(doc));
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Folder tree renderer — recursive, with collapse + checkbox per folder.
+// ─────────────────────────────────────────────────────────────────────────
+const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelected, toggleFolder }) => {
+  const subfolders = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
+  const isOpen = expanded.has(node.path);
+  const checked = isFolderSelected(node.path);
+
+  return (
+    <div>
+      <div
+        className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-[11px] hover:bg-sky-50/60 ${
+          checked ? 'bg-sky-50/40' : ''
+        }`}
+        style={{ paddingLeft: `${depth * 12 + 4}px` }}
+      >
+        {(subfolders.length > 0 || node.docs.length > 0) ? (
+          <button
+            type="button"
+            onClick={() => toggleExpanded(node.path)}
+            className="text-slate-400 hover:text-slate-700"
+            title={isOpen ? 'Bezárás' : 'Kibontás'}
+          >
+            {isOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+          </button>
+        ) : (
+          <span className="inline-block w-[11px]" />
+        )}
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() => toggleFolder(node.path)}
+          className="h-3 w-3 accent-sky-500"
+          title="Mappa kijelölése (minden alámappával együtt)"
+        />
+        {checked || isOpen ? (
+          <FolderOpen size={12} className="text-sky-500" />
+        ) : (
+          <Folder size={12} className="text-slate-400" />
+        )}
+        <span className="truncate font-semibold text-slate-700">
+          {node.path === '' ? '/ (root)' : node.name}
+        </span>
+        <span className="ml-auto text-[9.5px] font-mono text-slate-400">
+          {node.docs.length > 0 && `${node.docs.length} doc`}
+        </span>
+      </div>
+      {isOpen && (
+        <div>
+          {subfolders.map((child) => (
+            <FolderTreeNode
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              expanded={expanded}
+              toggleExpanded={toggleExpanded}
+              isFolderSelected={isFolderSelected}
+              toggleFolder={toggleFolder}
+            />
+          ))}
+          {node.docs.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10.5px] text-slate-500"
+              style={{ paddingLeft: `${(depth + 1) * 12 + 16}px` }}
+              title={`${doc.name} · ${formatBytes(doc.size_bytes)}`}
+            >
+              <FileText size={10} className="text-slate-400" />
+              <span className="truncate">{doc.name}</span>
+              <span className="ml-auto font-mono text-[9.5px] text-slate-400">
+                {formatBytes(doc.size_bytes)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Pure payload builder — kept symmetric with sibling panels' build* fn.
+// ─────────────────────────────────────────────────────────────────────────
+export const buildUploadedDocumentsPayload = (config, resolvedDocs = []) => ({
+  step_type: 'uploaded_documents',
+  metadata: {
+    selection: {
+      scope: config.scope,
+      selected_folders: config.selectedFolders,
+      selected_document_ids: config.selectedDocumentIds,
+      resolved_count: resolvedDocs.length,
+      resolved_total_bytes: resolvedDocs.reduce((sum, d) => sum + (d.size_bytes || 0), 0),
+      resolved_total_chunks: resolvedDocs.reduce((sum, d) => sum + (d.chunk_count || 0), 0),
+    },
+    filters: {
+      status: config.statusFilter,
+      content_type: config.contentTypeFilter,
+    },
+    preprocessing: {
+      remove_headers_footers: config.remove_headers_footers,
+      normalize_whitespace: config.normalize_whitespace,
+      ocr_enabled: config.ocr_enabled,
+      ocr_dpi: config.ocr_dpi,
+      page_range: config.page_range,
+      image_handling: config.image_handling,
+    },
+    metadata_enrichment: {
+      auto_tagging: config.auto_tagging,
+      source_label: config.source_label,
+    },
+  },
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────
+export default function UploadedDocumentsSettingsPanel({ value = {}, onChange }) {
+  const config = useMemo(
+    () => ({ ...DEFAULT_UPLOADED_DOCUMENTS_CONFIG, ...value }),
+    [value],
+  );
+  const setField = (field, fieldValue) => onChange?.(field, fieldValue);
+
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState(() => new Set(['']));
+
+  const reload = () => {
+    setLoading(true);
+    setLoadError(null);
+    xragApi
+      .listKnowledgeDocuments()
+      .then((data) => setDocuments(Array.isArray(data) ? data : []))
+      .catch((error) => setLoadError(error.message || 'Failed to load documents'))
+      .finally(() => setLoading(false));
+  };
+
+  // Initial load + manual refresh button.
+  useEffect(() => {
+    reload();
+  }, []);
+
+  // ── Folder tree + folder selection helpers ─────────────────────────────
+  const tree = useMemo(() => buildFolderTree(documents), [documents]);
+
+  const toggleExpanded = (path) => {
+    const next = new Set(expanded);
+    if (next.has(path)) next.delete(path);
+    else next.add(path);
+    setExpanded(next);
+  };
+
+  const isFolderSelected = (path) => (config.selectedFolders || []).includes(path);
+
+  const toggleFolder = (path) => {
+    const current = config.selectedFolders || [];
+    const next = current.includes(path)
+      ? current.filter((p) => p !== path)
+      : [...current, path];
+    setField('selectedFolders', next);
+    if (config.scope !== 'folders') setField('scope', 'folders');
+  };
+
+  // ── Document list (used in scope=documents) ────────────────────────────
+  const visibleDocuments = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return documents;
+    return documents.filter(
+      (doc) =>
+        (doc.name || '').toLowerCase().includes(term)
+        || (doc.relative_path || '').toLowerCase().includes(term),
+    );
+  }, [documents, search]);
+
+  const isDocSelected = (docId) => (config.selectedDocumentIds || []).includes(docId);
+  const toggleDocument = (docId) => {
+    const current = config.selectedDocumentIds || [];
+    const next = current.includes(docId)
+      ? current.filter((id) => id !== docId)
+      : [...current, docId];
+    setField('selectedDocumentIds', next);
+    if (config.scope !== 'documents') setField('scope', 'documents');
+  };
+
+  // ── Resolved selection summary ─────────────────────────────────────────
+  const resolved = useMemo(() => resolveSelection(documents, config), [documents, config]);
+  const totalBytes = useMemo(
+    () => resolved.reduce((sum, d) => sum + (d.size_bytes || 0), 0),
+    [resolved],
+  );
+  const totalChunks = useMemo(
+    () => resolved.reduce((sum, d) => sum + (d.chunk_count || 0), 0),
+    [resolved],
+  );
+
+  // ── Validation warnings ────────────────────────────────────────────────
+  const warnings = [];
+  if (!loading && !loadError && documents.length === 0) {
+    warnings.push('A knowledge base üres — tölts fel dokumentumokat a Documents oldalon.');
+  }
+  if (config.scope === 'folders' && (config.selectedFolders || []).length === 0) {
+    warnings.push('Folders mód kiválasztva, de nincs egyetlen mappa sem bejelölve.');
+  }
+  if (config.scope === 'documents' && (config.selectedDocumentIds || []).length === 0) {
+    warnings.push('Documents mód kiválasztva, de nincs egyetlen dokumentum sem bejelölve.');
+  }
+  if (!loading && resolved.length === 0 && documents.length > 0) {
+    warnings.push('A jelenlegi szűrők nem találnak egy dokumentumot sem.');
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* ── Knowledge base banner ──────────────────────────────────────── */}
+      <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+        <div className="flex items-start gap-2">
+          <Layers size={14} className="mt-0.5 text-sky-700" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-black uppercase tracking-wider text-sky-800">
+              Knowledge base · {documents.length} dokumentum
+            </p>
+            <p className="mt-0.5 text-[11px] text-sky-900">
+              Ez a node a <span className="font-bold">Documents</span> oldalon
+              feltöltött fájlokra hivatkozik. Itt csak kiválasztod, melyik
+              dokumentumok / mappák kerüljenek be a pipeline-ba — feltölteni
+              továbbra is a Documents oldalon kell.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={reload}
+            className="shrink-0 rounded-lg border border-sky-300 bg-white p-1.5 text-sky-600 transition hover:bg-sky-100"
+            title="Lista frissítése"
+            disabled={loading}
+          >
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+
+      {loadError && (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-rose-700">
+          Hiba a betöltéskor: {loadError}
+        </div>
+      )}
+
+      {/* ── Scope picker ───────────────────────────────────────────────── */}
+      <div>
+        <FieldLabel title="Selection scope" help="Mit küldjön tovább a node a Chunking felé." />
+        <div className="grid grid-cols-3 gap-1.5">
+          <ScopeChip
+            active={config.scope === 'all'}
+            onClick={() => setField('scope', 'all')}
+            icon={Sparkles}
+            label="All"
+            hint="Minden indexelt dokumentum."
+          />
+          <ScopeChip
+            active={config.scope === 'folders'}
+            onClick={() => setField('scope', 'folders')}
+            icon={Folder}
+            label="Folders"
+            hint="Egy vagy több mappa (rekurzív)."
+          />
+          <ScopeChip
+            active={config.scope === 'documents'}
+            onClick={() => setField('scope', 'documents')}
+            icon={FileText}
+            label="Documents"
+            hint="Konkrét fájlok kijelölése."
+          />
+        </div>
+      </div>
+
+      {/* ── Folder tree (when scope=folders) ───────────────────────────── */}
+      {config.scope === 'folders' && (
+        <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
+          <div className="flex items-center justify-between gap-1">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              Mappa-fa
+            </p>
+            <span className="font-mono text-[9.5px] text-slate-400">
+              {(config.selectedFolders || []).length} kijelölve
+            </span>
+          </div>
+          {documents.length === 0 ? (
+            <p className="rounded bg-slate-50 px-2 py-3 text-center text-[10.5px] text-slate-400">
+              {loading ? 'Betöltés…' : 'Nincs feltöltött dokumentum.'}
+            </p>
+          ) : (
+            <div className="max-h-64 overflow-auto rounded border border-slate-100 bg-slate-50/40 py-1">
+              <FolderTreeNode
+                node={tree}
+                depth={0}
+                expanded={expanded}
+                toggleExpanded={toggleExpanded}
+                isFolderSelected={isFolderSelected}
+                toggleFolder={toggleFolder}
+              />
+            </div>
+          )}
+          {(config.selectedFolders || []).length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {config.selectedFolders.map((path) => (
+                <button
+                  key={path}
+                  type="button"
+                  onClick={() => toggleFolder(path)}
+                  className="flex items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-mono text-sky-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+                  title="Eltávolítás"
+                >
+                  <Folder size={9} />
+                  {path === '' ? '/' : path}
+                  <span className="ml-0.5 text-rose-500">×</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Document picker (when scope=documents) ─────────────────────── */}
+      {config.scope === 'documents' && (
+        <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
+          <div className="relative">
+            <Search
+              size={11}
+              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Keresés név vagy útvonal alapján…"
+              className={`${inputClass} pl-7`}
+            />
+          </div>
+          {visibleDocuments.length === 0 ? (
+            <p className="rounded bg-slate-50 px-2 py-3 text-center text-[10.5px] text-slate-400">
+              {loading ? 'Betöltés…' : 'Nincs találat.'}
+            </p>
+          ) : (
+            <div className="max-h-64 overflow-auto rounded border border-slate-100 bg-slate-50/40">
+              {visibleDocuments.map((doc) => {
+                const checked = isDocSelected(doc.id);
+                const folder = folderOf(doc.relative_path, doc.name);
+                return (
+                  <label
+                    key={doc.id}
+                    className={`flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-[10.5px] hover:bg-sky-50/60 ${
+                      checked ? 'bg-sky-50/40' : ''
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleDocument(doc.id)}
+                      className="h-3 w-3 accent-sky-500"
+                    />
+                    <FileText size={10} className="text-slate-400" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-semibold text-slate-700">{doc.name}</div>
+                      {folder && (
+                        <div className="truncate font-mono text-[9px] text-slate-400">{folder}/</div>
+                      )}
+                    </div>
+                    <span className="font-mono text-[9px] text-slate-400">
+                      {formatBytes(doc.size_bytes)}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {(config.selectedDocumentIds || []).length > 0 && (
+            <p className="text-[10px] font-bold text-sky-700">
+              {config.selectedDocumentIds.length} dokumentum kijelölve
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Filters ────────────────────────────────────────────────────── */}
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+        <div className="flex items-center gap-1.5">
+          <Filter size={12} className="text-slate-500" />
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+            Filters
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <FieldLabel title="Status" />
+            <select
+              value={config.statusFilter}
+              onChange={(event) => setField('statusFilter', event.target.value)}
+              className={inputClass}
+            >
+              <option value="all">Bármely státusz</option>
+              <option value="indexed">Csak indexelt</option>
+              <option value="pending">Csak pending</option>
+              <option value="error">Csak hibás</option>
+            </select>
+          </div>
+          <div>
+            <FieldLabel title="Content type" />
+            <select
+              value={config.contentTypeFilter}
+              onChange={(event) => setField('contentTypeFilter', event.target.value)}
+              className={inputClass}
+            >
+              <option value="all">Bármely típus</option>
+              <option value="pdf">PDF</option>
+              <option value="docx">DOCX</option>
+              <option value="md">Markdown</option>
+              <option value="html">HTML</option>
+              <option value="txt">Plain text</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Resolved selection summary ─────────────────────────────────── */}
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
+          Resolved selection
+        </p>
+        <div className="mt-1.5 grid grid-cols-3 gap-1.5 text-[11px]">
+          <div className="rounded-lg bg-white/80 px-2 py-1.5">
+            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Docs</p>
+            <p className="font-mono text-[12px] font-bold text-slate-800">{resolved.length}</p>
+          </div>
+          <div className="rounded-lg bg-white/80 px-2 py-1.5">
+            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Size</p>
+            <p className="font-mono text-[12px] font-bold text-slate-800">{formatBytes(totalBytes)}</p>
+          </div>
+          <div className="rounded-lg bg-white/80 px-2 py-1.5">
+            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Chunks</p>
+            <p className="font-mono text-[12px] font-bold text-slate-800">{totalChunks}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Pre-processing (compact) ───────────────────────────────────── */}
+      <details className="rounded-xl border border-slate-200 bg-white p-3" open>
+        <summary className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-slate-500">
+          Pre-processing & metadata
+        </summary>
+        <div className="mt-2 space-y-2">
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+              <input
+                type="checkbox"
+                checked={Boolean(config.remove_headers_footers)}
+                onChange={(event) => setField('remove_headers_footers', event.target.checked)}
+                className="h-3 w-3 accent-sky-500"
+              />
+              remove_headers_footers
+            </label>
+            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+              <input
+                type="checkbox"
+                checked={Boolean(config.normalize_whitespace)}
+                onChange={(event) => setField('normalize_whitespace', event.target.checked)}
+                className="h-3 w-3 accent-sky-500"
+              />
+              normalize_whitespace
+            </label>
+            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+              <input
+                type="checkbox"
+                checked={Boolean(config.ocr_enabled)}
+                onChange={(event) => setField('ocr_enabled', event.target.checked)}
+                className="h-3 w-3 accent-sky-500"
+              />
+              ocr_enabled
+            </label>
+            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+              <input
+                type="checkbox"
+                checked={Boolean(config.auto_tagging)}
+                onChange={(event) => setField('auto_tagging', event.target.checked)}
+                className="h-3 w-3 accent-sky-500"
+              />
+              auto_tagging
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <FieldLabel title="OCR DPI" />
+              <input
+                type="number"
+                min={150}
+                max={600}
+                step={50}
+                value={Number(config.ocr_dpi || 300)}
+                onChange={(event) => setField('ocr_dpi', Number(event.target.value || 300))}
+                className={inputClass}
+                disabled={!config.ocr_enabled}
+              />
+            </div>
+            <div>
+              <FieldLabel title="Image handling" />
+              <select
+                value={(config.image_handling || 'ignore').toLowerCase()}
+                onChange={(event) => setField('image_handling', event.target.value)}
+                className={inputClass}
+              >
+                <option value="ignore">Ignore</option>
+                <option value="extract">Extract</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <FieldLabel title="Page range" help='Pl. "1-10, 15". Üres = minden oldal.' />
+            <input
+              type="text"
+              value={config.page_range || ''}
+              onChange={(event) => setField('page_range', event.target.value)}
+              className={inputClass}
+              placeholder="1-10, 15"
+            />
+          </div>
+          <div>
+            <FieldLabel title="Source label" help="Provenance / audit cimke a downstream node-oknak." />
+            <input
+              type="text"
+              value={config.source_label || ''}
+              onChange={(event) => setField('source_label', event.target.value)}
+              className={inputClass}
+              placeholder="knowledge_base"
+            />
+          </div>
+        </div>
+      </details>
+
+      {/* ── Warnings / OK ──────────────────────────────────────────────── */}
+      {warnings.length > 0 ? (
+        <ul className="space-y-1">
+          {warnings.map((warning) => (
+            <li
+              key={warning}
+              className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800"
+            >
+              <AlertTriangle size={11} className="mt-0.5 shrink-0" />
+              <span>{warning}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
+          <CheckCircle2 size={11} />
+          {resolved.length} dokumentum kerül továbbításra a Chunking node-nak.
+        </div>
+      )}
+
+      {/* ── Footer ─────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <Zap size={11} className="text-sky-500" />
+        Kimenet: <span className="font-mono">documents</span> → Chunking, Cleaning, Graph DB
+      </div>
+    </div>
+  );
+}
