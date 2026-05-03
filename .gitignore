@@ -205,3 +205,18 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Node / frontend build artifacts
+node_modules/
+dist/
+.vite/
+frontend/.vite/
+*.tsbuildinfo
+
+# Local env files
+.env.local
+.env.*.local
+
+# Local debug payloads
+backend/.run_flow_*.json
+
