@@ -15,22 +15,22 @@ const INITIAL_RAG_SOURCES = [
 
 const CACHE_LIMIT = 1000000;
 const RERANKER_MODELS = ['cohere-rerank-v3', 'bge-reranker-v2-m3', 'jina-reranker-v2'];
-const LLM_MODELS = ['Gemini 1.5 Pro', 'GPT-4o', 'Claude 3.5 Sonnet'];
+const LLM_MODELS = ['Gemini 2.5 Flash', 'Gemini 1.5 Pro', 'GPT-4o', 'Claude 3.5 Sonnet'];
 const DEFAULT_SYSTEM_PROMPT = 'You are a professional research assistant. Always cite your sources and clearly separate verified context from assumptions.';
 
-const DataStrategyPanel = ({ aiConfig, onAiConfigChange }) => {
+const DataStrategyPanel = ({ aiConfig, onAiConfigChange, retrievalConfig, onRetrievalConfigChange }) => {
   const [cagFiles, setCagFiles] = useState(INITIAL_CAG_FILES);
   const [ragSources] = useState(INITIAL_RAG_SOURCES);
   const [recentlyReindexed, setRecentlyReindexed] = useState(null);
-  const [hybridAlpha, setHybridAlpha] = useState(0.5);
-  const [topK, setTopK] = useState(5);
-  const [rerankerEnabled, setRerankerEnabled] = useState(true);
-  const [rerankerModel, setRerankerModel] = useState(RERANKER_MODELS[0]);
 
   const selectedModel = aiConfig?.model || 'GPT-4o';
   const temperature = aiConfig?.temperature ?? 0.7;
   const systemPrompt = aiConfig?.systemPrompt || DEFAULT_SYSTEM_PROMPT;
   const strictMode = aiConfig?.strictMode ?? true;
+  const hybridAlpha = retrievalConfig?.hybridAlpha ?? 0.5;
+  const topK = retrievalConfig?.topK ?? 5;
+  const rerankerEnabled = retrievalConfig?.rerankerEnabled ?? true;
+  const rerankerModel = retrievalConfig?.rerankerModel || RERANKER_MODELS[0];
 
   const pinnedCount = useMemo(() => cagFiles.filter((file) => file.pinned).length, [cagFiles]);
   const cacheUsed = Math.min(CACHE_LIMIT, pinnedCount * 250000);
@@ -52,11 +52,18 @@ const DataStrategyPanel = ({ aiConfig, onAiConfigChange }) => {
       return;
     }
 
-    setTopK(Math.min(50, Math.max(1, value)));
+    updateRetrievalConfig({ topK: Math.min(50, Math.max(1, value)) });
   };
 
   const updateAiConfig = (nextValues) => {
     onAiConfigChange((previous) => ({
+      ...previous,
+      ...nextValues,
+    }));
+  };
+
+  const updateRetrievalConfig = (nextValues) => {
+    onRetrievalConfigChange((previous) => ({
       ...previous,
       ...nextValues,
     }));
@@ -160,7 +167,7 @@ const DataStrategyPanel = ({ aiConfig, onAiConfigChange }) => {
               max="1"
               step="0.1"
               value={hybridAlpha}
-              onChange={(event) => setHybridAlpha(Number(event.target.value))}
+              onChange={(event) => updateRetrievalConfig({ hybridAlpha: Number(event.target.value) })}
               className="w-full accent-indigo-600"
             />
             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -191,7 +198,7 @@ const DataStrategyPanel = ({ aiConfig, onAiConfigChange }) => {
               </div>
               <button
                 type="button"
-                onClick={() => setRerankerEnabled((prevState) => !prevState)}
+                onClick={() => updateRetrievalConfig({ rerankerEnabled: !rerankerEnabled })}
                 className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
                   rerankerEnabled ? 'bg-emerald-500' : 'bg-slate-300'
                 }`}
@@ -209,7 +216,7 @@ const DataStrategyPanel = ({ aiConfig, onAiConfigChange }) => {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reranker Model</label>
               <select
                 value={rerankerModel}
-                onChange={(event) => setRerankerModel(event.target.value)}
+                onChange={(event) => updateRetrievalConfig({ rerankerModel: event.target.value })}
                 disabled={!rerankerEnabled}
                 className="w-full md:w-72 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >

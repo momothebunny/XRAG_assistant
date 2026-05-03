@@ -249,8 +249,8 @@ const ChatTab = ({
     resetFileInputs();
   };
 
-  const saveAnswerToDatabase = (messageIndex, message) => {
-    const wasAdded = onSaveAnswer({
+  const saveAnswerToDatabase = async (messageIndex, message) => {
+    const wasAdded = await onSaveAnswer({
       content: message.content,
       reasoning: message.reasoning,
       sources: message.sources,
@@ -366,7 +366,9 @@ const ChatTab = ({
                       <div className="mb-3">
                         <button
                           type="button"
-                          onClick={() => saveAnswerToDatabase(messageIndex, message)}
+                          onClick={() => {
+                            void saveAnswerToDatabase(messageIndex, message);
+                          }}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-wider hover:bg-indigo-100 transition-colors"
                         >
                           <BookmarkPlus size={12} /> Save answer to database
