@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { xragApi } from '../services/xragApi';
 
-export const useChat = (selectedDBName, aiConfig) => {
+export const useChat = (selectedDBName) => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -44,7 +45,7 @@ export const useChat = (selectedDBName, aiConfig) => {
     });
   }, [selectedDBName]);
 
-  const handleSendMessage = (event, attachments = [], options = {}) => {
+  const handleSendMessage = (event, attachments = []) => {
     event.preventDefault();
 
     if (!inputValue.trim() && attachments.length === 0) {
@@ -55,52 +56,37 @@ export const useChat = (selectedDBName, aiConfig) => {
       role: 'user',
       content: inputValue.trim() || 'Please analyze these uploaded attachments.',
       attachments,
-      promptReference: options.promptReference || null,
     };
     setMessages((previousMessages) => [...previousMessages, userMessage]);
     setInputValue('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const assistantMessage = {
-        role: 'assistant',
-        content:
-          attachments.length > 0
-            ? `I processed the uploaded attachments and cross-checked them with ${selectedDBName}. The answer is grounded and consistent with the indexed policy context.`
-            : `Based on the analyzed documents, the answer is supported. According to ${selectedDBName} vector search, the BCP 2024 plan is authoritative, which means the requested operation can be executed after the security audit.`,
-        reasoning:
-          `1. Search: Semantic similarity analysis. 2. Filter: Relevant context extraction (Score > 0.88). 3. Explainability: Cross-checking the supporting paragraphs. 4. Runtime: model=${aiConfig?.model || 'GPT-4o'}, temp=${aiConfig?.temperature ?? 0.7}, strict=${
-            aiConfig?.strictMode ? 'ON' : 'OFF'
-          }${options.promptReference ? `, preset=${options.promptReference}` : ''}.`,
-        traceSteps: [
-          { label: 'Search', duration: '132 ms' },
-          { label: 'Filter', duration: '95 ms' },
-          { label: 'Ground', duration: '142 ms' },
-          { label: 'Answer', duration: '71 ms' },
-        ],
-        sources: [
+    xragApi
+      .chat({
+        message: userMessage.content,
+        attachments: userMessage.attachments,
+      })
+      .then((assistantMessage) => {
+        setMessages((previousMessages) => [...previousMessages, { role: 'assistant', ...assistantMessage }]);
+      })
+      .catch(() => {
+        setMessages((previousMessages) => [
+          ...previousMessages,
           {
-            label: 'BCP_Plan_2024.pdf (p.12)',
-            page: 12,
-            chunkId: 'C-041',
-            tokenCount: 83,
-            snippet:
-              'Critical operation cutover is allowed only after security audit closure and approval from the continuity owner. The failback checklist must be attached to the incident record.',
+            role: 'assistant',
+            content: `Backend is currently unavailable. Showing fallback response for ${selectedDBName}.`,
+            reasoning: 'Fallback mode activated because /api/chat did not respond.',
+            traceSteps: [
+              { label: 'Fallback', duration: '3 ms' },
+              { label: 'Answer', duration: '8 ms' },
+            ],
+            sources: [],
           },
-          {
-            label: 'Infra_Security_v2.docx',
-            page: 4,
-            chunkId: 'C-019',
-            tokenCount: 71,
-            snippet:
-              'Execution access for operational changes requires least-privilege entitlement and dual-control confirmation when the system impact level is high.',
-          },
-        ],
-      };
-
-      setMessages((previousMessages) => [...previousMessages, assistantMessage]);
-      setIsTyping(false);
-    }, 1800);
+        ]);
+      })
+      .finally(() => {
+        setIsTyping(false);
+      });
 
     return true;
   };
