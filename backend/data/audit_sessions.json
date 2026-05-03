@@ -1,0 +1,73 @@
+[
+  {
+    "id": "audit-043bf2d425",
+    "name": "Audit Session",
+    "flows": [
+      {
+        "flow_id": "flow-self-rag-001",
+        "flow_name": "Self-RAG",
+        "blind_label": "Flow A"
+      },
+      {
+        "flow_id": "flow-naive-rag-001",
+        "flow_name": "Naive RAG",
+        "blind_label": "Flow B"
+      },
+      {
+        "flow_id": "flow-agentic-rag-001",
+        "flow_name": "Agentic RAG",
+        "blind_label": "Flow C"
+      },
+      {
+        "flow_id": "flow-pdr-001",
+        "flow_name": "Parent-Document Retrieval",
+        "blind_label": "Flow D"
+      }
+    ],
+    "questions": [
+      {
+        "question_index": 0,
+        "question": "mi a tuberkol\u00f3zis",
+        "responses": [
+          {
+            "blind_label": "Flow A",
+            "answer": "[Execution error]",
+            "duration_ms": 0,
+            "error": "Flow contains a cycle and cannot be executed."
+          },
+          {
+            "blind_label": "Flow B",
+            "answer": "A k\u00e9rd\u00e9sre vonatkoz\u00f3an a megadott forr\u00e1sok nem tartalmaznak inform\u00e1ci\u00f3t a tuberkul\u00f3zisr\u00f3l. K\u00e9rlek, pr\u00f3b\u00e1lj meg m\u00e1s forr\u00e1sokat keresni vagy pontos\u00edtsd a k\u00e9rd\u00e9st.",
+            "duration_ms": 3343,
+            "error": null
+          },
+          {
+            "blind_label": "Flow C",
+            "answer": "[Execution error]",
+            "duration_ms": 0,
+            "error": "Flow contains a cycle and cannot be executed."
+          },
+          {
+            "blind_label": "Flow D",
+            "answer": "Sajn\u00e1lom, de a k\u00e9rd\u00e9sedre nem tudok v\u00e1laszolni, mivel nem kaptam hozz\u00e1 megfelel\u0151 bizony\u00edt\u00e9kot vagy inform\u00e1ci\u00f3t. Ha van m\u00e1s k\u00e9rd\u00e9sed, amire tudok v\u00e1laszolni a rendelkez\u00e9sre \u00e1ll\u00f3 adatok alapj\u00e1n, sz\u00edvesen seg\u00edtek.",
+            "duration_ms": 2130,
+            "error": null
+          }
+        ],
+        "winner_label": null,
+        "winner_flow_id": null
+      }
+    ],
+    "status": "running",
+    "created_at": 1777753326026,
+    "finished_at": null,
+    "tally": {
+      "flow-self-rag-001": 0,
+      "flow-naive-rag-001": 0,
+      "flow-agentic-rag-001": 0,
+      "flow-pdr-001": 0
+    },
+    "winner_flow_id": null,
+    "winner_flow_name": null
+  }
+]

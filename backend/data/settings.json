@@ -1,0 +1,25 @@
+{
+  "vector_store": {
+    "id": "pinecone",
+    "name": "Pinecone",
+    "type": "Managed Cloud"
+  },
+  "retrieval": {
+    "hybrid_alpha": 1.0,
+    "top_k": 5,
+    "reranker_enabled": true,
+    "reranker_model": "cohere-rerank-v3",
+    "langchain_enabled": true,
+    "chunk_size": 700,
+    "chunk_overlap": 120
+  },
+  "llm": {
+    "model": "GPT-4o",
+    "temperature": 0.1,
+    "system_prompt": "You are a professional research assistant. Always cite your sources and clearly separate verified context from assumptions.",
+    "strict_mode": true,
+    "provider": "openai",
+    "api_key_env": "OPENAI_API_KEY",
+    "base_url": null
+  }
+}

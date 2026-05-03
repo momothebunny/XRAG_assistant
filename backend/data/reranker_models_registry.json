@@ -1,0 +1,129 @@
+{
+  "models": [
+    {
+      "id": "cohere/rerank-v3.5",
+      "label": "Cohere Rerank v3.5",
+      "provider": "cohere",
+      "badge": "Cloud",
+      "kind": "api",
+      "description": "Cohere's flagship reranker. Multilingual, 4k context per document.",
+      "maxDocuments": 1000,
+      "maxTokensPerDoc": 4096,
+      "languages": ["multilingual"],
+      "apiKeyEnvVar": "COHERE_API_KEY"
+    },
+    {
+      "id": "cohere/rerank-english-v3.0",
+      "label": "Cohere Rerank English v3",
+      "provider": "cohere",
+      "badge": "Cloud",
+      "kind": "api",
+      "description": "English-only reranker, fastest in the Cohere family.",
+      "maxDocuments": 1000,
+      "maxTokensPerDoc": 4096,
+      "languages": ["en"],
+      "apiKeyEnvVar": "COHERE_API_KEY"
+    },
+    {
+      "id": "cohere/rerank-multilingual-v3.0",
+      "label": "Cohere Rerank Multilingual v3",
+      "provider": "cohere",
+      "badge": "Cloud",
+      "kind": "api",
+      "description": "100+ languages, balanced quality / latency.",
+      "maxDocuments": 1000,
+      "maxTokensPerDoc": 4096,
+      "languages": ["multilingual"],
+      "apiKeyEnvVar": "COHERE_API_KEY"
+    },
+    {
+      "id": "voyage/rerank-2",
+      "label": "Voyage rerank-2",
+      "provider": "voyage",
+      "badge": "Cloud",
+      "kind": "api",
+      "description": "Voyage AI reranker, 16k token context, strong on long passages.",
+      "maxDocuments": 1000,
+      "maxTokensPerDoc": 16000,
+      "languages": ["multilingual"],
+      "apiKeyEnvVar": "VOYAGE_API_KEY"
+    },
+    {
+      "id": "jina/reranker-v2-base-multilingual",
+      "label": "Jina Reranker v2 Multilingual",
+      "provider": "jina",
+      "badge": "Cloud",
+      "kind": "api",
+      "description": "Open-weights model also available via Jina's API.",
+      "maxDocuments": 2048,
+      "maxTokensPerDoc": 8192,
+      "languages": ["multilingual"],
+      "apiKeyEnvVar": "JINA_API_KEY"
+    },
+    {
+      "id": "mixedbread/mxbai-rerank-large-v1",
+      "label": "Mixedbread mxbai-rerank-large-v1",
+      "provider": "mixedbread",
+      "badge": "Cloud",
+      "kind": "api",
+      "description": "High-quality open-weights reranker hosted by Mixedbread.",
+      "maxDocuments": 512,
+      "maxTokensPerDoc": 8192,
+      "languages": ["multilingual"],
+      "apiKeyEnvVar": "MXBAI_API_KEY"
+    },
+    {
+      "id": "bge/bge-reranker-v2-m3",
+      "label": "BGE Reranker v2 m3",
+      "provider": "bge",
+      "badge": "Local",
+      "kind": "local",
+      "description": "BAAI multilingual cross-encoder. Runs locally via sentence-transformers.",
+      "maxDocuments": 512,
+      "maxTokensPerDoc": 8192,
+      "languages": ["multilingual"],
+      "apiKeyEnvVar": null
+    },
+    {
+      "id": "bge/bge-reranker-large",
+      "label": "BGE Reranker Large",
+      "provider": "bge",
+      "badge": "Local",
+      "kind": "local",
+      "description": "Strong English/Chinese cross-encoder, ~560MB on disk.",
+      "maxDocuments": 512,
+      "maxTokensPerDoc": 512,
+      "languages": ["en", "zh"],
+      "apiKeyEnvVar": null
+    },
+    {
+      "id": "ms-marco/MiniLM-L-12-v2",
+      "label": "MS-MARCO MiniLM-L12 v2",
+      "provider": "sentence-transformers",
+      "badge": "Local",
+      "kind": "local",
+      "description": "Lightweight cross-encoder, sub-50ms per pair. English only.",
+      "maxDocuments": 512,
+      "maxTokensPerDoc": 512,
+      "languages": ["en"],
+      "apiKeyEnvVar": null
+    },
+    {
+      "id": "llm/as-reranker",
+      "label": "LLM-as-reranker (listwise)",
+      "provider": "llm",
+      "badge": "Experimental",
+      "kind": "llm",
+      "description": "Use a downstream LLM to rerank listwise. Highest quality, highest latency / cost.",
+      "maxDocuments": 50,
+      "maxTokensPerDoc": 2000,
+      "languages": ["multilingual"],
+      "apiKeyEnvVar": null
+    }
+  ],
+  "kindLabels": {
+    "api": "Cloud API",
+    "local": "Local cross-encoder",
+    "llm": "LLM-based"
+  }
+}

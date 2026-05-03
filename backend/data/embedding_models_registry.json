@@ -1,0 +1,146 @@
+[
+  {
+    "provider_id": "openai",
+    "provider_name": "OpenAI",
+    "auth_type": "api_key_only",
+    "models": [
+      {
+        "model_id": "text-embedding-3-large",
+        "display_name": "OpenAI v3 Large",
+        "max_tokens": 8191,
+        "output_dimensions": 3072,
+        "min_dimensions": 256,
+        "supports_matryoshka": true,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Tiktoken",
+        "default_query_prefix": null
+      },
+      {
+        "model_id": "text-embedding-3-small",
+        "display_name": "OpenAI v3 Small",
+        "max_tokens": 8191,
+        "output_dimensions": 1536,
+        "min_dimensions": 256,
+        "supports_matryoshka": true,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Tiktoken",
+        "default_query_prefix": null
+      },
+      {
+        "model_id": "text-embedding-ada-002",
+        "display_name": "OpenAI Ada v2 (Legacy)",
+        "max_tokens": 8191,
+        "output_dimensions": 1536,
+        "supports_matryoshka": false,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Tiktoken",
+        "default_query_prefix": null
+      }
+    ]
+  },
+  {
+    "provider_id": "azure_openai",
+    "provider_name": "Azure OpenAI (Enterprise)",
+    "auth_type": "azure_enterprise",
+    "models": [
+      {
+        "model_id": "text-embedding-3-large",
+        "display_name": "Azure OpenAI v3 Large",
+        "max_tokens": 8191,
+        "output_dimensions": 3072,
+        "supports_matryoshka": true,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Tiktoken",
+        "default_query_prefix": null
+      },
+      {
+        "model_id": "text-embedding-3-small",
+        "display_name": "Azure OpenAI v3 Small",
+        "max_tokens": 8191,
+        "output_dimensions": 1536,
+        "supports_matryoshka": true,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Tiktoken",
+        "default_query_prefix": null
+      }
+    ]
+  },
+  {
+    "provider_id": "cohere",
+    "provider_name": "Cohere",
+    "auth_type": "api_key_only",
+    "models": [
+      {
+        "model_id": "embed-multilingual-v3.0",
+        "display_name": "Cohere Embed Multilingual v3",
+        "max_tokens": 2048,
+        "output_dimensions": 1024,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Cohere",
+        "default_query_prefix": null
+      },
+      {
+        "model_id": "embed-english-v3.0",
+        "display_name": "Cohere Embed English v3",
+        "max_tokens": 2048,
+        "output_dimensions": 1024,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Cohere",
+        "default_query_prefix": null
+      }
+    ]
+  },
+  {
+    "provider_id": "google_gemini",
+    "provider_name": "Google Gemini",
+    "auth_type": "api_key_only",
+    "models": [
+      {
+        "model_id": "text-embedding-004",
+        "display_name": "Gemini text-embedding-004",
+        "max_tokens": 2048,
+        "output_dimensions": 768,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "Gemini",
+        "default_query_prefix": null
+      }
+    ]
+  },
+  {
+    "provider_id": "huggingface_cloud",
+    "provider_name": "HuggingFace (Felhő API)",
+    "auth_type": "hf_endpoint",
+    "models": [
+      {
+        "model_id": "BAAI/bge-m3",
+        "display_name": "BGE-M3 (Többnyelvű)",
+        "max_tokens": 8192,
+        "output_dimensions": 1024,
+        "recommended_metric": "Dot Product",
+        "tokenizer_type": "AutoTokenizer",
+        "default_query_prefix": "Represent this sentence for searching relevant passages: ",
+        "default_document_prefix": ""
+      },
+      {
+        "model_id": "intfloat/multilingual-e5-large",
+        "display_name": "Multilingual E5 Large",
+        "max_tokens": 512,
+        "output_dimensions": 1024,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "AutoTokenizer",
+        "default_query_prefix": "query: ",
+        "default_document_prefix": "passage: "
+      },
+      {
+        "model_id": "BAAI/bge-large-en-v1.5",
+        "display_name": "BGE Large EN v1.5",
+        "max_tokens": 512,
+        "output_dimensions": 1024,
+        "recommended_metric": "Cosine",
+        "tokenizer_type": "AutoTokenizer",
+        "default_query_prefix": "Represent this sentence for searching relevant passages: ",
+        "default_document_prefix": ""
+      }
+    ]
+  }
+]

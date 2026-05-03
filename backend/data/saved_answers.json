@@ -1,0 +1,56 @@
+[
+  {
+    "id": "answer-a1b2c3d4e5",
+    "content": "RAG (Retrieval-Augmented Generation) is an architecture that combines a retrieval system with a generative language model. Instead of relying solely on the model's parametric knowledge, RAG first searches a document corpus for relevant chunks and injects them into the prompt context. This grounds the model's output in up-to-date, verifiable source material and significantly reduces hallucination rates compared to vanilla generation.",
+    "reasoning": "The user asked for a conceptual overview. I retrieved the top-3 chunks from the XRAG bootstrap document which cover the RAG pipeline definition, then synthesised a concise paragraph.",
+    "sources": [
+      { "chunkId": "chunk-xrag-001", "label": "xrag_bootstrap.md — §1 Introduction" },
+      { "chunkId": "chunk-xrag-002", "label": "xrag_bootstrap.md — §2 Architecture" }
+    ],
+    "promptReference": "What is RAG?",
+    "createdAt": 1745780400000
+  },
+  {
+    "id": "answer-f6g7h8i9j0",
+    "content": "Chunking strategy has a direct impact on retrieval precision and recall. Smaller chunks (128–256 tokens) improve precision by keeping context tight, but may lose surrounding nuance. Larger chunks (512–1024 tokens) preserve more context but dilute the semantic signal when embedded. A sliding-window approach with 10–15% overlap is generally recommended as a balanced default. For technical documentation with clearly delineated sections, header-aware chunking outperforms fixed-size splitting.",
+    "reasoning": "Cross-referenced the chunking settings documentation and the embedding best-practices section. Applied a comparative analysis across four chunking strategies.",
+    "sources": [
+      { "chunkId": "chunk-xrag-014", "label": "xrag_bootstrap.md — §5 Chunking Strategies" },
+      { "chunkId": "chunk-xrag-015", "label": "xrag_bootstrap.md — §5.2 Overlap" }
+    ],
+    "promptReference": "How does chunk size affect retrieval quality?",
+    "createdAt": 1745694000000
+  },
+  {
+    "id": "answer-k1l2m3n4o5",
+    "content": "Pinecone is a managed vector database optimised for high-dimensional similarity search. It supports approximate nearest-neighbour (ANN) search via the HNSW and IVF algorithms. Key advantages include serverless scaling, sub-millisecond query latency at billion-vector scale, and native metadata filtering. In XRAG, Pinecone is the default vector provider and is configured through the Vector Database node in the canvas flow editor.",
+    "reasoning": "The user asked specifically about Pinecone integration. Retrieved the vector provider registry entry and the canvas VectorDatabase node documentation.",
+    "sources": [
+      { "chunkId": "chunk-vdb-001", "label": "vector_providers_registry.json — pinecone" },
+      { "chunkId": "chunk-xrag-031", "label": "xrag_bootstrap.md — §8 Vector Providers" }
+    ],
+    "promptReference": "Tell me about Pinecone integration",
+    "createdAt": 1745607600000
+  },
+  {
+    "id": "answer-p6q7r8s9t0",
+    "content": "Re-ranking is a post-retrieval step that reorders candidate chunks before they are injected into the LLM prompt. A cross-encoder model scores each (query, chunk) pair jointly, which is more accurate than the bi-encoder similarity used during initial retrieval, but too slow to run over the full corpus. XRAG supports several re-ranker models including Cohere Rerank v3 and BGE-Reranker-Large. Enabling re-ranking typically improves answer faithfulness by 10–20% at the cost of a ~50–100 ms latency increase.",
+    "reasoning": "Compared re-ranker model registry entries and retrieved the performance benchmarks section from the bootstrap document.",
+    "sources": [
+      { "chunkId": "chunk-rrk-001", "label": "reranker_models_registry.json — cohere-rerank-v3" },
+      { "chunkId": "chunk-xrag-042", "label": "xrag_bootstrap.md — §9 Re-ranking" }
+    ],
+    "promptReference": "What does a re-ranker do?",
+    "createdAt": 1745521200000
+  },
+  {
+    "id": "answer-u1v2w3x4y5",
+    "content": "The canvas flow editor in XRAG is a node-based visual pipeline builder. Each node represents a processing step — document upload, chunking, embedding, vector storage, retrieval, re-ranking, and LLM generation. Edges define data flow between nodes. A saved canvas flow becomes the active configuration used when new documents are uploaded or queries are answered. This allows different retrieval strategies to be A/B tested without changing code.",
+    "reasoning": "No specific source chunks available — answered from indexed canvas_flows.json metadata and the bootstrap introduction section.",
+    "sources": [
+      { "chunkId": "chunk-canvas-001", "label": "canvas_flows.json — default_flow" }
+    ],
+    "promptReference": null,
+    "createdAt": 1745434800000
+  }
+]

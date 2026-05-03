@@ -1,0 +1,88 @@
+{
+  "$schema_version": "1.0.0",
+  "$description": "Single source of truth for the storage-vector node. Consumed by both the backend executor (provider/metric/api-key validation) and the frontend VectorDatabaseSettingsPanel (provider picker UI). Add a provider here and it appears everywhere — no code change required.",
+  "providers": [
+    {
+      "id": "pinecone",
+      "label": "Pinecone",
+      "badge": "Managed",
+      "description": "Serverless or pod-based managed vector DB.",
+      "fields": ["indexName", "namespace", "cloud", "region", "environment", "apiKeyEnvVar", "hybridSearch"],
+      "supportedMetrics": ["cosine", "dotproduct", "euclidean"],
+      "defaultApiKeyEnvVar": "PINECONE_API_KEY"
+    },
+    {
+      "id": "chroma",
+      "label": "Chroma",
+      "badge": "Local · OSS",
+      "description": "Embeddable, runs in-process or via local server.",
+      "fields": ["collection", "persistDirectory", "url"],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": null
+    },
+    {
+      "id": "qdrant",
+      "label": "Qdrant",
+      "badge": "OSS · Hybrid",
+      "description": "High-perf Rust DB with native sparse + dense hybrid.",
+      "fields": ["collection", "url", "apiKeyEnvVar", "shards", "replicas", "hybridSearch"],
+      "supportedMetrics": ["cosine", "euclidean", "dot"],
+      "defaultApiKeyEnvVar": "QDRANT_API_KEY"
+    },
+    {
+      "id": "weaviate",
+      "label": "Weaviate",
+      "badge": "Hybrid · OSS",
+      "description": "GraphQL-native, hybrid search with BM25 baked in.",
+      "fields": ["collection", "url", "apiKeyEnvVar", "hybridSearch"],
+      "supportedMetrics": ["cosine", "l2-squared", "dot"],
+      "defaultApiKeyEnvVar": "WEAVIATE_API_KEY"
+    },
+    {
+      "id": "milvus",
+      "label": "Milvus",
+      "badge": "OSS · Scale",
+      "description": "Distributed billion-scale vector store.",
+      "fields": ["collection", "url", "shards", "replicas"],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": null
+    },
+    {
+      "id": "pgvector",
+      "label": "pgvector",
+      "badge": "Postgres",
+      "description": "Bring vector search to existing Postgres.",
+      "fields": ["indexName", "url", "apiKeyEnvVar"],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": "POSTGRES_URL"
+    },
+    {
+      "id": "faiss",
+      "label": "FAISS",
+      "badge": "In-memory",
+      "description": "Local Facebook AI similarity search index.",
+      "fields": ["persistDirectory"],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": null
+    }
+  ],
+  "metricLabels": {
+    "cosine": "Cosine similarity",
+    "dotproduct": "Dot product",
+    "dot": "Dot product",
+    "ip": "Inner product",
+    "euclidean": "Euclidean (L2)",
+    "l2": "L2 distance",
+    "l2-squared": "L2 squared"
+  },
+  "pineconeClouds": [
+    { "id": "aws", "label": "AWS" },
+    { "id": "gcp", "label": "GCP" },
+    { "id": "azure", "label": "Azure" }
+  ],
+  "pineconeRegionsByCloud": {
+    "aws": ["us-east-1", "us-west-2", "eu-west-1"],
+    "gcp": ["us-central1", "europe-west4"],
+    "azure": ["eastus2"]
+  }
+}

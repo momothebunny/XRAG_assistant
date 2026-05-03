@@ -1,0 +1,5827 @@
+[
+  {
+    "id": "flow-67e13e2b61",
+    "name": "",
+    "description": "Saved from XRAG canvas UI",
+    "nodes": [
+      {
+        "id": "node-1777195904880",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "persona": "enterprise-user"
+        },
+        "position": {
+          "x": 192.0,
+          "y": 352.0
+        }
+      },
+      {
+        "id": "node-1777195904880-q",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 544.0,
+          "y": 352.0
+        }
+      },
+      {
+        "id": "node-1777195920766",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 8,
+          "similarityThreshold": 0.72,
+          "includeMetadata": true
+        },
+        "position": {
+          "x": 880.0,
+          "y": 352.0
+        }
+      },
+      {
+        "id": "node-1777195939959",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false,
+          "ocr_dpi": 300,
+          "page_range": "1-10, 15",
+          "image_handling": "ignore",
+          "auto_tagging": false,
+          "source_label": "policy_docs_2024"
+        },
+        "position": {
+          "x": -144.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777195946015",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "chunkSize": 700,
+          "overlap": 120
+        },
+        "position": {
+          "x": 192.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777195968131",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "model": "text-embedding-3-large"
+        },
+        "position": {
+          "x": 544.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777196050165",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone"
+        },
+        "position": {
+          "x": 880.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777196272378",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "model": "cohere-rerank-v3",
+          "topN": 5
+        },
+        "position": {
+          "x": 880.0,
+          "y": 560.0
+        }
+      },
+      {
+        "id": "node-1777196287079",
+        "templateKey": "brain-llm",
+        "label": "LLM + System Prompt",
+        "config": {
+          "model": "gpt-4o",
+          "systemPrompt": "You are a grounded enterprise RAG assistant. Cite evidence from retrieved chunks."
+        },
+        "position": {
+          "x": 544.0,
+          "y": 560.0
+        }
+      },
+      {
+        "id": "node-1777196308983",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 544.0,
+          "y": 800.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1777195904880-81843",
+        "source": "node-1777195904880",
+        "target": "node-1777195904880-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777195904881-31858",
+        "source": "node-1777195904881",
+        "target": "node-1777195904881-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777195924314-14036",
+        "source": "node-1777195904880-q",
+        "target": "node-1777195920766",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196027727-90882",
+        "source": "node-1777195939959",
+        "target": "node-1777195946015",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196041959-34361",
+        "source": "node-1777195946015",
+        "target": "node-1777195968131",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196056002-85298",
+        "source": "node-1777195968131",
+        "target": "node-1777196050165",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196239400-21614",
+        "source": "node-1777196050165",
+        "target": "node-1777195920766",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777196317160-67705",
+        "source": "node-1777195920766",
+        "target": "node-1777196272378",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777196319093-41432",
+        "source": "node-1777196272378",
+        "target": "node-1777196287079",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-1777196321994-51600",
+        "source": "node-1777196287079",
+        "target": "node-1777196308983",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": 1777573975161,
+    "updatedAt": 1777573975161
+  },
+  {
+    "id": "flow-d628a330e8",
+    "name": "",
+    "description": "Saved from XRAG canvas UI",
+    "nodes": [
+      {
+        "id": "node-1777195939959",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false,
+          "ocr_dpi": 300,
+          "page_range": "1-10, 15",
+          "image_handling": "ignore",
+          "auto_tagging": false,
+          "source_label": "policy_docs_2024"
+        },
+        "position": {
+          "x": -144.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777195946015",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "chunkSize": 700,
+          "overlap": 120
+        },
+        "position": {
+          "x": 192.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777195968131",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "model": "text-embedding-3-large",
+          "gateway": "backend_proxy"
+        },
+        "position": {
+          "x": 544.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777196050165",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone"
+        },
+        "position": {
+          "x": 880.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777318157527",
+        "templateKey": "brain-llm",
+        "label": "LLM (Generation)",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.2,
+            "max_tokens": 1024,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "systemPrompt": "",
+          "citationMode": true
+        },
+        "position": {
+          "x": 544.0,
+          "y": 576.0
+        }
+      },
+      {
+        "id": "node-1777318173749",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "inherit",
+          "includeCitations": true,
+          "citationStyle": "inline",
+          "showReasoning": false,
+          "streamTokens": true,
+          "maxChars": 4000,
+          "truncation": "show_more",
+          "redactPii": true,
+          "profanityFilter": false,
+          "enforceLanguage": "auto",
+          "channels": {
+            "chat": true,
+            "voice": false,
+            "export": false,
+            "webhook": false
+          },
+          "exportFormat": "md",
+          "webhookUrl": "",
+          "logLatency": true,
+          "logTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 544.0,
+          "y": 832.0
+        }
+      },
+      {
+        "id": "node-1777318186429",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 5,
+            "score_threshold": 0
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "maxDocuments": 100,
+          "fallbackOnError": true
+        },
+        "position": {
+          "x": 880.0,
+          "y": 576.0
+        }
+      },
+      {
+        "id": "node-1777318195811",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 8,
+          "similarityThreshold": 0.72,
+          "mmrLambda": 0.5,
+          "mmrFetchK": 24,
+          "hybridAlpha": 0.5,
+          "includeMetadata": true,
+          "includeScores": true,
+          "metadataFilter": "",
+          "embeddingProfile": null,
+          "vectorStore": {
+            "provider": "pinecone"
+          }
+        },
+        "position": {
+          "x": 880.0,
+          "y": 352.0
+        }
+      },
+      {
+        "id": "node-1777318210579",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "preset": "enterprise-user",
+          "role": "user",
+          "tenantId": "acme-corp",
+          "userId": "",
+          "requireAuth": true,
+          "locale": "en",
+          "expertise": "intermediate",
+          "tone": "professional",
+          "channel": "web_chat",
+          "sessionId": "",
+          "rememberHistory": true,
+          "allowedTools": [
+            "retrieve",
+            "rerank",
+            "cite"
+          ],
+          "rateLimitRpm": 60,
+          "consentDataCollection": true,
+          "consentTraining": false
+        },
+        "position": {
+          "x": 208.0,
+          "y": 352.0
+        }
+      },
+      {
+        "id": "node-1777318210579-q",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "mode": "free_text",
+          "language": "auto",
+          "placeholder": "Tedd fel a k\u00e9rd\u00e9sed\u2026",
+          "sampleQuery": "",
+          "multipleChoiceOptions": "",
+          "minLength": 3,
+          "maxLength": 4000,
+          "required": true,
+          "blocklistRegex": "",
+          "trimWhitespace": true,
+          "collapseWhitespace": true,
+          "normalizeUnicode": true,
+          "stripEmoji": false,
+          "caseFold": false,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 544.0,
+          "y": 352.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1777195904881-31858",
+        "source": "node-1777195904881",
+        "target": "node-1777195904881-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318210579-67505",
+        "source": "node-1777318210579",
+        "target": "node-1777318210579-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318228814-29026",
+        "source": "node-1777318210579-q",
+        "target": "node-1777318195811",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318235958-6934",
+        "source": "node-1777196050165",
+        "target": "node-1777318195811",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777318245297-85888",
+        "source": "node-1777318195811",
+        "target": "node-1777318186429",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777318247717-36727",
+        "source": "node-1777318186429",
+        "target": "node-1777318157527",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-1777318250499-2097",
+        "source": "node-1777318157527",
+        "target": "node-1777318173749",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777318320264-91214",
+        "source": "node-1777195939959",
+        "target": "node-1777195946015",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318322614-64985",
+        "source": "node-1777195946015",
+        "target": "node-1777195968131",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318324960-84873",
+        "source": "node-1777195968131",
+        "target": "node-1777196050165",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      }
+    ],
+    "createdAt": 1777573975156,
+    "updatedAt": 1777573975156
+  },
+  {
+    "id": "flow-9a9ae73215",
+    "name": "",
+    "description": "Saved from XRAG canvas UI",
+    "nodes": [
+      {
+        "id": "node-1777195939959",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false,
+          "ocr_dpi": 300,
+          "page_range": "1-10, 15",
+          "image_handling": "ignore",
+          "auto_tagging": false,
+          "source_label": "policy_docs_2024"
+        },
+        "position": {
+          "x": -144.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777195946015",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "chunkSize": 700,
+          "overlap": 120
+        },
+        "position": {
+          "x": 192.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777195968131",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "model": "text-embedding-3-large",
+          "gateway": "backend_proxy"
+        },
+        "position": {
+          "x": 544.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777196050165",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone"
+        },
+        "position": {
+          "x": 880.0,
+          "y": 80.0
+        }
+      },
+      {
+        "id": "node-1777318157527",
+        "templateKey": "brain-llm",
+        "label": "LLM (Generation)",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.2,
+            "max_tokens": 1024,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "systemPrompt": "",
+          "citationMode": true
+        },
+        "position": {
+          "x": 544.0,
+          "y": 576.0
+        }
+      },
+      {
+        "id": "node-1777318173749",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "inherit",
+          "includeCitations": true,
+          "citationStyle": "inline",
+          "showReasoning": false,
+          "streamTokens": true,
+          "maxChars": 4000,
+          "truncation": "show_more",
+          "redactPii": true,
+          "profanityFilter": false,
+          "enforceLanguage": "auto",
+          "channels": {
+            "chat": true,
+            "voice": false,
+            "export": false,
+            "webhook": false
+          },
+          "exportFormat": "md",
+          "webhookUrl": "",
+          "logLatency": true,
+          "logTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 544.0,
+          "y": 832.0
+        }
+      },
+      {
+        "id": "node-1777318186429",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 5,
+            "score_threshold": 0
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "maxDocuments": 100,
+          "fallbackOnError": true
+        },
+        "position": {
+          "x": 880.0,
+          "y": 576.0
+        }
+      },
+      {
+        "id": "node-1777318195811",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 8,
+          "similarityThreshold": 0.72,
+          "mmrLambda": 0.5,
+          "mmrFetchK": 24,
+          "hybridAlpha": 0.5,
+          "includeMetadata": true,
+          "includeScores": true,
+          "metadataFilter": "",
+          "embeddingProfile": null,
+          "vectorStore": {
+            "provider": "pinecone"
+          }
+        },
+        "position": {
+          "x": 880.0,
+          "y": 352.0
+        }
+      },
+      {
+        "id": "node-1777318210579",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "preset": "enterprise-user",
+          "role": "user",
+          "tenantId": "acme-corp",
+          "userId": "",
+          "requireAuth": true,
+          "locale": "en",
+          "expertise": "intermediate",
+          "tone": "professional",
+          "channel": "web_chat",
+          "sessionId": "",
+          "rememberHistory": true,
+          "allowedTools": [
+            "retrieve",
+            "rerank",
+            "cite"
+          ],
+          "rateLimitRpm": 60,
+          "consentDataCollection": true,
+          "consentTraining": false
+        },
+        "position": {
+          "x": 208.0,
+          "y": 352.0
+        }
+      },
+      {
+        "id": "node-1777318210579-q",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "mode": "free_text",
+          "language": "auto",
+          "placeholder": "Tedd fel a k\u00e9rd\u00e9sed\u2026",
+          "sampleQuery": "",
+          "multipleChoiceOptions": "",
+          "minLength": 3,
+          "maxLength": 4000,
+          "required": true,
+          "blocklistRegex": "",
+          "trimWhitespace": true,
+          "collapseWhitespace": true,
+          "normalizeUnicode": true,
+          "stripEmoji": false,
+          "caseFold": false,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 544.0,
+          "y": 352.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1777195904881-31858",
+        "source": "node-1777195904881",
+        "target": "node-1777195904881-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318210579-67505",
+        "source": "node-1777318210579",
+        "target": "node-1777318210579-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318228814-29026",
+        "source": "node-1777318210579-q",
+        "target": "node-1777318195811",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318235958-6934",
+        "source": "node-1777196050165",
+        "target": "node-1777318195811",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777318245297-85888",
+        "source": "node-1777318195811",
+        "target": "node-1777318186429",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777318247717-36727",
+        "source": "node-1777318186429",
+        "target": "node-1777318157527",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-1777318250499-2097",
+        "source": "node-1777318157527",
+        "target": "node-1777318173749",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777318320264-91214",
+        "source": "node-1777195939959",
+        "target": "node-1777195946015",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318322614-64985",
+        "source": "node-1777195946015",
+        "target": "node-1777195968131",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777318324960-84873",
+        "source": "node-1777195968131",
+        "target": "node-1777196050165",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      }
+    ],
+    "createdAt": 1777573975150,
+    "updatedAt": 1777573975150
+  },
+  {
+    "id": "flow-naive-rag-001",
+    "name": "Naive RAG",
+    "description": "Alap RAG pipeline: dokumentum felt\u00f6lt\u00e9s \u2192 chunking \u2192 embedding \u2192 vector DB \u2192 similarity retrieval (top-5) \u2192 LLM v\u00e1lasz.",
+    "nodes": [
+      {
+        "id": "naive-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -160.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "naive-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 150,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 240.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "naive-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100
+        },
+        "position": {
+          "x": 480.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "naive-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "xrag-knowledge",
+          "namespace": "knowledge",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "PINECONE_API_KEY"
+        },
+        "position": {
+          "x": 720.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "naive-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 5,
+          "similarityThreshold": 0.72,
+          "includeMetadata": true,
+          "includeScores": true
+        },
+        "position": {
+          "x": 720.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.2,
+          "max_tokens": 800,
+          "systemPrompt": "You are a helpful RAG assistant. Answer questions strictly based on the retrieved context. Be concise and cite sources inline as [n].",
+          "citationMode": true
+        },
+        "position": {
+          "x": 480.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 480.0,
+          "y": 440.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "naive-e1",
+        "source": "naive-node-user",
+        "target": "naive-node-question",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e2",
+        "source": "naive-node-upload",
+        "target": "naive-node-chunking",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e3",
+        "source": "naive-node-chunking",
+        "target": "naive-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e4",
+        "source": "naive-node-embedding",
+        "target": "naive-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e5",
+        "source": "naive-node-vectordb",
+        "target": "naive-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "naive-e6",
+        "source": "naive-node-question",
+        "target": "naive-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e7",
+        "source": "naive-node-retriever",
+        "target": "naive-node-llm",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "naive-e8",
+        "source": "naive-node-llm",
+        "target": "naive-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-c504631287",
+    "name": "Reranker RAG",
+    "description": "Tuned RAG flow: MMR retrieval (top 20) \u2192 LLM-as-reranker via OpenRouter (gpt-4o-mini judge, top 5, score\u22650.15) \u2192 openai/gpt-4o-mini answer.",
+    "nodes": [
+      {
+        "id": "node-1777195904880",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "persona": "enterprise-user"
+        },
+        "position": {
+          "x": -160.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-1777195904880-q",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-1777195920766",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "mmr",
+          "topK": 20,
+          "similarityThreshold": 0,
+          "mmrLambda": 0.5,
+          "mmrFetchK": 60,
+          "hybridAlpha": 0.5,
+          "includeMetadata": true,
+          "includeScores": true,
+          "metadataFilter": "",
+          "rewriteQueries": false,
+          "deduplicate": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-1777195939959",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false,
+          "ocr_dpi": 300,
+          "page_range": "1-10, 15",
+          "image_handling": "ignore",
+          "auto_tagging": false,
+          "source_label": "policy_docs_2024"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-1777195946015",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 480,
+          "overlap": 80,
+          "separators": "\\n\\n,\\n,. , ,",
+          "keepSeparator": true,
+          "lengthFunction": "tokens",
+          "minChunkChars": 0,
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-1777195968131",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "output_dimensions": 1024,
+            "max_token_capacity": 512,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-1777196050165",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "xrag-knowledge",
+          "namespace": "knowledge",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "environment": "us-east-1-aws",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "hybridSearch": false,
+          "upsertBatchSize": 96,
+          "metadataFields": "doc_id, title, category, subcategory",
+          "embeddingProfile": {
+            "modelId": "intfloat/multilingual-e5-large",
+            "nativeDimension": 1024,
+            "metric": "cosine",
+            "lengthFunction": "tokens"
+          }
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-1777196272378",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "jina/reranker-v2-base-multilingual",
+            "top_n": 5,
+            "score_threshold": 0.15,
+            "judge_model": "openai/gpt-4o-mini"
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "maxDocuments": 100,
+          "fallbackOnError": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 460.0
+        }
+      },
+      {
+        "id": "node-1777196287079",
+        "templateKey": "brain-llm",
+        "label": "LLM + System Prompt",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o-mini",
+            "fallback_model_id": null,
+            "temperature": 0.2,
+            "max_tokens": 800,
+            "top_p": 1,
+            "response_format": "text",
+            "streaming": false,
+            "stop_sequences": [],
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "seed": null,
+            "context_overflow_strategy": "truncate_middle"
+          },
+          "model": "openai/gpt-4o-mini",
+          "systemPrompt": "You are a grounded retrieval-augmented assistant. Answer ONLY using the provided evidence. Be concise, factual, and cite supporting facts inline as [n] referencing the evidence list.",
+          "citationMode": true
+        },
+        "position": {
+          "x": 440.0,
+          "y": 460.0
+        }
+      },
+      {
+        "id": "node-1777196308983",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 440.0,
+          "y": 680.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1777195904880-81843",
+        "source": "node-1777195904880",
+        "target": "node-1777195904880-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777195904881-31858",
+        "source": "node-1777195904881",
+        "target": "node-1777195904881-q",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777195924314-14036",
+        "source": "node-1777195904880-q",
+        "target": "node-1777195920766",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196027727-90882",
+        "source": "node-1777195939959",
+        "target": "node-1777195946015",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196041959-34361",
+        "source": "node-1777195946015",
+        "target": "node-1777195968131",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196056002-85298",
+        "source": "node-1777195968131",
+        "target": "node-1777196050165",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-1777196239400-21614",
+        "source": "node-1777196050165",
+        "target": "node-1777195920766",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777196317160-67705",
+        "source": "node-1777195920766",
+        "target": "node-1777196272378",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777196319093-41432",
+        "source": "node-1777196272378",
+        "target": "node-1777196287079",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-1777196321994-51600",
+        "source": "node-1777196287079",
+        "target": "node-1777196308983",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": 1777274782355
+  },
+  {
+    "id": "flow-hyde-rag-001",
+    "name": "HyDE RAG",
+    "description": "Hypothetical Document Embeddings: az LLM hipotetikus v\u00e1laszt gener\u00e1l a k\u00e9rd\u00e9sre, azt embeddeli a keres\u00e9shez, majd az eredeti k\u00e9rd\u00e9ssel rerankel.",
+    "nodes": [
+      {
+        "id": "node-hyde-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -160.0,
+          "y": 240.0
+        }
+      },
+      {
+        "id": "node-hyde-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 240.0
+        }
+      },
+      {
+        "id": "node-hyde-003",
+        "templateKey": "input-upload",
+        "label": "Uploaded Documents",
+        "config": {},
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-hyde-004",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 120,
+          "lengthFunction": "tokens",
+          "minChunkChars": 0,
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 240.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-hyde-005",
+        "templateKey": "process-embedding",
+        "label": "Embedding (Ingestion)",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-large",
+          "output_dimensions": 3072,
+          "max_token_capacity": 8192,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "openai/text-embedding-3-large",
+            "output_dimensions": 3072,
+            "max_token_capacity": 8192
+          }
+        },
+        "position": {
+          "x": 480.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-hyde-006",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "hyde-knowledge",
+          "namespace": "hyde",
+          "metric": "cosine",
+          "dimensions": 3072,
+          "cloud": "aws",
+          "region": "us-east-1",
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "hybridSearch": false,
+          "upsertBatchSize": 100,
+          "embeddingProfile": {
+            "modelId": "openai/text-embedding-3-large",
+            "nativeDimension": 3072,
+            "metric": "cosine",
+            "lengthFunction": "tokens"
+          }
+        },
+        "position": {
+          "x": 720.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-hyde-007",
+        "templateKey": "brain-hyde-gen",
+        "label": "LLM: HyDE Gen",
+        "config": {
+          "model": "openai/gpt-4o-mini",
+          "hypothesesPerQuery": 3,
+          "maxTokens": 256,
+          "temperature": 0.7,
+          "systemPrompt": "Write a concise hypothetical answer to the user question that would plausibly appear in a relevant document."
+        },
+        "position": {
+          "x": 320.0,
+          "y": 240.0
+        }
+      },
+      {
+        "id": "node-hyde-008",
+        "templateKey": "process-embedding",
+        "label": "Embedding (Query)",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-large",
+          "output_dimensions": 3072,
+          "max_token_capacity": 8192,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "openai/text-embedding-3-large",
+            "output_dimensions": 3072,
+            "max_token_capacity": 8192
+          }
+        },
+        "position": {
+          "x": 560.0,
+          "y": 240.0
+        }
+      },
+      {
+        "id": "node-hyde-009",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 15,
+          "similarityThreshold": 0,
+          "mmrLambda": 0.5,
+          "mmrFetchK": 45,
+          "includeMetadata": true,
+          "includeScores": true,
+          "metadataFilter": ""
+        },
+        "position": {
+          "x": 720.0,
+          "y": 240.0
+        }
+      },
+      {
+        "id": "node-hyde-010",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-v3.5",
+            "top_n": 6,
+            "score_threshold": 0.1
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "maxDocuments": 100,
+          "fallbackOnError": true
+        },
+        "position": {
+          "x": 720.0,
+          "y": 480.0
+        }
+      },
+      {
+        "id": "node-hyde-011",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a grounded RAG assistant. Answer only using retrieved evidence.",
+          "style": "Concise, factual, with inline citations like [1].",
+          "constraints": "Refuse to answer if no evidence supports the claim."
+        },
+        "position": {
+          "x": 480.0,
+          "y": 680.0
+        }
+      },
+      {
+        "id": "node-hyde-012",
+        "templateKey": "brain-llm",
+        "label": "LLM (Generation)",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.2,
+            "max_tokens": 1024,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "citationMode": true,
+          "systemPrompt": "Answer ONLY using the provided evidence. Cite inline as [n]."
+        },
+        "position": {
+          "x": 720.0,
+          "y": 680.0
+        }
+      },
+      {
+        "id": "node-hyde-013",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 720.0,
+          "y": 900.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-hyde-001",
+        "source": "node-hyde-001",
+        "target": "node-hyde-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-002",
+        "source": "node-hyde-003",
+        "target": "node-hyde-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-003",
+        "source": "node-hyde-004",
+        "target": "node-hyde-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-004",
+        "source": "node-hyde-005",
+        "target": "node-hyde-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-005",
+        "source": "node-hyde-006",
+        "target": "node-hyde-009",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-hyde-006",
+        "source": "node-hyde-002",
+        "target": "node-hyde-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-007",
+        "source": "node-hyde-007",
+        "target": "node-hyde-008",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-008",
+        "source": "node-hyde-008",
+        "target": "node-hyde-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-009",
+        "source": "node-hyde-009",
+        "target": "node-hyde-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-hyde-010",
+        "source": "node-hyde-002",
+        "target": "node-hyde-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-011",
+        "source": "node-hyde-010",
+        "target": "node-hyde-012",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-hyde-012",
+        "source": "node-hyde-011",
+        "target": "node-hyde-012",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-hyde-013",
+        "source": "node-hyde-012",
+        "target": "node-hyde-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": 1777450800000,
+    "updatedAt": 1777450800000
+  },
+  {
+    "id": "flow-agentic-rag-001",
+    "name": "Agentic RAG",
+    "description": "Plan \u2192 Act \u2192 Observe \u2192 Reason \u2192 Verify \u2192 Iterate: query decomposition, intent routing, dual retrieval (similarity + MMR) with hybrid merge, context compression, agentic LLM reasoning, reflection loop \u00e9s hallucination guard.",
+    "nodes": [
+      {
+        "id": "node-agent-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "expertise": "intermediate",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-agent-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "mode": "free_text",
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 6
+        },
+        "position": {
+          "x": 0.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-agent-003",
+        "templateKey": "input-upload",
+        "label": "Knowledge Base",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-agent-004",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 600,
+          "overlap": 100,
+          "lengthFunction": "tokens",
+          "stripWhitespace": true,
+          "smartMergeShortChunks": true
+        },
+        "position": {
+          "x": 200.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-agent-005",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-large",
+          "output_dimensions": 3072,
+          "max_token_capacity": 8192,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "openai/text-embedding-3-large",
+            "output_dimensions": 3072,
+            "max_token_capacity": 8192
+          }
+        },
+        "position": {
+          "x": 400.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-agent-006",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "agentic-knowledge",
+          "namespace": "main",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 3072,
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "hybridSearch": false,
+          "upsertBatchSize": 100,
+          "embeddingProfile": {
+            "modelId": "openai/text-embedding-3-large",
+            "nativeDimension": 3072,
+            "metric": "cosine",
+            "lengthFunction": "tokens"
+          }
+        },
+        "position": {
+          "x": 600.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-agent-007",
+        "templateKey": "process-query-rewriter",
+        "label": "Query Decomposer",
+        "config": {
+          "strategy": "intent-aware",
+          "expansionTerms": 3,
+          "decomposeMultiHop": true,
+          "rewriteForRetrieval": true
+        },
+        "position": {
+          "x": 200.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-agent-008",
+        "templateKey": "brain-router",
+        "label": "Intent Router",
+        "config": {
+          "strategy": "intent-first",
+          "routes": [
+            {
+              "label": "factual",
+              "model": "openai/gpt-4o-mini",
+              "path": "similarity"
+            },
+            {
+              "label": "complex",
+              "model": "openai/gpt-4o",
+              "path": "mmr"
+            },
+            {
+              "label": "ambiguous",
+              "model": "openai/gpt-4o",
+              "path": "hybrid"
+            }
+          ],
+          "fallbackModel": "openai/gpt-4o-mini"
+        },
+        "position": {
+          "x": 400.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-agent-009",
+        "templateKey": "process-retriever",
+        "label": "Retriever (Similarity)",
+        "config": {
+          "strategy": "similarity",
+          "topK": 12,
+          "similarityThreshold": 0.72,
+          "includeMetadata": true,
+          "includeScores": true,
+          "deduplicate": true
+        },
+        "position": {
+          "x": 500.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-agent-010",
+        "templateKey": "process-retriever",
+        "label": "Retriever (MMR)",
+        "config": {
+          "strategy": "mmr",
+          "topK": 12,
+          "mmrLambda": 0.5,
+          "mmrFetchK": 40,
+          "includeMetadata": true,
+          "includeScores": true,
+          "deduplicate": true
+        },
+        "position": {
+          "x": 700.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-agent-011",
+        "templateKey": "process-hybrid-merge",
+        "label": "Hybrid Merge",
+        "config": {
+          "bm25Weight": 0.35,
+          "vectorWeight": 0.65
+        },
+        "position": {
+          "x": 600.0,
+          "y": 660.0
+        }
+      },
+      {
+        "id": "node-agent-012",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 8,
+            "score_threshold": 0.1
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "maxDocuments": 100,
+          "fallbackOnError": true
+        },
+        "position": {
+          "x": 600.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-agent-013",
+        "templateKey": "process-context-compression",
+        "label": "Context Compression",
+        "config": {
+          "maxTokens": 3000,
+          "keepCitations": true
+        },
+        "position": {
+          "x": 600.0,
+          "y": 1100.0
+        }
+      },
+      {
+        "id": "node-agent-014",
+        "templateKey": "input-system-prompt",
+        "label": "Agent System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are an autonomous reasoning agent. Think step-by-step, use ONLY the provided evidence, and cite sources inline as [n]. If evidence is insufficient, state it explicitly.",
+          "style": "Chain-of-thought reasoning, concise conclusions, inline citations.",
+          "constraints": "Never hallucinate. If unsure, hedge appropriately. Never fabricate citations."
+        },
+        "position": {
+          "x": 380.0,
+          "y": 1320.0
+        }
+      },
+      {
+        "id": "node-agent-015",
+        "templateKey": "brain-llm",
+        "label": "Agent (Reasoning)",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.1,
+            "max_tokens": 2048,
+            "top_p": 1,
+            "response_format": "text",
+            "context_overflow_strategy": "truncate_middle"
+          },
+          "citationMode": true
+        },
+        "position": {
+          "x": 600.0,
+          "y": 1320.0
+        }
+      },
+      {
+        "id": "node-agent-016",
+        "templateKey": "process-reflection-loop",
+        "label": "Reflection Loop",
+        "config": {
+          "maxReflections": 2,
+          "critiquePrompt": "Evaluate the answer: Is it fully grounded in evidence? Are all claims cited? Is reasoning coherent? List specific gaps."
+        },
+        "position": {
+          "x": 820.0,
+          "y": 1320.0
+        }
+      },
+      {
+        "id": "node-agent-017",
+        "templateKey": "process-hallucination-guard",
+        "label": "Hallucination Guard",
+        "config": {
+          "minGroundingScore": 0.8,
+          "fallbackToCitationMode": true
+        },
+        "position": {
+          "x": 1040.0,
+          "y": 1320.0
+        }
+      },
+      {
+        "id": "node-agent-018",
+        "templateKey": "brain-guardrails",
+        "label": "Guardrails",
+        "config": {
+          "piiRedaction": true,
+          "jailbreakCheck": true,
+          "toxicityCheck": true
+        },
+        "position": {
+          "x": 1260.0,
+          "y": 1320.0
+        }
+      },
+      {
+        "id": "node-agent-019",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "markdown",
+          "includeCitations": true,
+          "citationStyle": "inline",
+          "showReasoning": true,
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 1260.0,
+          "y": 1540.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-agent-001",
+        "source": "node-agent-001",
+        "target": "node-agent-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-002",
+        "source": "node-agent-003",
+        "target": "node-agent-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-003",
+        "source": "node-agent-004",
+        "target": "node-agent-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-004",
+        "source": "node-agent-005",
+        "target": "node-agent-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-005",
+        "source": "node-agent-002",
+        "target": "node-agent-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-006",
+        "source": "node-agent-007",
+        "target": "node-agent-008",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-007",
+        "source": "node-agent-008",
+        "target": "node-agent-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-008",
+        "source": "node-agent-008",
+        "target": "node-agent-010",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-009",
+        "source": "node-agent-006",
+        "target": "node-agent-009",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-agent-010",
+        "source": "node-agent-006",
+        "target": "node-agent-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-agent-011",
+        "source": "node-agent-009",
+        "target": "node-agent-011",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-012",
+        "source": "node-agent-010",
+        "target": "node-agent-011",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-013",
+        "source": "node-agent-011",
+        "target": "node-agent-012",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-014",
+        "source": "node-agent-002",
+        "target": "node-agent-012",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-agent-015",
+        "source": "node-agent-012",
+        "target": "node-agent-013",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-016",
+        "source": "node-agent-013",
+        "target": "node-agent-015",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-agent-017",
+        "source": "node-agent-014",
+        "target": "node-agent-015",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-018",
+        "source": "node-agent-015",
+        "target": "node-agent-016",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-019",
+        "source": "node-agent-016",
+        "target": "node-agent-017",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-020",
+        "source": "node-agent-017",
+        "target": "node-agent-016",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-agent-021",
+        "source": "node-agent-017",
+        "target": "node-agent-018",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-agent-022",
+        "source": "node-agent-018",
+        "target": "node-agent-019",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": 1777537200000,
+    "updatedAt": 1777537200000
+  },
+  {
+    "id": "flow-self-rag-001",
+    "name": "Self-RAG",
+    "description": "Az LLM maga d\u00f6nt a retrieval sz\u00fcks\u00e9gess\u00e9g\u00e9r\u0151l [Retrieve], \u00e9rt\u00e9keli a chunkek relevanci\u00e1j\u00e1t [ISREL], majd ellen\u0151rzi, hogy a v\u00e1lasza al\u00e1t\u00e1masztott-e [ISSUP] \u00e9s hasznos-e [ISUSE] \u2014 iterat\u00edv \u00f6nkritik\u00e1val.",
+    "nodes": [
+      {
+        "id": "node-srag-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-srag-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "mode": "free_text",
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 0.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-srag-003",
+        "templateKey": "input-upload",
+        "label": "Knowledge Base",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-srag-004",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 512,
+          "overlap": 80,
+          "lengthFunction": "tokens",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-srag-005",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "max_token_capacity": 8192,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "openai/text-embedding-3-small",
+            "output_dimensions": 1536,
+            "max_token_capacity": 8192
+          }
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-srag-006",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "self-rag-knowledge",
+          "namespace": "main",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 1536,
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "embeddingProfile": {
+            "modelId": "openai/text-embedding-3-small",
+            "nativeDimension": 1536,
+            "metric": "cosine",
+            "lengthFunction": "tokens"
+          }
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-srag-007",
+        "templateKey": "brain-router",
+        "label": "Retrieval Decision [Retrieve]",
+        "config": {
+          "strategy": "intent-first",
+          "routes": [
+            {
+              "label": "needs_retrieval",
+              "path": "retrieve",
+              "model": "openai/gpt-4o-mini"
+            },
+            {
+              "label": "no_retrieval_needed",
+              "path": "direct",
+              "model": "openai/gpt-4o-mini"
+            }
+          ],
+          "routingPrompt": "Does the following question require external document retrieval to answer accurately? Answer with 'needs_retrieval' or 'no_retrieval_needed'.",
+          "fallbackModel": "openai/gpt-4o-mini"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-srag-008",
+        "templateKey": "process-query-rewriter",
+        "label": "Query Rewriter",
+        "config": {
+          "strategy": "intent-aware",
+          "expansionTerms": 2,
+          "rewriteForRetrieval": true
+        },
+        "position": {
+          "x": 440.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-srag-009",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 10,
+          "similarityThreshold": 0.68,
+          "includeMetadata": true,
+          "includeScores": true,
+          "deduplicate": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-srag-010",
+        "templateKey": "brain-llm",
+        "label": "Relevance Judge [ISREL]",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o-mini",
+            "temperature": 0,
+            "max_tokens": 64,
+            "response_format": "text"
+          },
+          "systemPrompt": "You are a relevance judge. For each retrieved chunk, decide: is it relevant to the user question? Reply with only 'relevant' or 'irrelevant'. Be strict \u2014 only mark as relevant if the chunk directly helps answer the question.",
+          "citationMode": false
+        },
+        "position": {
+          "x": 660.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-srag-011",
+        "templateKey": "process-context-compression",
+        "label": "Context Compression",
+        "config": {
+          "maxTokens": 2500,
+          "keepCitations": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 660.0
+        }
+      },
+      {
+        "id": "node-srag-012",
+        "templateKey": "input-system-prompt",
+        "label": "Self-RAG System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a self-critical RAG assistant. Generate a grounded answer using ONLY the provided evidence. After your answer, internally assess: is every claim supported by the evidence (ISSUP)? Is the answer complete and useful (ISUSE)?",
+          "style": "Factual, concise, with inline citations like [1]. End with a brief self-assessment.",
+          "constraints": "Do not introduce information not present in the evidence. If evidence is insufficient, say so explicitly."
+        },
+        "position": {
+          "x": 440.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-srag-013",
+        "templateKey": "brain-llm",
+        "label": "Generator",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.15,
+            "max_tokens": 1536,
+            "top_p": 1,
+            "response_format": "text",
+            "context_overflow_strategy": "truncate_middle"
+          },
+          "citationMode": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-srag-014",
+        "templateKey": "process-hallucination-guard",
+        "label": "Support Check [ISSUP]",
+        "config": {
+          "minGroundingScore": 0.78,
+          "fallbackToCitationMode": true,
+          "checkPrompt": "Is every factual claim in the generated answer directly supported by the provided evidence chunks? Score from 0 to 1."
+        },
+        "position": {
+          "x": 880.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-srag-015",
+        "templateKey": "process-reflection-loop",
+        "label": "Utility Check [ISUSE]",
+        "config": {
+          "maxReflections": 2,
+          "critiquePrompt": "Is this answer useful, complete, and directly addressing the user's question? If not, identify what is missing or unclear, and produce an improved answer using only the available evidence."
+        },
+        "position": {
+          "x": 1100.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-srag-016",
+        "templateKey": "brain-guardrails",
+        "label": "Guardrails",
+        "config": {
+          "piiRedaction": true,
+          "jailbreakCheck": true,
+          "toxicityCheck": false
+        },
+        "position": {
+          "x": 1320.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-srag-017",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "markdown",
+          "includeCitations": true,
+          "citationStyle": "inline",
+          "showReasoning": false,
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 1320.0,
+          "y": 1100.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-srag-001",
+        "source": "node-srag-001",
+        "target": "node-srag-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-002",
+        "source": "node-srag-003",
+        "target": "node-srag-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-003",
+        "source": "node-srag-004",
+        "target": "node-srag-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-004",
+        "source": "node-srag-005",
+        "target": "node-srag-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-005",
+        "source": "node-srag-002",
+        "target": "node-srag-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-006",
+        "source": "node-srag-007",
+        "target": "node-srag-008",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-007",
+        "source": "node-srag-008",
+        "target": "node-srag-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-008",
+        "source": "node-srag-006",
+        "target": "node-srag-009",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-srag-009",
+        "source": "node-srag-009",
+        "target": "node-srag-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-srag-010",
+        "source": "node-srag-002",
+        "target": "node-srag-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-011",
+        "source": "node-srag-010",
+        "target": "node-srag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-srag-012",
+        "source": "node-srag-011",
+        "target": "node-srag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-srag-013",
+        "source": "node-srag-012",
+        "target": "node-srag-013",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-014",
+        "source": "node-srag-002",
+        "target": "node-srag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-015",
+        "source": "node-srag-013",
+        "target": "node-srag-014",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-016",
+        "source": "node-srag-014",
+        "target": "node-srag-015",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-017",
+        "source": "node-srag-015",
+        "target": "node-srag-014",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-srag-018",
+        "source": "node-srag-015",
+        "target": "node-srag-016",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-srag-019",
+        "source": "node-srag-016",
+        "target": "node-srag-017",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": 1777537260000,
+    "updatedAt": 1777537260000
+  },
+  {
+    "id": "flow-pdr-001",
+    "name": "Parent-Document Retrieval",
+    "description": "K\u00e9tszint\u0171 chunkol\u00e1s: kis child chunkok indexel\u00e9se a pontos vektoros keres\u00e9s\u00e9hez, de az LLM a teljes parent chunkot kapja kontextusk\u00e9nt \u2014 \u00edgy egyes\u00edti a prec\u00edz keres\u00e9s \u00e9s a gazdag kontextus el\u0151nyeit.",
+    "nodes": [
+      {
+        "id": "node-pdr-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-pdr-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "mode": "free_text",
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 0.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-pdr-003",
+        "templateKey": "input-upload",
+        "label": "Knowledge Base",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-pdr-004",
+        "templateKey": "process-chunking",
+        "label": "Parent Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 1500,
+          "overlap": 0,
+          "lengthFunction": "tokens",
+          "stripWhitespace": true,
+          "smartMergeShortChunks": false,
+          "addContextHeader": false
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-pdr-005",
+        "templateKey": "process-chunking",
+        "label": "Child Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 200,
+          "overlap": 20,
+          "lengthFunction": "tokens",
+          "stripWhitespace": true,
+          "smartMergeShortChunks": true,
+          "addContextHeader": false
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-pdr-006",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "max_token_capacity": 8192,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "openai/text-embedding-3-small",
+            "output_dimensions": 1536,
+            "max_token_capacity": 8192
+          }
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-pdr-007",
+        "templateKey": "storage-vector",
+        "label": "Child Index (Vector DB)",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "pdr-child-chunks",
+          "namespace": "children",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 1536,
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "hybridSearch": false,
+          "upsertBatchSize": 100,
+          "metadataFields": "parent_id,doc_id,title,chunk_index",
+          "embeddingProfile": {
+            "modelId": "openai/text-embedding-3-small",
+            "nativeDimension": 1536,
+            "metric": "cosine",
+            "lengthFunction": "tokens"
+          }
+        },
+        "position": {
+          "x": 880.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-pdr-008",
+        "templateKey": "storage-keyvalue",
+        "label": "Parent Store (KV Cache)",
+        "config": {
+          "provider": "redis",
+          "ttlSeconds": 86400,
+          "namespace": "pdr-parents",
+          "keyField": "parent_id"
+        },
+        "position": {
+          "x": 440.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-pdr-009",
+        "templateKey": "process-retriever",
+        "label": "Child Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 10,
+          "similarityThreshold": 0.7,
+          "includeMetadata": true,
+          "includeScores": true,
+          "deduplicate": true,
+          "returnParentChunks": true,
+          "parentIdField": "parent_id"
+        },
+        "position": {
+          "x": 880.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-pdr-010",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 5,
+            "score_threshold": 0.1
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "maxDocuments": 100,
+          "fallbackOnError": true
+        },
+        "position": {
+          "x": 880.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-pdr-011",
+        "templateKey": "process-context-compression",
+        "label": "Context Compression",
+        "config": {
+          "maxTokens": 4000,
+          "keepCitations": true
+        },
+        "position": {
+          "x": 880.0,
+          "y": 660.0
+        }
+      },
+      {
+        "id": "node-pdr-012",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a grounded RAG assistant. You receive full document sections as context \u2014 use them thoroughly to give complete, well-cited answers.",
+          "style": "Detailed yet concise, with inline citations [n].",
+          "constraints": "Base every claim on provided evidence. Do not hallucinate."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-pdr-013",
+        "templateKey": "brain-llm",
+        "label": "LLM (Generation)",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.2,
+            "max_tokens": 1536,
+            "top_p": 1,
+            "response_format": "text",
+            "context_overflow_strategy": "truncate_middle"
+          },
+          "citationMode": true
+        },
+        "position": {
+          "x": 880.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-pdr-014",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "markdown",
+          "includeCitations": true,
+          "citationStyle": "inline",
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 880.0,
+          "y": 1100.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-pdr-001",
+        "source": "node-pdr-001",
+        "target": "node-pdr-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-002",
+        "source": "node-pdr-003",
+        "target": "node-pdr-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-003",
+        "source": "node-pdr-004",
+        "target": "node-pdr-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-004",
+        "source": "node-pdr-004",
+        "target": "node-pdr-008",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-pdr-005",
+        "source": "node-pdr-005",
+        "target": "node-pdr-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-006",
+        "source": "node-pdr-006",
+        "target": "node-pdr-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-007",
+        "source": "node-pdr-002",
+        "target": "node-pdr-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-008",
+        "source": "node-pdr-007",
+        "target": "node-pdr-009",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-pdr-009",
+        "source": "node-pdr-008",
+        "target": "node-pdr-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-010",
+        "source": "node-pdr-002",
+        "target": "node-pdr-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-pdr-011",
+        "source": "node-pdr-009",
+        "target": "node-pdr-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-pdr-012",
+        "source": "node-pdr-010",
+        "target": "node-pdr-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-pdr-013",
+        "source": "node-pdr-011",
+        "target": "node-pdr-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-pdr-014",
+        "source": "node-pdr-012",
+        "target": "node-pdr-013",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-015",
+        "source": "node-pdr-002",
+        "target": "node-pdr-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-pdr-016",
+        "source": "node-pdr-013",
+        "target": "node-pdr-014",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": 1777537320000,
+    "updatedAt": 1777537320000
+  },
+  {
+    "id": "flow-graphrag-001",
+    "name": "GraphRAG",
+    "description": "Knowledge Graph + Vector RAG: az entit\u00e1sokat \u00e9s kapcsolatokat gr\u00e1fban t\u00e1rolja (Neo4j), query-kor graph traversal + vector keres\u00e9s p\u00e1rhuzamosan fut, majd hybrid merge egyes\u00edti a gr\u00e1f-szubgr\u00e1f kontextust a szemantikus chunk-okkal.",
+    "nodes": [
+      {
+        "id": "node-grag-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-grag-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "mode": "free_text",
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 0.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-grag-003",
+        "templateKey": "input-upload",
+        "label": "Knowledge Base",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-grag-004",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 512,
+          "overlap": 64,
+          "lengthFunction": "tokens",
+          "stripWhitespace": true,
+          "smartMergeShortChunks": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-grag-005",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "max_token_capacity": 8192,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "openai/text-embedding-3-small",
+            "output_dimensions": 1536,
+            "max_token_capacity": 8192
+          }
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-grag-006",
+        "templateKey": "storage-vector",
+        "label": "Vector Index",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "graphrag-vectors",
+          "namespace": "chunks",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 1536,
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "hybridSearch": false,
+          "upsertBatchSize": 100,
+          "metadataFields": "doc_id,title,chunk_index,entity_ids",
+          "embeddingProfile": {
+            "modelId": "openai/text-embedding-3-small",
+            "nativeDimension": 1536,
+            "metric": "cosine",
+            "lengthFunction": "tokens"
+          }
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-grag-007",
+        "templateKey": "storage-graph",
+        "label": "Knowledge Graph",
+        "config": {
+          "provider": "neo4j",
+          "mode": "property-graph",
+          "url": "bolt://localhost:7687",
+          "database": "graphrag",
+          "encrypted": false,
+          "usernameEnvVar": "NEO4J_USERNAME",
+          "passwordEnvVar": "NEO4J_PASSWORD",
+          "extractorStrategy": "llm-extraction",
+          "entityTypes": "Person,Organization,Location,Concept,Technology,Product,Event,Document",
+          "minConfidence": 0.65,
+          "avgTriplesPerChunk": 8,
+          "upsertBatchSize": 100,
+          "upstreamProfile": null
+        },
+        "position": {
+          "x": 440.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-grag-008",
+        "templateKey": "process-query-rewriter",
+        "label": "Entity Extractor",
+        "config": {
+          "strategy": "intent-aware",
+          "expansionTerms": 3,
+          "extractEntities": true,
+          "rewriteForGraphTraversal": true,
+          "entityTypes": "Person,Organization,Location,Concept,Technology"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-grag-009",
+        "templateKey": "process-retriever",
+        "label": "Vector Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 10,
+          "similarityThreshold": 0.7,
+          "includeMetadata": true,
+          "includeScores": true,
+          "deduplicate": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-grag-010",
+        "templateKey": "process-hybrid-merge",
+        "label": "Graph + Vector Merge",
+        "config": {
+          "bm25Weight": 0,
+          "vectorWeight": 0.5,
+          "graphWeight": 0.5,
+          "strategy": "reciprocal-rank-fusion",
+          "rrf_k": 60
+        },
+        "position": {
+          "x": 660.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-grag-011",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 6,
+            "score_threshold": 0.08
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "maxDocuments": 100,
+          "fallbackOnError": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-grag-012",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a knowledge-graph-enhanced RAG assistant. You receive both document chunks and structured knowledge graph triples (entity\u2013relation\u2013entity). Use both sources to give precise, well-connected answers.",
+          "style": "Factual, entity-aware, with inline citations [n]. When graph triples add context, mention the relationship explicitly.",
+          "constraints": "Do not introduce facts absent from provided evidence or graph context."
+        },
+        "position": {
+          "x": 440.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-grag-013",
+        "templateKey": "brain-llm",
+        "label": "LLM (Generation)",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.15,
+            "max_tokens": 1536,
+            "top_p": 1,
+            "response_format": "text",
+            "context_overflow_strategy": "truncate_middle"
+          },
+          "citationMode": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-grag-014",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "markdown",
+          "includeCitations": true,
+          "citationStyle": "inline",
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1160.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-grag-001",
+        "source": "node-grag-001",
+        "target": "node-grag-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-002",
+        "source": "node-grag-003",
+        "target": "node-grag-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-003",
+        "source": "node-grag-004",
+        "target": "node-grag-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-004",
+        "source": "node-grag-005",
+        "target": "node-grag-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-005",
+        "source": "node-grag-004",
+        "target": "node-grag-007",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-grag-006",
+        "source": "node-grag-002",
+        "target": "node-grag-008",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-007",
+        "source": "node-grag-008",
+        "target": "node-grag-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-008",
+        "source": "node-grag-002",
+        "target": "node-grag-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-009",
+        "source": "node-grag-006",
+        "target": "node-grag-009",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-grag-010",
+        "source": "node-grag-007",
+        "target": "node-grag-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-grag-011",
+        "source": "node-grag-009",
+        "target": "node-grag-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-grag-012",
+        "source": "node-grag-002",
+        "target": "node-grag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-grag-013",
+        "source": "node-grag-010",
+        "target": "node-grag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-grag-014",
+        "source": "node-grag-011",
+        "target": "node-grag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-grag-015",
+        "source": "node-grag-012",
+        "target": "node-grag-013",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-grag-016",
+        "source": "node-grag-013",
+        "target": "node-grag-014",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": 1777537380000,
+    "updatedAt": 1777537380000
+  },
+  {
+    "id": "flow-router-rag-001",
+    "name": "Router RAG",
+    "description": "A Szakir\u00e1ny\u00edt\u00f3: a Query Router az intent alapj\u00e1n h\u00e1rom specializ\u00e1lt visszakeres\u00e9si \u00f6sv\u00e9nyre ir\u00e1ny\u00edtja a k\u00e9rd\u00e9st (Factual Direct / Analytical MMR / Broad Hybrid), majd RRF-merge + reranker + LLM gener\u00e1lja a v\u00e1laszt.",
+    "nodes": [
+      {
+        "id": "node-rrag-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "expertise": "intermediate",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -160.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-rrag-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 0.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-rrag-003",
+        "templateKey": "brain-router",
+        "label": "Query Router",
+        "config": {
+          "strategy": "semantic-routing",
+          "description": "Classifies the incoming query into one of three retrieval paths based on intent, complexity and query type.",
+          "routes": [
+            {
+              "label": "factual",
+              "description": "Short factual / lookup questions \u2014 fast direct similarity search",
+              "model": "openai/gpt-4o-mini",
+              "path": "similarity"
+            },
+            {
+              "label": "analytical",
+              "description": "Complex multi-step / comparative questions \u2014 query expansion + MMR diversity",
+              "model": "openai/gpt-4o",
+              "path": "mmr"
+            },
+            {
+              "label": "hybrid",
+              "description": "Keyword-heavy / terminology-dense questions \u2014 sparse+dense hybrid retrieval",
+              "model": "openai/gpt-4o-mini",
+              "path": "hybrid"
+            }
+          ],
+          "fallbackModel": "openai/gpt-4o-mini",
+          "fallbackPath": "similarity"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "node-rrag-004",
+        "templateKey": "input-upload",
+        "label": "Knowledge Base",
+        "config": {
+          "normalize_whitespace": true,
+          "auto_tagging": true,
+          "source_label": "router-rag-docs"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-rrag-005",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 600,
+          "overlap": 120,
+          "smartMergeShortChunks": true,
+          "respectSentenceBoundary": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-rrag-006",
+        "templateKey": "process-embedding",
+        "label": "Embedding",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "is_cached": true,
+          "batch_size": 100
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-rrag-007",
+        "templateKey": "storage-vector",
+        "label": "Vector Index",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "router-rag-index",
+          "metric": "cosine",
+          "dimensions": 1536,
+          "hybridSearch": true,
+          "metadataFields": "source,title,page,doc_type"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-rrag-008",
+        "templateKey": "process-retriever",
+        "label": "Path A: Factual Direct",
+        "config": {
+          "strategy": "similarity",
+          "topK": 5,
+          "similarityThreshold": 0.78,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Fast lookup \u2014 returns top-5 high-confidence chunks directly"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-rrag-009",
+        "templateKey": "process-query-rewriter",
+        "label": "Path B: Query Expander",
+        "config": {
+          "strategy": "multi-query",
+          "expansionTerms": 4,
+          "hypotheticalAnswer": false,
+          "description": "Generates query variants and synonyms to maximise analytical coverage"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-rrag-010",
+        "templateKey": "process-retriever",
+        "label": "Path C: Broad Hybrid",
+        "config": {
+          "strategy": "hybrid",
+          "topK": 12,
+          "hybridAlpha": 0.25,
+          "similarityThreshold": 0.6,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Sparse-biased hybrid (25% dense / 75% BM25) \u2014 excels at exact-term queries"
+        },
+        "position": {
+          "x": 440.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-rrag-011",
+        "templateKey": "process-retriever",
+        "label": "Path B: Analytical MMR",
+        "config": {
+          "strategy": "mmr",
+          "topK": 15,
+          "mmrLambda": 0.35,
+          "mmrFetchK": 40,
+          "similarityThreshold": 0.65,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "MMR diversity retrieval on expanded queries \u2014 covers multiple sub-topics"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 660.0
+        }
+      },
+      {
+        "id": "node-rrag-012",
+        "templateKey": "process-hybrid-merge",
+        "label": "Path Merger (RRF)",
+        "config": {
+          "strategy": "rrf",
+          "rrfK": 60,
+          "pathAWeight": 0.33,
+          "pathBWeight": 0.34,
+          "pathCWeight": 0.33,
+          "deduplicateByContent": true,
+          "description": "Reciprocal Rank Fusion across all three retrieval paths \u2014 equal weighting by default"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 880.0
+        }
+      },
+      {
+        "id": "node-rrag-013",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 7,
+            "score_threshold": 0.05
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 1100.0
+        }
+      },
+      {
+        "id": "node-rrag-014",
+        "templateKey": "process-context-compression",
+        "label": "Context Compression",
+        "config": {
+          "maxTokens": 2400,
+          "keepCitations": true,
+          "strategy": "extractive"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 1320.0
+        }
+      },
+      {
+        "id": "node-rrag-015",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a precise enterprise RAG assistant. The user question was pre-classified and retrieved via the most appropriate path (factual / analytical / hybrid). Answer using only the provided evidence chunks.",
+          "style": "Concise and factual with inline citations like [1].",
+          "constraints": "State which retrieval path was used. Refuse if no evidence supports the claim.",
+          "template": ""
+        },
+        "position": {
+          "x": 0.0,
+          "y": 1540.0
+        }
+      },
+      {
+        "id": "node-rrag-016",
+        "templateKey": "brain-llm",
+        "label": "Generator",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.15,
+            "max_tokens": 1024,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "citationMode": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 1540.0
+        }
+      },
+      {
+        "id": "node-rrag-017",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "inherit",
+          "includeCitations": true,
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 1760.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-rrag-001",
+        "source": "node-rrag-001",
+        "target": "node-rrag-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-rrag-002",
+        "source": "node-rrag-002",
+        "target": "node-rrag-003",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-rrag-003",
+        "source": "node-rrag-003",
+        "target": "node-rrag-008",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-004",
+        "source": "node-rrag-003",
+        "target": "node-rrag-009",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-005",
+        "source": "node-rrag-003",
+        "target": "node-rrag-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-006",
+        "source": "node-rrag-009",
+        "target": "node-rrag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-007",
+        "source": "node-rrag-007",
+        "target": "node-rrag-008",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-008",
+        "source": "node-rrag-007",
+        "target": "node-rrag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-009",
+        "source": "node-rrag-007",
+        "target": "node-rrag-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-010",
+        "source": "node-rrag-008",
+        "target": "node-rrag-012",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-011",
+        "source": "node-rrag-011",
+        "target": "node-rrag-012",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-012",
+        "source": "node-rrag-010",
+        "target": "node-rrag-012",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-013",
+        "source": "node-rrag-012",
+        "target": "node-rrag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-014",
+        "source": "node-rrag-002",
+        "target": "node-rrag-013",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-rrag-015",
+        "source": "node-rrag-013",
+        "target": "node-rrag-014",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-016",
+        "source": "node-rrag-014",
+        "target": "node-rrag-016",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-017",
+        "source": "node-rrag-015",
+        "target": "node-rrag-016",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-rrag-018",
+        "source": "node-rrag-016",
+        "target": "node-rrag-017",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-rrag-019",
+        "source": "node-rrag-004",
+        "target": "node-rrag-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-rrag-020",
+        "source": "node-rrag-005",
+        "target": "node-rrag-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-rrag-021",
+        "source": "node-rrag-006",
+        "target": "node-rrag-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-lcrag-001",
+    "name": "Long-Context RAG",
+    "description": "A Hosszu Memoria: nagy chunkokban (2500 tok) tamogatja a teljes dokumentumok beolvasasat, ingestion-kori LLM-osszefoglalokkal (Redis cache), Lost-in-the-Middle elleni pyramid-rendezesssel, es 200k-kontextus ablaku Claude 3.5 Sonnet generaloval.",
+    "nodes": [
+      {
+        "id": "node-lcrag-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "expertise": "intermediate",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-lcrag-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 6
+        },
+        "position": {
+          "x": 0.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-lcrag-003",
+        "templateKey": "input-upload",
+        "label": "Knowledge Base",
+        "config": {
+          "normalize_whitespace": true,
+          "auto_tagging": true,
+          "source_label": "lcrag-docs"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-lcrag-004",
+        "templateKey": "process-chunking",
+        "label": "Large-Chunk Splitter",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 2500,
+          "overlap": 200,
+          "smartMergeShortChunks": true,
+          "respectSentenceBoundary": true,
+          "includeHeadersInMetadata": true,
+          "description": "Large semantic chunks preserve paragraph and section coherence"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-lcrag-005",
+        "templateKey": "brain-llm",
+        "label": "Doc Summarizer",
+        "config": {
+          "gateway": "backend_proxy",
+          "role": "ingestion-summarizer",
+          "metadata": {
+            "model_id": "openai/gpt-4o-mini",
+            "temperature": 0,
+            "max_tokens": 512,
+            "response_format": "text"
+          },
+          "systemPrompt": "Summarize the following document in 3-5 sentences, capturing the main topics, key facts, and scope. The summary will be used as a context-window header in long-context retrieval.",
+          "citationMode": false,
+          "description": "Generates a compact per-document summary at ingestion time, stored in Redis and prepended to context at query time"
+        },
+        "position": {
+          "x": 220.0,
+          "y": -220.0
+        }
+      },
+      {
+        "id": "node-lcrag-006",
+        "templateKey": "storage-keyvalue",
+        "label": "Summary Cache",
+        "config": {
+          "provider": "redis",
+          "ttlSeconds": 86400,
+          "keyPrefix": "lcrag:summary:",
+          "description": "Stores { docId -> summary } mappings. At query time, summaries for retrieved docs are injected at the top of the context window as a table-of-contents."
+        },
+        "position": {
+          "x": 440.0,
+          "y": -220.0
+        }
+      },
+      {
+        "id": "node-lcrag-007",
+        "templateKey": "process-embedding",
+        "label": "Embedding",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-large",
+          "output_dimensions": 3072,
+          "is_cached": true,
+          "batch_size": 50
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-lcrag-008",
+        "templateKey": "storage-vector",
+        "label": "Dense Index",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "lcrag-large-chunks",
+          "metric": "cosine",
+          "dimensions": 3072,
+          "hybridSearch": false,
+          "metadataFields": "source,title,page,doc_id,section",
+          "description": "Pinecone index for large semantic chunks (text-embedding-3-large, 3072-dim)"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-lcrag-009",
+        "templateKey": "process-query-rewriter",
+        "label": "Semantic Expander",
+        "config": {
+          "strategy": "intent-aware",
+          "expansionTerms": 3,
+          "hypotheticalAnswer": false,
+          "description": "Expands the user query with synonyms and intent-aware reformulations"
+        },
+        "position": {
+          "x": 220.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-lcrag-010",
+        "templateKey": "process-retriever",
+        "label": "Large-Chunk Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 5,
+          "similarityThreshold": 0.6,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Retrieves only top-5 chunks; each chunk is ~2500 tokens (~12500 tokens of evidence total)"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-lcrag-011",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 4,
+            "score_threshold": 0.03
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "description": "Prunes to top-4 large chunks (~10000 tokens) before context assembly"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-lcrag-012",
+        "templateKey": "process-context-compression",
+        "label": "Context Assembler",
+        "config": {
+          "maxTokens": 60000,
+          "keepCitations": true,
+          "strategy": "pyramid-reorder",
+          "reorderStrategy": "pyramid",
+          "injectDocSummaries": true,
+          "description": "Lost-in-the-Middle mitigation: most-relevant chunks placed at START and END of context window, less-relevant in the middle. Doc summaries injected as preamble. Budget: 60k tokens."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-lcrag-013",
+        "templateKey": "process-hallucination-guard",
+        "label": "Grounding Check",
+        "config": {
+          "minGroundingScore": 0.65,
+          "fallbackToCitationMode": true,
+          "description": "Validates factual grounding before generation; prevents Doc Summarizer artifacts from leaking into the LLM context"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-lcrag-014",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a meticulous long-document analyst. You have been given large document sections plus compact per-document summaries. Use the summaries as a navigation guide and the full sections as your primary evidence.",
+          "style": "Detailed and structured with inline citations like [1]. For multi-part questions, answer each part separately.",
+          "constraints": "Never answer from memory alone. If the provided evidence is insufficient, say so explicitly.",
+          "template": ""
+        },
+        "position": {
+          "x": 440.0,
+          "y": 1160.0
+        }
+      },
+      {
+        "id": "node-lcrag-015",
+        "templateKey": "brain-llm",
+        "label": "Long-Context Generator",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "anthropic/claude-3.5-sonnet",
+            "temperature": 0.1,
+            "max_tokens": 4096,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "contextWindow": 200000,
+          "citationMode": true,
+          "description": "Claude 3.5 Sonnet: 200k context window. Handles 60k tokens of assembled evidence with ample room."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1160.0
+        }
+      },
+      {
+        "id": "node-lcrag-016",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "inherit",
+          "includeCitations": true,
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1380.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-lcrag-001",
+        "source": "node-lcrag-003",
+        "target": "node-lcrag-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-002",
+        "source": "node-lcrag-004",
+        "target": "node-lcrag-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-003",
+        "source": "node-lcrag-007",
+        "target": "node-lcrag-008",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-004",
+        "source": "node-lcrag-004",
+        "target": "node-lcrag-005",
+        "sourceHandle": "source-top",
+        "targetHandle": "target-bottom"
+      },
+      {
+        "id": "edge-lcrag-005",
+        "source": "node-lcrag-005",
+        "target": "node-lcrag-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-006",
+        "source": "node-lcrag-001",
+        "target": "node-lcrag-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-007",
+        "source": "node-lcrag-002",
+        "target": "node-lcrag-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-008",
+        "source": "node-lcrag-009",
+        "target": "node-lcrag-010",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-009",
+        "source": "node-lcrag-008",
+        "target": "node-lcrag-010",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-lcrag-010",
+        "source": "node-lcrag-010",
+        "target": "node-lcrag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-lcrag-011",
+        "source": "node-lcrag-002",
+        "target": "node-lcrag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-012",
+        "source": "node-lcrag-011",
+        "target": "node-lcrag-012",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-lcrag-013",
+        "source": "node-lcrag-006",
+        "target": "node-lcrag-012",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-014",
+        "source": "node-lcrag-012",
+        "target": "node-lcrag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-lcrag-015",
+        "source": "node-lcrag-013",
+        "target": "node-lcrag-015",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-lcrag-016",
+        "source": "node-lcrag-014",
+        "target": "node-lcrag-015",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-lcrag-017",
+        "source": "node-lcrag-015",
+        "target": "node-lcrag-016",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-crag-001",
+    "name": "Corrective RAG (C-RAG)",
+    "description": "A korrekcio alapu RAG: a Relevance Evaluator pontoz minden visszakeresett dokumentumot (CORRECT / AMBIGUOUS / INCORRECT), az Action Selector dont el a tovabblepsrol: helyes -> Knowledge Refiner, ketes -> Refiner + webes kereses, helytelen -> csak webes kereses. Vegul minden forrast osszevon es ellenoriz a generator elott.",
+    "nodes": [
+      {
+        "id": "node-crag-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "expertise": "intermediate",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-crag-002",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 0.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-crag-003",
+        "templateKey": "input-upload",
+        "label": "Knowledge Base",
+        "config": {
+          "normalize_whitespace": true,
+          "auto_tagging": true,
+          "source_label": "crag-docs"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-crag-004",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 700,
+          "overlap": 140,
+          "smartMergeShortChunks": true,
+          "respectSentenceBoundary": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-crag-005",
+        "templateKey": "process-embedding",
+        "label": "Embedding",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "is_cached": true,
+          "batch_size": 100
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-crag-006",
+        "templateKey": "storage-vector",
+        "label": "Vector Index",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "crag-index",
+          "metric": "cosine",
+          "dimensions": 1536,
+          "metadataFields": "source,title,page,doc_id"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-crag-007",
+        "templateKey": "process-retriever",
+        "label": "Initial Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 10,
+          "similarityThreshold": 0.55,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Broad top-10 retrieval \u2014 the Relevance Evaluator will filter down to only truly relevant documents"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-crag-008",
+        "templateKey": "brain-llm",
+        "label": "Relevance Evaluator",
+        "config": {
+          "gateway": "backend_proxy",
+          "role": "relevance-judge",
+          "metadata": {
+            "model_id": "openai/gpt-4o-mini",
+            "temperature": 0,
+            "max_tokens": 256,
+            "response_format": "json"
+          },
+          "systemPrompt": "You are a relevance judge. For each retrieved document chunk, score its relevance to the user question as: CORRECT (directly answers), AMBIGUOUS (partially relevant or uncertain), or INCORRECT (irrelevant). Return a JSON array of {chunk_id, score, confidence} objects.",
+          "citationMode": false,
+          "description": "Scores each retrieved chunk: CORRECT / AMBIGUOUS / INCORRECT. This drives the Action Selector routing."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-crag-009",
+        "templateKey": "brain-router",
+        "label": "Action Selector",
+        "config": {
+          "strategy": "confidence-threshold",
+          "description": "Decides the corrective action based on Evaluator scores. Routes to one of three paths or combinations.",
+          "routes": [
+            {
+              "label": "correct",
+              "description": "All retrieved docs scored CORRECT \u2014 pass to Knowledge Refiner only, skip web search",
+              "model": "openai/gpt-4o",
+              "path": "refine-only"
+            },
+            {
+              "label": "ambiguous",
+              "description": "Some docs AMBIGUOUS \u2014 refine existing docs AND supplement with web search",
+              "model": "openai/gpt-4o",
+              "path": "refine-and-search"
+            },
+            {
+              "label": "incorrect",
+              "description": "Retrieved docs INCORRECT / no relevant docs \u2014 discard, use web search only",
+              "model": "openai/gpt-4o-mini",
+              "path": "search-only"
+            }
+          ],
+          "correctThreshold": 0.8,
+          "incorrectThreshold": 0.25,
+          "fallbackModel": "openai/gpt-4o",
+          "fallbackPath": "refine-and-search"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-crag-010",
+        "templateKey": "input-url",
+        "label": "Web Search",
+        "config": {
+          "depth": 1,
+          "description": "Triggered for AMBIGUOUS or INCORRECT paths. Performs live web search with the original (or rewritten) user query to supplement or replace the retrieved evidence.",
+          "searchEngine": "google",
+          "maxResults": 5,
+          "includeSnippets": true,
+          "queryRewrite": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-crag-011",
+        "templateKey": "process-context-compression",
+        "label": "Knowledge Refiner",
+        "config": {
+          "maxTokens": 4000,
+          "keepCitations": true,
+          "strategy": "strip-irrelevant",
+          "stripThreshold": 0.3,
+          "description": "Fine-grained knowledge stripping: decomposes each CORRECT/AMBIGUOUS chunk into smaller knowledge strips, scores each strip against the query, and discards strips below the threshold. Only the truly relevant sub-passages survive."
+        },
+        "position": {
+          "x": 440.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-crag-012",
+        "templateKey": "process-hybrid-merge",
+        "label": "Knowledge Merger",
+        "config": {
+          "strategy": "path-aware-rrf",
+          "rrfK": 60,
+          "refinedWeight": 0.6,
+          "webWeight": 0.4,
+          "deduplicateByContent": true,
+          "description": "Merges refined internal knowledge (60%) with web search results (40%) using RRF. If only one source is active, full weight goes there."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-crag-013",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 6,
+            "score_threshold": 0.05
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1160.0
+        }
+      },
+      {
+        "id": "node-crag-014",
+        "templateKey": "process-hallucination-guard",
+        "label": "Grounding Check",
+        "config": {
+          "minGroundingScore": 0.7,
+          "fallbackToCitationMode": true,
+          "description": "Final grounding validation \u2014 ensures every claim in the selected evidence is traceable to either a refined chunk or a web snippet before generation"
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1380.0
+        }
+      },
+      {
+        "id": "node-crag-015",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a precise enterprise RAG assistant. Retrieved evidence has been evaluated, corrected, and supplemented (web search if needed). Cite every claim with its source type: [internal] or [web].",
+          "style": "Concise and factual. Distinguish internal knowledge base citations from live web sources.",
+          "constraints": "Never answer from prior knowledge. If sources conflict, explicitly note the discrepancy.",
+          "template": ""
+        },
+        "position": {
+          "x": 440.0,
+          "y": 1600.0
+        }
+      },
+      {
+        "id": "node-crag-016",
+        "templateKey": "brain-llm",
+        "label": "Generator",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.15,
+            "max_tokens": 1536,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "citationMode": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1600.0
+        }
+      },
+      {
+        "id": "node-crag-017",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "inherit",
+          "includeCitations": true,
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1820.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-crag-001",
+        "source": "node-crag-003",
+        "target": "node-crag-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-002",
+        "source": "node-crag-004",
+        "target": "node-crag-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-003",
+        "source": "node-crag-005",
+        "target": "node-crag-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-004",
+        "source": "node-crag-001",
+        "target": "node-crag-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-005",
+        "source": "node-crag-002",
+        "target": "node-crag-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-006",
+        "source": "node-crag-006",
+        "target": "node-crag-007",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-007",
+        "source": "node-crag-007",
+        "target": "node-crag-008",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-008",
+        "source": "node-crag-002",
+        "target": "node-crag-008",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-009",
+        "source": "node-crag-008",
+        "target": "node-crag-009",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-010",
+        "source": "node-crag-009",
+        "target": "node-crag-010",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-011",
+        "source": "node-crag-002",
+        "target": "node-crag-010",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-crag-012",
+        "source": "node-crag-009",
+        "target": "node-crag-011",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-013",
+        "source": "node-crag-007",
+        "target": "node-crag-011",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "edge-crag-014",
+        "source": "node-crag-011",
+        "target": "node-crag-012",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-015",
+        "source": "node-crag-010",
+        "target": "node-crag-012",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-016",
+        "source": "node-crag-012",
+        "target": "node-crag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-017",
+        "source": "node-crag-002",
+        "target": "node-crag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-018",
+        "source": "node-crag-013",
+        "target": "node-crag-014",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-019",
+        "source": "node-crag-014",
+        "target": "node-crag-016",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-crag-020",
+        "source": "node-crag-015",
+        "target": "node-crag-016",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-crag-021",
+        "source": "node-crag-016",
+        "target": "node-crag-017",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-mmrag-001",
+    "name": "Multi-Modal RAG",
+    "description": "Kep + Szoveg RAG: ket ingestion ag (szoveges dokumentumok + kepek), Vision LLM kepfeliratok generalasahoz (ingestion) es vizualis kerdes-elemzeshez (query-time), kozos vektortarba unifikalt indexelve, GPT-4o generaloval.",
+    "nodes": [
+      {
+        "id": "node-mmrag-001",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "expertise": "intermediate",
+          "channel": "web_chat"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-mmrag-002",
+        "templateKey": "input-question",
+        "label": "Text Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 4
+        },
+        "position": {
+          "x": 0.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-mmrag-003",
+        "templateKey": "input-upload",
+        "label": "Document Library",
+        "config": {
+          "normalize_whitespace": true,
+          "auto_tagging": true,
+          "source_label": "mmrag-text-docs"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mmrag-004",
+        "templateKey": "process-chunking",
+        "label": "Text Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 600,
+          "overlap": 120,
+          "smartMergeShortChunks": true,
+          "respectSentenceBoundary": true
+        },
+        "position": {
+          "x": 220.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mmrag-005",
+        "templateKey": "process-embedding",
+        "label": "Text Embedding",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "is_cached": true,
+          "batch_size": 100
+        },
+        "position": {
+          "x": 440.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mmrag-006",
+        "templateKey": "input-image",
+        "label": "Image Library",
+        "config": {
+          "role": "library",
+          "acceptedFormats": "jpg,jpeg,png,webp,tiff",
+          "maxSizeMB": 20,
+          "maxImages": 500,
+          "extractExif": true,
+          "generateThumbnail": true
+        },
+        "position": {
+          "x": 0.0,
+          "y": -240.0
+        }
+      },
+      {
+        "id": "node-mmrag-007",
+        "templateKey": "brain-vision",
+        "label": "Image Captioner",
+        "config": {
+          "gateway": "backend_proxy",
+          "role": "ingestion-captioner",
+          "metadata": {
+            "model_id": "openai/gpt-4o-mini",
+            "temperature": 0,
+            "max_tokens": 512,
+            "detail": "high"
+          },
+          "mode": "caption",
+          "captionStyle": "structured",
+          "systemPrompt": "Generate a detailed, searchable description of this image. Include: (1) primary subject/scene, (2) all visible text verbatim, (3) chart/table data if present, (4) colors and spatial layout. Format: structured prose for embedding into a vector index.",
+          "includeOCR": true,
+          "outputFormat": "text",
+          "description": "Runs at ingestion time. Each image is described as a rich text caption that gets embedded alongside document chunks in the same vector store."
+        },
+        "position": {
+          "x": 220.0,
+          "y": -240.0
+        }
+      },
+      {
+        "id": "node-mmrag-008",
+        "templateKey": "process-embedding",
+        "label": "Caption Embedding",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "is_cached": true,
+          "batch_size": 100,
+          "description": "Embeds image captions using the SAME model as text chunks so they land in the same vector space."
+        },
+        "position": {
+          "x": 440.0,
+          "y": -240.0
+        }
+      },
+      {
+        "id": "node-mmrag-009",
+        "templateKey": "storage-vector",
+        "label": "Multimodal Index",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "mmrag-unified-index",
+          "metric": "cosine",
+          "dimensions": 1536,
+          "hybridSearch": false,
+          "metadataFields": "source,title,page,doc_id,modality,image_url,caption",
+          "description": "Unified Pinecone index holding both text chunks (modality=text) and image captions (modality=image). Metadata includes image_url for generator reference."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mmrag-010",
+        "templateKey": "input-image",
+        "label": "Query Image",
+        "config": {
+          "role": "query",
+          "acceptedFormats": "jpg,jpeg,png,webp",
+          "maxSizeMB": 10,
+          "maxImages": 1,
+          "description": "Optional: user can attach a single image to their query. The Vision Analyzer converts it to a text description that enriches retrieval."
+        },
+        "position": {
+          "x": 0.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mmrag-011",
+        "templateKey": "brain-vision",
+        "label": "Query Analyzer",
+        "config": {
+          "gateway": "backend_proxy",
+          "role": "query-analyzer",
+          "metadata": {
+            "model_id": "openai/gpt-4o-mini",
+            "temperature": 0,
+            "max_tokens": 256,
+            "detail": "auto"
+          },
+          "mode": "analyze",
+          "captionStyle": "brief",
+          "systemPrompt": "Analyze the attached image in the context of the user question. Produce a concise text description (max 150 words) suitable for augmenting a semantic search query. Focus on entities, relationships, and visual evidence relevant to the question.",
+          "includeOCR": true,
+          "outputFormat": "text",
+          "description": "Runs at query time only when the user attaches an image. Output is merged with the text question to form a richer retrieval query."
+        },
+        "position": {
+          "x": 220.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mmrag-012",
+        "templateKey": "process-query-rewriter",
+        "label": "Multimodal Composer",
+        "config": {
+          "strategy": "multimodal-merge",
+          "expansionTerms": 2,
+          "hypotheticalAnswer": false,
+          "description": "Fuses the text question and the Vision Analyzer output (if present) into a single enriched query string for embedding and retrieval. Falls back to text-only when no image is provided."
+        },
+        "position": {
+          "x": 220.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-mmrag-013",
+        "templateKey": "process-retriever",
+        "label": "Multimodal Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 12,
+          "similarityThreshold": 0.58,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Retrieves both text chunks AND image captions from the unified index. The modality field in metadata tells the generator which results are image-backed."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 280.0
+        }
+      },
+      {
+        "id": "node-mmrag-014",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 7,
+            "score_threshold": 0.04
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mmrag-015",
+        "templateKey": "process-context-compression",
+        "label": "Context Assembler",
+        "config": {
+          "maxTokens": 5000,
+          "keepCitations": true,
+          "strategy": "modality-aware",
+          "imageMetadataPassthrough": true,
+          "description": "Assembles text chunks and image captions into a unified context block. Image entries include their image_url so the generator can reference them. Budget: 5000 tokens."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-mmrag-016",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a multimodal enterprise assistant. You have access to both text passages and image descriptions from a unified knowledge base. When referencing image evidence, cite the image (e.g., [img-1]) and describe what it shows.",
+          "style": "Clear and factual with inline citations. Distinguish text sources [1] from image sources [img-1].",
+          "constraints": "Only answer from the provided evidence. If an image caption is the sole evidence, state that explicitly.",
+          "template": ""
+        },
+        "position": {
+          "x": 440.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-mmrag-017",
+        "templateKey": "brain-llm",
+        "label": "Multimodal Generator",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.15,
+            "max_tokens": 1536,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "citationMode": true,
+          "visionEnabled": true,
+          "description": "GPT-4o: handles text context + optionally sees the original query image directly. Produces grounded answers citing both text and image evidence."
+        },
+        "position": {
+          "x": 660.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-mmrag-018",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "inherit",
+          "includeCitations": true,
+          "streamTokens": true,
+          "collectFeedback": true
+        },
+        "position": {
+          "x": 660.0,
+          "y": 1160.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-mmrag-001",
+        "source": "node-mmrag-003",
+        "target": "node-mmrag-004",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-002",
+        "source": "node-mmrag-004",
+        "target": "node-mmrag-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-003",
+        "source": "node-mmrag-005",
+        "target": "node-mmrag-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-004",
+        "source": "node-mmrag-006",
+        "target": "node-mmrag-007",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-005",
+        "source": "node-mmrag-007",
+        "target": "node-mmrag-008",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-006",
+        "source": "node-mmrag-008",
+        "target": "node-mmrag-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mmrag-007",
+        "source": "node-mmrag-001",
+        "target": "node-mmrag-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-008",
+        "source": "node-mmrag-002",
+        "target": "node-mmrag-012",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-009",
+        "source": "node-mmrag-010",
+        "target": "node-mmrag-011",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-010",
+        "source": "node-mmrag-011",
+        "target": "node-mmrag-012",
+        "sourceHandle": "source-top",
+        "targetHandle": "target-bottom"
+      },
+      {
+        "id": "edge-mmrag-011",
+        "source": "node-mmrag-012",
+        "target": "node-mmrag-013",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-012",
+        "source": "node-mmrag-009",
+        "target": "node-mmrag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mmrag-013",
+        "source": "node-mmrag-013",
+        "target": "node-mmrag-014",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mmrag-014",
+        "source": "node-mmrag-002",
+        "target": "node-mmrag-014",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-015",
+        "source": "node-mmrag-014",
+        "target": "node-mmrag-015",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mmrag-016",
+        "source": "node-mmrag-015",
+        "target": "node-mmrag-017",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mmrag-017",
+        "source": "node-mmrag-016",
+        "target": "node-mmrag-017",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-018",
+        "source": "node-mmrag-010",
+        "target": "node-mmrag-017",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mmrag-019",
+        "source": "node-mmrag-017",
+        "target": "node-mmrag-018",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-modular-rag-001",
+    "name": "Modular RAG",
+    "description": "Az Epitokeszlet: nem fix architektura, hanem modulok szabad kombinacioja. 5 csereelheto modul: (1) Tobb-forrasu Ingestion, (2) Query Intelligence, (3) Tobb-utvonalu Retrieval, (4) Post-retrieval Processing, (5) Biztonsagos Generacio. Minden modul fueggetlen komponens, barmely elem kivasltjhato anelkul, hogy a tobbi megsertene.",
+    "nodes": [
+      {
+        "id": "node-mrag-001",
+        "templateKey": "input-image",
+        "label": "Image Library",
+        "config": {
+          "role": "library",
+          "acceptedFormats": "jpg,jpeg,png,webp,tiff,pdf",
+          "maxSizeMB": 20,
+          "maxImages": 500,
+          "extractExif": true
+        },
+        "position": {
+          "x": 0.0,
+          "y": -440.0
+        }
+      },
+      {
+        "id": "node-mrag-002",
+        "templateKey": "brain-vision",
+        "label": "Image Captioner",
+        "config": {
+          "gateway": "backend_proxy",
+          "role": "ingestion-captioner",
+          "metadata": {
+            "model_id": "openai/gpt-4o-mini",
+            "temperature": 0,
+            "max_tokens": 512,
+            "detail": "high"
+          },
+          "mode": "caption",
+          "captionStyle": "structured",
+          "includeOCR": true,
+          "systemPrompt": "Describe this image in detail: subject, all visible text, charts/tables, spatial layout. Output structured prose suitable for embedding in a vector index."
+        },
+        "position": {
+          "x": 240.0,
+          "y": -440.0
+        }
+      },
+      {
+        "id": "node-mrag-003",
+        "templateKey": "input-url",
+        "label": "Web Crawler",
+        "config": {
+          "depth": 2,
+          "maxPages": 20,
+          "includeSnippets": true,
+          "respectRobotsTxt": true
+        },
+        "position": {
+          "x": 0.0,
+          "y": -220.0
+        }
+      },
+      {
+        "id": "node-mrag-004",
+        "templateKey": "input-upload",
+        "label": "Doc Library",
+        "config": {
+          "normalize_whitespace": true,
+          "auto_tagging": true,
+          "source_label": "modular-rag-docs"
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mrag-005",
+        "templateKey": "process-cleaning",
+        "label": "Doc Cleaner",
+        "config": {
+          "removeHeaders": true,
+          "normalizeWhitespace": true,
+          "fixEncoding": true,
+          "removeBoilerplate": true,
+          "removeDuplicateLines": true,
+          "description": "Swap: replace with any domain-specific pre-processor (OCR post-correction, HTML stripper, PDF artifact removal, etc.)"
+        },
+        "position": {
+          "x": 240.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mrag-006",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 700,
+          "overlap": 140,
+          "smartMergeShortChunks": true,
+          "respectSentenceBoundary": true,
+          "includeHeadersInMetadata": true,
+          "description": "Swap: recursive / semantic / sentence / agentic / fixed-size. Each strategy is an independent module."
+        },
+        "position": {
+          "x": 460.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mrag-007",
+        "templateKey": "storage-graph",
+        "label": "Knowledge Graph",
+        "config": {
+          "provider": "neo4j",
+          "url": "bolt://localhost:7687",
+          "database": "neo4j",
+          "extractorStrategy": "llm-extraction",
+          "entityTypes": "Person,Organization,Location,Concept,Technology,Event,Product",
+          "minConfidence": 0.6,
+          "avgTriplesPerChunk": 6,
+          "description": "Swap: Neo4j / Memgraph / K\u00f9zu / NetworkX. Or remove entirely for pure vector flows."
+        },
+        "position": {
+          "x": 680.0,
+          "y": -220.0
+        }
+      },
+      {
+        "id": "node-mrag-008",
+        "templateKey": "process-embedding",
+        "label": "Text Embedding",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/text-embedding-3-small",
+          "output_dimensions": 1536,
+          "is_cached": true,
+          "batch_size": 100,
+          "description": "Swap: any embedding model from the registry. Shared by both text chunks and image captions."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mrag-009",
+        "templateKey": "storage-vector",
+        "label": "Vector Index",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "modular-rag-index",
+          "metric": "cosine",
+          "dimensions": 1536,
+          "hybridSearch": true,
+          "metadataFields": "source,title,page,doc_id,modality,section",
+          "description": "Swap: Pinecone / Chroma / Qdrant / Weaviate / pgvector. Unified index for text + image captions."
+        },
+        "position": {
+          "x": 900.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "node-mrag-010",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user",
+          "expertise": "intermediate",
+          "channel": "web_chat",
+          "rememberHistory": true
+        },
+        "position": {
+          "x": -140.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mrag-011",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000,
+          "appendHistory": true,
+          "historyTurns": 6
+        },
+        "position": {
+          "x": 0.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mrag-012",
+        "templateKey": "brain-router",
+        "label": "Query Router",
+        "config": {
+          "strategy": "semantic-routing",
+          "routes": [
+            {
+              "label": "factual",
+              "description": "Lookup / single-fact",
+              "model": "openai/gpt-4o-mini",
+              "path": "similarity"
+            },
+            {
+              "label": "analytical",
+              "description": "Complex / multi-hop",
+              "model": "openai/gpt-4o",
+              "path": "hyde-mmr"
+            },
+            {
+              "label": "keyword",
+              "description": "Exact-term / code / names",
+              "model": "openai/gpt-4o-mini",
+              "path": "hybrid"
+            }
+          ],
+          "fallbackModel": "openai/gpt-4o-mini",
+          "fallbackPath": "similarity",
+          "description": "Swap: intent-based / cost-based / latency-based / round-robin routing strategies."
+        },
+        "position": {
+          "x": 240.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mrag-013",
+        "templateKey": "storage-keyvalue",
+        "label": "Session Cache",
+        "config": {
+          "provider": "redis",
+          "ttlSeconds": 7200,
+          "keyPrefix": "mrag:session:",
+          "description": "Stores conversation turns (query+response pairs). Feeds history context back to the router for multi-turn awareness. Swap: in-memory / DynamoDB / Firestore."
+        },
+        "position": {
+          "x": 240.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-mrag-014",
+        "templateKey": "process-query-rewriter",
+        "label": "Query Rewriter",
+        "config": {
+          "strategy": "intent-aware",
+          "expansionTerms": 3,
+          "hypotheticalAnswer": false,
+          "description": "Swap: intent-aware / multi-query / step-back / HyDE / none. Feeds Retriever A (similarity path)."
+        },
+        "position": {
+          "x": 460.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mrag-015",
+        "templateKey": "brain-hyde-gen",
+        "label": "HyDE Generator",
+        "config": {
+          "model": "openai/gpt-4o-mini",
+          "hypothesesPerQuery": 3,
+          "maxTokens": 256,
+          "temperature": 0.7,
+          "systemPrompt": "Write a concise hypothetical answer that would plausibly appear in a relevant document. Used to generate embedding anchors for MMR retrieval.",
+          "description": "Swap: HyDE / step-back / none. Feeds Retriever B (analytical MMR path)."
+        },
+        "position": {
+          "x": 460.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-mrag-016",
+        "templateKey": "process-retriever",
+        "label": "Retriever A: Similarity",
+        "config": {
+          "strategy": "similarity",
+          "topK": 8,
+          "similarityThreshold": 0.72,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Path: Factual. Swap: any similarity metric or topK value independently."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 500.0
+        }
+      },
+      {
+        "id": "node-mrag-017",
+        "templateKey": "process-retriever",
+        "label": "Retriever B: MMR",
+        "config": {
+          "strategy": "mmr",
+          "topK": 12,
+          "mmrLambda": 0.35,
+          "mmrFetchK": 36,
+          "similarityThreshold": 0.6,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Path: Analytical. MMR diversity over HyDE hypothetical docs. Swap: lambda, fetchK, or strategy."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-mrag-018",
+        "templateKey": "process-retriever",
+        "label": "Retriever C: Hybrid",
+        "config": {
+          "strategy": "hybrid",
+          "topK": 10,
+          "hybridAlpha": 0.3,
+          "similarityThreshold": 0.55,
+          "includeMetadata": true,
+          "includeScores": true,
+          "description": "Path: Keyword + Graph. Combines sparse BM25 and dense vector; also receives graph-traversal context. Swap: hybridAlpha freely."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-mrag-019",
+        "templateKey": "process-hybrid-merge",
+        "label": "RRF Merge",
+        "config": {
+          "strategy": "rrf",
+          "rrfK": 60,
+          "pathAWeight": 0.33,
+          "pathBWeight": 0.34,
+          "pathCWeight": 0.33,
+          "deduplicateByContent": true,
+          "description": "Swap: RRF / linear score blend / pick-best. Each retriever path is an independent module."
+        },
+        "position": {
+          "x": 900.0,
+          "y": 720.0
+        }
+      },
+      {
+        "id": "node-mrag-020",
+        "templateKey": "process-reranker",
+        "label": "Reranker",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "cohere/rerank-4-pro",
+            "top_n": 8,
+            "score_threshold": 0.04
+          },
+          "normalizeScores": true,
+          "keepOriginalScore": true,
+          "description": "Swap: Cohere / Voyage / Jina / LLM-as-reranker. Or remove for latency-sensitive flows."
+        },
+        "position": {
+          "x": 900.0,
+          "y": 940.0
+        }
+      },
+      {
+        "id": "node-mrag-021",
+        "templateKey": "process-context-compression",
+        "label": "Context Compression",
+        "config": {
+          "maxTokens": 3500,
+          "keepCitations": true,
+          "strategy": "extractive",
+          "description": "Swap: extractive / abstractive / pyramid / none. Trims context to LLM token budget."
+        },
+        "position": {
+          "x": 900.0,
+          "y": 1160.0
+        }
+      },
+      {
+        "id": "node-mrag-022",
+        "templateKey": "process-pii-redaction",
+        "label": "PII Redaction",
+        "config": {
+          "redactEmails": true,
+          "redactPhones": true,
+          "redactIds": true,
+          "redactNames": false,
+          "description": "Swap: presidio / spaCy NER / regex. Or remove for internal-only flows. Last gatekeeper before generation."
+        },
+        "position": {
+          "x": 900.0,
+          "y": 1380.0
+        }
+      },
+      {
+        "id": "node-mrag-023",
+        "templateKey": "brain-guardrails",
+        "label": "Input Guardrails",
+        "config": {
+          "piiRedaction": true,
+          "jailbreakCheck": true,
+          "topicFilter": true,
+          "allowedTopics": "",
+          "description": "Swap: NeMo Guardrails / Llama Guard / custom classifier. Checks assembled context + question before generation."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 1600.0
+        }
+      },
+      {
+        "id": "node-mrag-024",
+        "templateKey": "input-system-prompt",
+        "label": "System Prompt",
+        "config": {
+          "preset": "rag-grounded",
+          "persona": "You are a modular enterprise RAG assistant. You receive evidence from multiple retrieval paths (similarity, MMR, hybrid+graph) unified by RRF. Answer precisely with inline citations.",
+          "style": "Structured and factual. Cite every claim as [1], [2], etc. For image evidence, cite as [img-1].",
+          "constraints": "Never answer from prior knowledge. If evidence is insufficient, say so explicitly.",
+          "template": ""
+        },
+        "position": {
+          "x": 460.0,
+          "y": 1600.0
+        }
+      },
+      {
+        "id": "node-mrag-025",
+        "templateKey": "brain-llm",
+        "label": "LLM Generator",
+        "config": {
+          "gateway": "backend_proxy",
+          "metadata": {
+            "model_id": "openai/gpt-4o",
+            "temperature": 0.15,
+            "max_tokens": 1536,
+            "top_p": 1,
+            "response_format": "text"
+          },
+          "citationMode": true,
+          "description": "Swap: any OpenRouter model. The generation module is independent of all upstream modules."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 1820.0
+        }
+      },
+      {
+        "id": "node-mrag-026",
+        "templateKey": "process-hallucination-guard",
+        "label": "Hallucination Guard",
+        "config": {
+          "minGroundingScore": 0.72,
+          "fallbackToCitationMode": true,
+          "description": "Swap: RAGAS / TruLens / custom LLM judge / none. Verifies every claim traces to retrieved evidence."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 2040.0
+        }
+      },
+      {
+        "id": "node-mrag-027",
+        "templateKey": "process-reflection-loop",
+        "label": "Reflection Loop",
+        "config": {
+          "maxReflections": 2,
+          "critiquePrompt": "Check: (1) Are all claims grounded in the cited evidence? (2) Is the answer complete for the question? (3) Are citations accurate? Suggest improvements if not.",
+          "description": "Swap: 1-pass / 2-pass / critique-revise / none. Feeds back to LLM Generator for revision."
+        },
+        "position": {
+          "x": 680.0,
+          "y": 2260.0
+        }
+      },
+      {
+        "id": "node-mrag-028",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "format": "inherit",
+          "includeCitations": true,
+          "streamTokens": true,
+          "collectFeedback": true,
+          "showReasoning": true
+        },
+        "position": {
+          "x": 680.0,
+          "y": 2480.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-mrag-001",
+        "source": "node-mrag-004",
+        "target": "node-mrag-005",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-002",
+        "source": "node-mrag-003",
+        "target": "node-mrag-005",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-003",
+        "source": "node-mrag-005",
+        "target": "node-mrag-006",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-004",
+        "source": "node-mrag-006",
+        "target": "node-mrag-007",
+        "sourceHandle": "source-top",
+        "targetHandle": "target-bottom"
+      },
+      {
+        "id": "edge-mrag-005",
+        "source": "node-mrag-006",
+        "target": "node-mrag-008",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-006",
+        "source": "node-mrag-001",
+        "target": "node-mrag-002",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-007",
+        "source": "node-mrag-002",
+        "target": "node-mrag-008",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-008",
+        "source": "node-mrag-008",
+        "target": "node-mrag-009",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-009",
+        "source": "node-mrag-010",
+        "target": "node-mrag-011",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-010",
+        "source": "node-mrag-011",
+        "target": "node-mrag-012",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-011",
+        "source": "node-mrag-011",
+        "target": "node-mrag-013",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-012",
+        "source": "node-mrag-013",
+        "target": "node-mrag-012",
+        "sourceHandle": "source-top",
+        "targetHandle": "target-bottom"
+      },
+      {
+        "id": "edge-mrag-013",
+        "source": "node-mrag-012",
+        "target": "node-mrag-014",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-014",
+        "source": "node-mrag-012",
+        "target": "node-mrag-018",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-015",
+        "source": "node-mrag-014",
+        "target": "node-mrag-016",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-016",
+        "source": "node-mrag-014",
+        "target": "node-mrag-015",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-017",
+        "source": "node-mrag-015",
+        "target": "node-mrag-017",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-018",
+        "source": "node-mrag-009",
+        "target": "node-mrag-016",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-019",
+        "source": "node-mrag-009",
+        "target": "node-mrag-017",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-020",
+        "source": "node-mrag-009",
+        "target": "node-mrag-018",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-021",
+        "source": "node-mrag-007",
+        "target": "node-mrag-018",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-022",
+        "source": "node-mrag-016",
+        "target": "node-mrag-019",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-023",
+        "source": "node-mrag-017",
+        "target": "node-mrag-019",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-024",
+        "source": "node-mrag-018",
+        "target": "node-mrag-019",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-bottom"
+      },
+      {
+        "id": "edge-mrag-025",
+        "source": "node-mrag-019",
+        "target": "node-mrag-020",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-026",
+        "source": "node-mrag-011",
+        "target": "node-mrag-020",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-027",
+        "source": "node-mrag-020",
+        "target": "node-mrag-021",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-028",
+        "source": "node-mrag-021",
+        "target": "node-mrag-022",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-029",
+        "source": "node-mrag-022",
+        "target": "node-mrag-023",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-030",
+        "source": "node-mrag-011",
+        "target": "node-mrag-023",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-031",
+        "source": "node-mrag-023",
+        "target": "node-mrag-025",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-032",
+        "source": "node-mrag-024",
+        "target": "node-mrag-025",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-033",
+        "source": "node-mrag-025",
+        "target": "node-mrag-026",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-034",
+        "source": "node-mrag-011",
+        "target": "node-mrag-026",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-035",
+        "source": "node-mrag-026",
+        "target": "node-mrag-027",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-mrag-036",
+        "source": "node-mrag-027",
+        "target": "node-mrag-025",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "edge-mrag-037",
+        "source": "node-mrag-027",
+        "target": "node-mrag-028",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  }
+]

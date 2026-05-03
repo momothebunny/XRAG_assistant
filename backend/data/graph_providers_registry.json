@@ -1,0 +1,113 @@
+{
+  "$schema_version": "1.0.0",
+  "$description": "Single source of truth for the storage-graph node. Consumed by both the backend executor (provider/mode/credential validation) and the frontend GraphDatabaseSettingsPanel (provider picker UI). Add a provider here and it appears everywhere — no code change required.",
+  "providers": [
+    {
+      "id": "neo4j",
+      "label": "Neo4j",
+      "badge": "Industry standard",
+      "description": "Cypher-based property graph. AuraDB managed or self-hosted.",
+      "fields": ["url", "database", "usernameEnvVar", "passwordEnvVar", "encrypted"],
+      "supportedModes": ["property-graph"],
+      "defaultPasswordEnvVar": "NEO4J_PASSWORD",
+      "defaultUsernameEnvVar": "NEO4J_USERNAME",
+      "defaultUrl": "bolt://localhost:7687",
+      "queryLanguage": "cypher"
+    },
+    {
+      "id": "memgraph",
+      "label": "Memgraph",
+      "badge": "In-memory · OSS",
+      "description": "Cypher-compatible, in-memory graph store with streaming.",
+      "fields": ["url", "usernameEnvVar", "passwordEnvVar", "encrypted"],
+      "supportedModes": ["property-graph"],
+      "defaultPasswordEnvVar": "MEMGRAPH_PASSWORD",
+      "defaultUsernameEnvVar": "MEMGRAPH_USERNAME",
+      "defaultUrl": "bolt://localhost:7687",
+      "queryLanguage": "cypher"
+    },
+    {
+      "id": "nebula",
+      "label": "NebulaGraph",
+      "badge": "OSS · Scale",
+      "description": "Distributed billion-edge graph DB with nGQL.",
+      "fields": ["url", "space", "usernameEnvVar", "passwordEnvVar"],
+      "supportedModes": ["property-graph"],
+      "defaultPasswordEnvVar": "NEBULA_PASSWORD",
+      "defaultUsernameEnvVar": "NEBULA_USERNAME",
+      "defaultUrl": "graphd://localhost:9669",
+      "queryLanguage": "ngql"
+    },
+    {
+      "id": "arangodb",
+      "label": "ArangoDB",
+      "badge": "Multi-model",
+      "description": "Document + graph + key-value in one engine, AQL queries.",
+      "fields": ["url", "database", "usernameEnvVar", "passwordEnvVar"],
+      "supportedModes": ["property-graph"],
+      "defaultPasswordEnvVar": "ARANGO_PASSWORD",
+      "defaultUsernameEnvVar": "ARANGO_USERNAME",
+      "defaultUrl": "http://localhost:8529",
+      "queryLanguage": "aql"
+    },
+    {
+      "id": "neptune",
+      "label": "AWS Neptune",
+      "badge": "Managed · AWS",
+      "description": "Managed graph DB supporting both Gremlin and SPARQL.",
+      "fields": ["url", "iamRole", "region"],
+      "supportedModes": ["property-graph", "rdf-triplestore"],
+      "defaultPasswordEnvVar": null,
+      "defaultUsernameEnvVar": null,
+      "defaultUrl": "wss://neptune.cluster.region.amazonaws.com:8182/gremlin",
+      "queryLanguage": "gremlin"
+    },
+    {
+      "id": "kuzu",
+      "label": "Kùzu",
+      "badge": "Embedded · OSS",
+      "description": "Embeddable analytical graph DB, runs in-process.",
+      "fields": ["persistDirectory"],
+      "supportedModes": ["property-graph"],
+      "defaultPasswordEnvVar": null,
+      "defaultUsernameEnvVar": null,
+      "defaultUrl": null,
+      "queryLanguage": "cypher"
+    },
+    {
+      "id": "networkx",
+      "label": "NetworkX",
+      "badge": "In-memory · Dev",
+      "description": "Pure-Python in-memory graph. Great for prototyping.",
+      "fields": ["persistDirectory"],
+      "supportedModes": ["property-graph"],
+      "defaultPasswordEnvVar": null,
+      "defaultUsernameEnvVar": null,
+      "defaultUrl": null,
+      "queryLanguage": "python-api"
+    },
+    {
+      "id": "blazegraph",
+      "label": "Blazegraph",
+      "badge": "RDF · SPARQL",
+      "description": "RDF triplestore with SPARQL endpoint.",
+      "fields": ["url"],
+      "supportedModes": ["rdf-triplestore"],
+      "defaultPasswordEnvVar": null,
+      "defaultUsernameEnvVar": null,
+      "defaultUrl": "http://localhost:9999/blazegraph/sparql",
+      "queryLanguage": "sparql"
+    }
+  ],
+  "modeLabels": {
+    "property-graph": "Property graph (nodes + edges + props)",
+    "rdf-triplestore": "RDF triplestore (subject-predicate-object)",
+    "hypergraph": "Hypergraph (multi-node edges)"
+  },
+  "extractorStrategies": [
+    { "id": "llm-extraction", "label": "LLM-based entity & relation extraction", "description": "Uses the connected LLM to extract (subject, predicate, object) triples from each chunk. Highest quality, highest cost." },
+    { "id": "spacy-ner", "label": "spaCy NER + dependency parse", "description": "Local statistical NER + verb-based relation heuristics. Fast and cheap." },
+    { "id": "rebel", "label": "REBEL (end-to-end relation extraction)", "description": "BART-based seq2seq relation extractor. Good middle ground." },
+    { "id": "manual", "label": "Pre-extracted (chunks contain triples)", "description": "Skip extraction — assumes upstream node already produced graph triples." }
+  ]
+}

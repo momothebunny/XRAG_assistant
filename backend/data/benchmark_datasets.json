@@ -1,0 +1,738 @@
+[
+  {
+    "id": "bmd-0349d70067",
+    "name": "SQuAD v2 - smoke",
+    "description": "Imported from HuggingFace dataset rajpurkar/squad_v2 (validation split).",
+    "entries": [
+      {
+        "question": "In what country is Normandy located?",
+        "expected_answer": "France"
+      },
+      {
+        "question": "When were the Normans in Normandy?",
+        "expected_answer": "10th and 11th centuries"
+      },
+      {
+        "question": "From which countries did the Norse originate?",
+        "expected_answer": "Denmark, Iceland and Norway"
+      },
+      {
+        "question": "Who was the Norse leader?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What century did the Normans first gain their separate identity?",
+        "expected_answer": "10th century"
+      }
+    ],
+    "created_at": 1777794215956
+  },
+  {
+    "id": "bmd-a16e188f62",
+    "name": "NQ open 10q",
+    "description": "Imported from HuggingFace dataset google-research-datasets/nq_open (nq_open/validation).",
+    "entries": [
+      {
+        "question": "when was the last time anyone was on the moon",
+        "expected_answer": "14 December 1972 UTC"
+      },
+      {
+        "question": "who wrote he ain't heavy he's my brother lyrics",
+        "expected_answer": "Bobby Scott"
+      },
+      {
+        "question": "how many seasons of the bastard executioner are there",
+        "expected_answer": "one"
+      },
+      {
+        "question": "when did the eagles win last super bowl",
+        "expected_answer": "2017"
+      },
+      {
+        "question": "who won last year's ncaa women's basketball",
+        "expected_answer": "South Carolina"
+      },
+      {
+        "question": "when did the isle of wight become an island",
+        "expected_answer": "During the last Ice Age"
+      },
+      {
+        "question": "love yourself by justin bieber is about who",
+        "expected_answer": "Rihanna"
+      },
+      {
+        "question": "who was the ruler of england in 1616",
+        "expected_answer": "James I"
+      },
+      {
+        "question": "what is the hot coffee mod in san andreas",
+        "expected_answer": "a normally inaccessible mini-game"
+      },
+      {
+        "question": "what is the maximum data rate for the 802.11a standard select one",
+        "expected_answer": "54 Mbit/s"
+      }
+    ],
+    "created_at": 1777795865692
+  },
+  {
+    "id": "bmd-f0653ddc0b",
+    "name": "SQuAD HF 50q",
+    "description": "Imported from HuggingFace dataset rajpurkar/squad_v2 (squad_v2/validation).",
+    "entries": [
+      {
+        "question": "In what country is Normandy located?",
+        "expected_answer": "France"
+      },
+      {
+        "question": "When were the Normans in Normandy?",
+        "expected_answer": "10th and 11th centuries"
+      },
+      {
+        "question": "From which countries did the Norse originate?",
+        "expected_answer": "Denmark, Iceland and Norway"
+      },
+      {
+        "question": "Who was the Norse leader?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What century did the Normans first gain their separate identity?",
+        "expected_answer": "10th century"
+      },
+      {
+        "question": "Who was the duke in the battle of Hastings?",
+        "expected_answer": "William the Conqueror"
+      },
+      {
+        "question": "Who ruled the duchy of Normandy",
+        "expected_answer": "Richard I"
+      },
+      {
+        "question": "What religion were the Normans",
+        "expected_answer": "Catholic"
+      },
+      {
+        "question": "What is the original meaning of the word Norman?",
+        "expected_answer": "Viking"
+      },
+      {
+        "question": "When was the Latin version of the word Norman first recorded?",
+        "expected_answer": "9th century"
+      },
+      {
+        "question": "When was the Duchy of Normandy founded?",
+        "expected_answer": "911"
+      },
+      {
+        "question": "Who did Rollo sign the treaty of Saint-Clair-sur-Epte with?",
+        "expected_answer": "King Charles III"
+      },
+      {
+        "question": "What river originally bounded the Duchy",
+        "expected_answer": "Seine"
+      },
+      {
+        "question": "Who upon arriving gave the original viking settlers a common identity?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What was the Norman religion?",
+        "expected_answer": "Catholicism"
+      },
+      {
+        "question": "What part of France were the Normans located?",
+        "expected_answer": "north"
+      },
+      {
+        "question": "What was one of the Norman's major exports?",
+        "expected_answer": "fighting horsemen"
+      },
+      {
+        "question": "Who was the Normans' main enemy in Italy, the Byzantine Empire and Armenia?",
+        "expected_answer": "Seljuk Turks"
+      },
+      {
+        "question": "When did Herve serve as a Byzantine general?",
+        "expected_answer": "1050s"
+      },
+      {
+        "question": "When did Robert Crispin go up against the Turks?",
+        "expected_answer": "1060s"
+      },
+      {
+        "question": "Who ruined Roussel de Bailleul's plans for an independent state?",
+        "expected_answer": "Alexius Komnenos"
+      },
+      {
+        "question": "What was the name of the Norman castle?",
+        "expected_answer": "Afranji"
+      },
+      {
+        "question": "Who was the leader when the Franks entered the Euphrates valley?",
+        "expected_answer": "Oursel"
+      },
+      {
+        "question": "Who did the Normans team up with in Anatolia?",
+        "expected_answer": "Turkish forces"
+      },
+      {
+        "question": "What were the origins of the Raouliii family?",
+        "expected_answer": "Norman mercenary"
+      },
+      {
+        "question": "What was the name of the count of Apulia",
+        "expected_answer": "Robert Guiscard"
+      },
+      {
+        "question": "When did Dyrrachium  fall to the Normans?",
+        "expected_answer": "1082"
+      },
+      {
+        "question": "How many men were in Robert's army?",
+        "expected_answer": "30,000"
+      },
+      {
+        "question": "Where did the Normans and Byzantines sign the peace treaty?",
+        "expected_answer": "Deabolis"
+      },
+      {
+        "question": "Who was Robert's son?",
+        "expected_answer": "Bohemond"
+      },
+      {
+        "question": "What river was Petrela located by?",
+        "expected_answer": "Deabolis"
+      },
+      {
+        "question": "When did the Normans attack Dyrrachium?",
+        "expected_answer": "1185"
+      },
+      {
+        "question": "What was the naval base called?",
+        "expected_answer": "Dyrrachium"
+      },
+      {
+        "question": "Where was Dyrrachium located?",
+        "expected_answer": "the Adriatic"
+      },
+      {
+        "question": "Who did Emma Marry?",
+        "expected_answer": "King Ethelred II"
+      },
+      {
+        "question": "Who was Emma's brother?",
+        "expected_answer": "Duke Richard II"
+      },
+      {
+        "question": "To where did Ethelred flee?",
+        "expected_answer": "Normandy"
+      },
+      {
+        "question": "Who kicked Ethelred out?",
+        "expected_answer": "Sweyn Forkbeard"
+      },
+      {
+        "question": "Who was Edward the Confessor's half-brother?",
+        "expected_answer": "Harthacnut"
+      },
+      {
+        "question": "When did Edward return?",
+        "expected_answer": "1041"
+      },
+      {
+        "question": "Who did Edward make archbishop of Canterbury?",
+        "expected_answer": "Robert of Jumièges"
+      },
+      {
+        "question": "Where did Harold II die?",
+        "expected_answer": "Battle of Hastings"
+      },
+      {
+        "question": "Who killed Harold II?",
+        "expected_answer": "William II"
+      },
+      {
+        "question": "When was the Battle of Hastings?",
+        "expected_answer": "1066"
+      },
+      {
+        "question": "Who was the ruling class ahead of the Normans?",
+        "expected_answer": "Anglo-Saxons"
+      },
+      {
+        "question": "What was the Anglo-Norman language's final form?",
+        "expected_answer": "Modern English"
+      },
+      {
+        "question": "In what year did the Norman's invade at Bannow Bay?",
+        "expected_answer": "1169"
+      },
+      {
+        "question": "What country did the Normans invade in 1169?",
+        "expected_answer": "Ireland"
+      },
+      {
+        "question": "What culture did the Normans combine with in Ireland?",
+        "expected_answer": "Irish"
+      },
+      {
+        "question": "Who was Margaret's brother?",
+        "expected_answer": "Edgar"
+      }
+    ],
+    "created_at": 1777795875510
+  },
+  {
+    "id": "bmd-f6bf045070",
+    "name": "SQuAD HF 50q",
+    "description": "Imported from HuggingFace dataset rajpurkar/squad_v2 (squad_v2/validation).",
+    "entries": [
+      {
+        "question": "In what country is Normandy located?",
+        "expected_answer": "France"
+      },
+      {
+        "question": "When were the Normans in Normandy?",
+        "expected_answer": "10th and 11th centuries"
+      },
+      {
+        "question": "From which countries did the Norse originate?",
+        "expected_answer": "Denmark, Iceland and Norway"
+      },
+      {
+        "question": "Who was the Norse leader?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What century did the Normans first gain their separate identity?",
+        "expected_answer": "10th century"
+      },
+      {
+        "question": "Who was the duke in the battle of Hastings?",
+        "expected_answer": "William the Conqueror"
+      },
+      {
+        "question": "Who ruled the duchy of Normandy",
+        "expected_answer": "Richard I"
+      },
+      {
+        "question": "What religion were the Normans",
+        "expected_answer": "Catholic"
+      },
+      {
+        "question": "What is the original meaning of the word Norman?",
+        "expected_answer": "Viking"
+      },
+      {
+        "question": "When was the Latin version of the word Norman first recorded?",
+        "expected_answer": "9th century"
+      },
+      {
+        "question": "When was the Duchy of Normandy founded?",
+        "expected_answer": "911"
+      },
+      {
+        "question": "Who did Rollo sign the treaty of Saint-Clair-sur-Epte with?",
+        "expected_answer": "King Charles III"
+      },
+      {
+        "question": "What river originally bounded the Duchy",
+        "expected_answer": "Seine"
+      },
+      {
+        "question": "Who upon arriving gave the original viking settlers a common identity?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What was the Norman religion?",
+        "expected_answer": "Catholicism"
+      },
+      {
+        "question": "What part of France were the Normans located?",
+        "expected_answer": "north"
+      },
+      {
+        "question": "What was one of the Norman's major exports?",
+        "expected_answer": "fighting horsemen"
+      },
+      {
+        "question": "Who was the Normans' main enemy in Italy, the Byzantine Empire and Armenia?",
+        "expected_answer": "Seljuk Turks"
+      },
+      {
+        "question": "When did Herve serve as a Byzantine general?",
+        "expected_answer": "1050s"
+      },
+      {
+        "question": "When did Robert Crispin go up against the Turks?",
+        "expected_answer": "1060s"
+      },
+      {
+        "question": "Who ruined Roussel de Bailleul's plans for an independent state?",
+        "expected_answer": "Alexius Komnenos"
+      },
+      {
+        "question": "What was the name of the Norman castle?",
+        "expected_answer": "Afranji"
+      },
+      {
+        "question": "Who was the leader when the Franks entered the Euphrates valley?",
+        "expected_answer": "Oursel"
+      },
+      {
+        "question": "Who did the Normans team up with in Anatolia?",
+        "expected_answer": "Turkish forces"
+      },
+      {
+        "question": "What were the origins of the Raouliii family?",
+        "expected_answer": "Norman mercenary"
+      },
+      {
+        "question": "What was the name of the count of Apulia",
+        "expected_answer": "Robert Guiscard"
+      },
+      {
+        "question": "When did Dyrrachium  fall to the Normans?",
+        "expected_answer": "1082"
+      },
+      {
+        "question": "How many men were in Robert's army?",
+        "expected_answer": "30,000"
+      },
+      {
+        "question": "Where did the Normans and Byzantines sign the peace treaty?",
+        "expected_answer": "Deabolis"
+      },
+      {
+        "question": "Who was Robert's son?",
+        "expected_answer": "Bohemond"
+      },
+      {
+        "question": "What river was Petrela located by?",
+        "expected_answer": "Deabolis"
+      },
+      {
+        "question": "When did the Normans attack Dyrrachium?",
+        "expected_answer": "1185"
+      },
+      {
+        "question": "What was the naval base called?",
+        "expected_answer": "Dyrrachium"
+      },
+      {
+        "question": "Where was Dyrrachium located?",
+        "expected_answer": "the Adriatic"
+      },
+      {
+        "question": "Who did Emma Marry?",
+        "expected_answer": "King Ethelred II"
+      },
+      {
+        "question": "Who was Emma's brother?",
+        "expected_answer": "Duke Richard II"
+      },
+      {
+        "question": "To where did Ethelred flee?",
+        "expected_answer": "Normandy"
+      },
+      {
+        "question": "Who kicked Ethelred out?",
+        "expected_answer": "Sweyn Forkbeard"
+      },
+      {
+        "question": "Who was Edward the Confessor's half-brother?",
+        "expected_answer": "Harthacnut"
+      },
+      {
+        "question": "When did Edward return?",
+        "expected_answer": "1041"
+      },
+      {
+        "question": "Who did Edward make archbishop of Canterbury?",
+        "expected_answer": "Robert of Jumièges"
+      },
+      {
+        "question": "Where did Harold II die?",
+        "expected_answer": "Battle of Hastings"
+      },
+      {
+        "question": "Who killed Harold II?",
+        "expected_answer": "William II"
+      },
+      {
+        "question": "When was the Battle of Hastings?",
+        "expected_answer": "1066"
+      },
+      {
+        "question": "Who was the ruling class ahead of the Normans?",
+        "expected_answer": "Anglo-Saxons"
+      },
+      {
+        "question": "What was the Anglo-Norman language's final form?",
+        "expected_answer": "Modern English"
+      },
+      {
+        "question": "In what year did the Norman's invade at Bannow Bay?",
+        "expected_answer": "1169"
+      },
+      {
+        "question": "What country did the Normans invade in 1169?",
+        "expected_answer": "Ireland"
+      },
+      {
+        "question": "What culture did the Normans combine with in Ireland?",
+        "expected_answer": "Irish"
+      },
+      {
+        "question": "Who was Margaret's brother?",
+        "expected_answer": "Edgar"
+      }
+    ],
+    "created_at": 1777795879684
+  },
+  {
+    "id": "bmd-c4542fbdf0",
+    "name": "SQuAD HF 30q",
+    "description": "Imported from HuggingFace dataset rajpurkar/squad_v2 (squad_v2/validation).",
+    "entries": [
+      {
+        "question": "In what country is Normandy located?",
+        "expected_answer": "France"
+      },
+      {
+        "question": "When were the Normans in Normandy?",
+        "expected_answer": "10th and 11th centuries"
+      },
+      {
+        "question": "From which countries did the Norse originate?",
+        "expected_answer": "Denmark, Iceland and Norway"
+      },
+      {
+        "question": "Who was the Norse leader?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What century did the Normans first gain their separate identity?",
+        "expected_answer": "10th century"
+      },
+      {
+        "question": "Who was the duke in the battle of Hastings?",
+        "expected_answer": "William the Conqueror"
+      },
+      {
+        "question": "Who ruled the duchy of Normandy",
+        "expected_answer": "Richard I"
+      },
+      {
+        "question": "What religion were the Normans",
+        "expected_answer": "Catholic"
+      },
+      {
+        "question": "What is the original meaning of the word Norman?",
+        "expected_answer": "Viking"
+      },
+      {
+        "question": "When was the Latin version of the word Norman first recorded?",
+        "expected_answer": "9th century"
+      },
+      {
+        "question": "When was the Duchy of Normandy founded?",
+        "expected_answer": "911"
+      },
+      {
+        "question": "Who did Rollo sign the treaty of Saint-Clair-sur-Epte with?",
+        "expected_answer": "King Charles III"
+      },
+      {
+        "question": "What river originally bounded the Duchy",
+        "expected_answer": "Seine"
+      },
+      {
+        "question": "Who upon arriving gave the original viking settlers a common identity?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What was the Norman religion?",
+        "expected_answer": "Catholicism"
+      },
+      {
+        "question": "What part of France were the Normans located?",
+        "expected_answer": "north"
+      },
+      {
+        "question": "What was one of the Norman's major exports?",
+        "expected_answer": "fighting horsemen"
+      },
+      {
+        "question": "Who was the Normans' main enemy in Italy, the Byzantine Empire and Armenia?",
+        "expected_answer": "Seljuk Turks"
+      },
+      {
+        "question": "When did Herve serve as a Byzantine general?",
+        "expected_answer": "1050s"
+      },
+      {
+        "question": "When did Robert Crispin go up against the Turks?",
+        "expected_answer": "1060s"
+      },
+      {
+        "question": "Who ruined Roussel de Bailleul's plans for an independent state?",
+        "expected_answer": "Alexius Komnenos"
+      },
+      {
+        "question": "What was the name of the Norman castle?",
+        "expected_answer": "Afranji"
+      },
+      {
+        "question": "Who was the leader when the Franks entered the Euphrates valley?",
+        "expected_answer": "Oursel"
+      },
+      {
+        "question": "Who did the Normans team up with in Anatolia?",
+        "expected_answer": "Turkish forces"
+      },
+      {
+        "question": "What were the origins of the Raouliii family?",
+        "expected_answer": "Norman mercenary"
+      },
+      {
+        "question": "What was the name of the count of Apulia",
+        "expected_answer": "Robert Guiscard"
+      },
+      {
+        "question": "When did Dyrrachium  fall to the Normans?",
+        "expected_answer": "1082"
+      },
+      {
+        "question": "How many men were in Robert's army?",
+        "expected_answer": "30,000"
+      },
+      {
+        "question": "Where did the Normans and Byzantines sign the peace treaty?",
+        "expected_answer": "Deabolis"
+      },
+      {
+        "question": "Who was Robert's son?",
+        "expected_answer": "Bohemond"
+      }
+    ],
+    "created_at": 1777795884323
+  },
+  {
+    "id": "bmd-008a25952a",
+    "name": "NQ open 15q",
+    "description": "Imported from HuggingFace dataset google-research-datasets/nq_open (nq_open/validation).",
+    "entries": [
+      {
+        "question": "when was the last time anyone was on the moon",
+        "expected_answer": "14 December 1972 UTC"
+      },
+      {
+        "question": "who wrote he ain't heavy he's my brother lyrics",
+        "expected_answer": "Bobby Scott"
+      },
+      {
+        "question": "how many seasons of the bastard executioner are there",
+        "expected_answer": "one"
+      },
+      {
+        "question": "when did the eagles win last super bowl",
+        "expected_answer": "2017"
+      },
+      {
+        "question": "who won last year's ncaa women's basketball",
+        "expected_answer": "South Carolina"
+      },
+      {
+        "question": "when did the isle of wight become an island",
+        "expected_answer": "During the last Ice Age"
+      },
+      {
+        "question": "love yourself by justin bieber is about who",
+        "expected_answer": "Rihanna"
+      },
+      {
+        "question": "who was the ruler of england in 1616",
+        "expected_answer": "James I"
+      },
+      {
+        "question": "what is the hot coffee mod in san andreas",
+        "expected_answer": "a normally inaccessible mini-game"
+      },
+      {
+        "question": "what is the maximum data rate for the 802.11a standard select one",
+        "expected_answer": "54 Mbit/s"
+      },
+      {
+        "question": "which state is located in the centre of india",
+        "expected_answer": "Chhattisgarh"
+      },
+      {
+        "question": "who sang i ran all the way home",
+        "expected_answer": "The Impalas"
+      },
+      {
+        "question": "where did the last name wallace come from",
+        "expected_answer": "a Scottish surname"
+      },
+      {
+        "question": "who was the actor that played ben stone on law and order",
+        "expected_answer": "Michael Moriarty"
+      },
+      {
+        "question": "who does the voice of nala in the lion king",
+        "expected_answer": "Niketa Calame"
+      }
+    ],
+    "created_at": 1777795890471
+  },
+  {
+    "id": "bmd-44d0d61c8e",
+    "name": "SQuAD auto-config",
+    "description": "Imported from HuggingFace dataset rajpurkar/squad_v2 (squad_v2/validation).",
+    "entries": [
+      {
+        "question": "In what country is Normandy located?",
+        "expected_answer": "France"
+      },
+      {
+        "question": "When were the Normans in Normandy?",
+        "expected_answer": "10th and 11th centuries"
+      },
+      {
+        "question": "From which countries did the Norse originate?",
+        "expected_answer": "Denmark, Iceland and Norway"
+      },
+      {
+        "question": "Who was the Norse leader?",
+        "expected_answer": "Rollo"
+      },
+      {
+        "question": "What century did the Normans first gain their separate identity?",
+        "expected_answer": "10th century"
+      },
+      {
+        "question": "Who was the duke in the battle of Hastings?",
+        "expected_answer": "William the Conqueror"
+      },
+      {
+        "question": "Who ruled the duchy of Normandy",
+        "expected_answer": "Richard I"
+      },
+      {
+        "question": "What religion were the Normans",
+        "expected_answer": "Catholic"
+      },
+      {
+        "question": "What is the original meaning of the word Norman?",
+        "expected_answer": "Viking"
+      },
+      {
+        "question": "When was the Latin version of the word Norman first recorded?",
+        "expected_answer": "9th century"
+      }
+    ],
+    "created_at": 1777795896132
+  }
+]
