@@ -270,7 +270,7 @@ export default function QuestionSettingsPanel({
               {langLabel} · {config.minLength}–{config.maxLength} chars
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+          <div className="hidden @[280px]:flex shrink-0 flex-col items-end gap-0.5 text-right">
             <span className="text-[10.5px] font-bold text-fuchsia-700">
               {enabledPrep} {enabledPrep === 1 ? 'rule' : 'rules'}
             </span>

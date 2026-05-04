@@ -5263,7 +5263,7 @@ const CanvasBoard = () => {
         </div>
 
         <aside
-          className="bg-white rounded-3xl border border-slate-200 shadow-sm p-3 overflow-y-auto space-y-4 flex-none"
+          className="@container bg-white rounded-3xl border border-slate-200 shadow-sm p-3 overflow-y-auto space-y-4 flex-none"
           style={{ width: inspectorWidth }}
         >
           {/* Inspector header — merged with Save / Browse / Run controls.

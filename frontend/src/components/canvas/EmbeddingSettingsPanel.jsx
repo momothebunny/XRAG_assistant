@@ -256,8 +256,8 @@ const EmbeddingSettingsPanel = ({ value = {}, onChange }) => {
               {dims ? `${dims}d` : '—'} · {ctx ? `${ctx} ctx` : '—'} · backend proxy
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
-            <span className="text-[10.5px] font-bold text-sky-700">
+          <div className="hidden @[280px]:flex shrink-0 flex-col items-end gap-0.5 text-right">
+            <span className="truncate max-w-[90px] text-[10.5px] font-bold text-sky-700">
               {selectedModel?.name?.split('/').slice(-1)[0] || 'embedding'}
             </span>
             <span className="font-mono text-[10px] text-slate-500">openrouter</span>
@@ -278,7 +278,7 @@ const EmbeddingSettingsPanel = ({ value = {}, onChange }) => {
             <p className="text-[10px] font-semibold uppercase tracking-wider text-sky-800">
               Backend proxy · key stays server-side
             </p>
-            <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <div className="mt-2 grid grid-cols-2 @[280px]:grid-cols-3 gap-1.5">
               <StatPill
                 label="Model"
                 ok={Boolean(value.model_id)}

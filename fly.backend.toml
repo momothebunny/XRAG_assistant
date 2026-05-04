@@ -1,50 +1,42 @@
-# fly.toml — Aurelia BACKEND (FastAPI)
+# fly.toml app configuration file generated for aurelia-backend on 2026-05-04T16:35:25+02:00
 #
-# Deploy from the repo root:
-#   fly launch --config fly.backend.toml --no-deploy --copy-config --name aurelia-backend
-#   fly volumes create aurelia_data --region ams --size 3 --app aurelia-backend
-#   fly secrets set --app aurelia-backend `
-#       XRAG_AUTH_DEV_MODE=0 `
-#       XRAG_SMTP_HOST=smtp.example.com `
-#       XRAG_SMTP_USER=... `
-#       XRAG_SMTP_PASSWORD=... `
-#       XRAG_SMTP_FROM=noreply@example.com
-#   fly deploy --config fly.backend.toml
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "aurelia-backend"
-primary_region = "ams"
+app = 'aurelia-backend'
+primary_region = 'ams'
 
 [build]
-  dockerfile = "docker/backend.Dockerfile"
+  dockerfile = 'docker/backend.Dockerfile'
 
 [env]
-  XRAG_DATA_DIR = "/data"
-  PORT = "8001"
+  PORT = '8001'
+  XRAG_DATA_DIR = '/data'
 
 [[mounts]]
-  source = "aurelia_data"
-  destination = "/data"
+  source = 'aurelia_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8001
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
   [http_service.concurrency]
-    type = "requests"
-    soft_limit = 20
+    type = 'requests'
     hard_limit = 40
+    soft_limit = 20
 
-[[http_service.checks]]
-  interval = "30s"
-  timeout = "5s"
-  grace_period = "20s"
-  method = "GET"
-  path = "/health"
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    method = 'GET'
+    path = '/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
+  size = 'shared-cpu-1x'
+  memory = '1gb'

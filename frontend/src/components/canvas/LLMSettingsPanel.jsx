@@ -665,7 +665,7 @@ export default function LLMSettingsPanel({
               {provider} · {metadata.response_format || 'text'}
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+          <div className="hidden @[280px]:flex shrink-0 flex-col items-end gap-0.5 text-right">
             <span className="text-[10.5px] font-bold text-amber-700">
               T={Number(metadata.temperature ?? 0.2).toFixed(2)}
             </span>
@@ -689,7 +689,7 @@ export default function LLMSettingsPanel({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-800">
               Upstream contract
             </p>
-            <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <div className="mt-2 grid grid-cols-2 @[280px]:grid-cols-3 gap-1.5">
               <UpstreamPill label="Query" ok={hasQuerySource} hint={hasQuerySource ? 'connected' : 'missing'} Icon={Search} />
               <UpstreamPill label="Chunks" ok={hasChunksUpstream} hint={hasChunksUpstream ? `${upstreamChunkCount || '?'} found` : 'optional'} Icon={Database} />
               <UpstreamPill label="Sys-Prompt" ok={hasSystemPromptUpstream} hint={hasSystemPromptUpstream ? 'wired' : 'inline only'} Icon={Sparkles} />

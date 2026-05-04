@@ -456,7 +456,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
       {/* ── Scope picker ───────────────────────────────────────────────── */}
       <div>
         <FieldLabel title="Selection scope" help="What the node forwards to Chunking." />
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 @[280px]:grid-cols-3 gap-1.5">
           <ScopeChip
             active={config.scope === 'all'}
             onClick={() => setField('scope', 'all')}
@@ -634,7 +634,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
         <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
           Resolved selection
         </p>
-        <div className="mt-1.5 grid grid-cols-3 gap-1.5 text-[11px]">
+        <div className="mt-1.5 grid grid-cols-2 @[280px]:grid-cols-3 gap-1.5 text-[11px]">
           <div className="rounded-lg bg-white/80 px-2 py-1.5">
             <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Docs</p>
             <p className="font-mono text-[12px] font-bold text-slate-800">{resolved.length}</p>

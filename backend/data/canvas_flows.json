@@ -1,5 +1,254 @@
 [
   {
+    "id": "flow-f14e4d082d",
+    "name": "My RAG Flow 19:08:36",
+    "description": "Saved from XRAG canvas UI",
+    "nodes": [
+      {
+        "id": "naive-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -160.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "naive-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 150,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 240.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "naive-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "max_token_capacity": 512,
+            "output_dimensions": 1024,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 480.0,
+          "y": -48.0
+        }
+      },
+      {
+        "id": "naive-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Vector Database",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "xrag-knowledge",
+          "namespace": "knowledge",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "PINECONE_API_KEY"
+        },
+        "position": {
+          "x": 720.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "naive-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 5,
+          "similarityThreshold": 0.72,
+          "includeMetadata": true,
+          "includeScores": true,
+          "embeddingProfile": null,
+          "vectorStore": {
+            "provider": "pinecone",
+            "indexName": "xrag-knowledge",
+            "namespace": "knowledge",
+            "metric": "cosine"
+          }
+        },
+        "position": {
+          "x": 720.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.2,
+          "max_tokens": 800,
+          "systemPrompt": "You are a helpful RAG assistant. Answer questions strictly based on the retrieved context. Be concise and cite sources inline as [n].",
+          "citationMode": true
+        },
+        "position": {
+          "x": 480.0,
+          "y": 220.0
+        }
+      },
+      {
+        "id": "naive-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 480.0,
+          "y": 440.0
+        }
+      },
+      {
+        "id": "node-1777891816676",
+        "templateKey": "input-upload",
+        "label": "Uploaded Documents",
+        "config": {
+          "scope": "all",
+          "selectedFolders": [],
+          "selectedDocumentIds": [],
+          "statusFilter": "indexed",
+          "contentTypeFilter": "all",
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false,
+          "ocr_dpi": 300,
+          "page_range": "",
+          "image_handling": "ignore",
+          "auto_tagging": false,
+          "source_label": "knowledge_base"
+        },
+        "position": {
+          "x": 240.0,
+          "y": -304.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "naive-e1",
+        "source": "naive-node-user",
+        "target": "naive-node-question",
+        "sourceHandle": "source-top",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e2",
+        "source": "naive-node-upload",
+        "target": "naive-node-chunking",
+        "sourceHandle": "source-top",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "naive-e3",
+        "source": "naive-node-chunking",
+        "target": "naive-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e4",
+        "source": "naive-node-embedding",
+        "target": "naive-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "naive-e5",
+        "source": "naive-node-vectordb",
+        "target": "naive-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "naive-e6",
+        "source": "naive-node-question",
+        "target": "naive-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "naive-e7",
+        "source": "naive-node-retriever",
+        "target": "naive-node-llm",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "naive-e8",
+        "source": "naive-node-llm",
+        "target": "naive-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "edge-1777891824987-88151",
+        "source": "node-1777891816676",
+        "target": "naive-node-chunking",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": 1777914516234,
+    "updatedAt": 1777914516234
+  },
+  {
     "id": "flow-naive-rag-001",
     "name": "Naive RAG",
     "description": "Saved from XRAG canvas UI",

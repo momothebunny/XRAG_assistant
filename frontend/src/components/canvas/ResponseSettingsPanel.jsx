@@ -345,7 +345,7 @@ export default function ResponseSettingsPanel({
               {formatLabel} · {channelLabel}
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+          <div className="hidden @[280px]:flex shrink-0 flex-col items-end gap-0.5 text-right">
             <span className="text-[10.5px] font-bold text-fuchsia-700">
               {config.maxChars} chars
             </span>

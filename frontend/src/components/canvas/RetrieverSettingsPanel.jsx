@@ -398,7 +398,7 @@ export default function RetrieverSettingsPanel({
               {vectorStore?.provider || embeddingProfile?.provider || 'in-memory'}
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+          <div className="hidden @[280px]:flex shrink-0 flex-col items-end gap-0.5 text-right">
             <span className="text-[10.5px] font-bold text-cyan-700">
               {value.topK ?? 8} chunks
             </span>
@@ -422,7 +422,7 @@ export default function RetrieverSettingsPanel({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-800">
               Upstream contract · auto-synced
             </p>
-            <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <div className="mt-2 grid grid-cols-2 @[280px]:grid-cols-3 gap-1.5">
               <UpstreamPill
                 label="Query"
                 ok={hasQuerySource}
