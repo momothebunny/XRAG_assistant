@@ -1,5 +1,35 @@
 [
   {
+    "id": "doc-738100fa8863",
+    "name": "LLukas22-fiqa-LLukas22-fiqa-answer-key.txt",
+    "relative_path": "LLukas22-fiqa-LLukas22-fiqa-answer-key.txt",
+    "content_type": "text/plain",
+    "size_bytes": 20298,
+    "page_count": 1,
+    "char_count": 20298,
+    "word_count": 3688,
+    "chunk_count": 57,
+    "token_estimate": 8099,
+    "status": "indexed",
+    "error": null,
+    "flow_id": null,
+    "chunking_config": {
+      "chunkSize": 700,
+      "overlap": 120,
+      "strategy": "recursive",
+      "separators": "\\n\\n,\\n,. , ,",
+      "keepSeparator": true,
+      "lengthFunction": "characters",
+      "minChunkChars": 0,
+      "stripWhitespace": true
+    },
+    "category": "fiqa",
+    "subcategory": "LLukas22-fiqa-answer-key",
+    "content_hash": "27d556d443f96677352ce638c6bf83e6040fc8d07a6f5b9d9fde98a637970e58",
+    "created_at": 1777883148952,
+    "updated_at": 1777883148952
+  },
+  {
     "id": "doc-20c008d1c7be",
     "name": "squad-Normans.txt",
     "relative_path": "squad-Normans.txt",

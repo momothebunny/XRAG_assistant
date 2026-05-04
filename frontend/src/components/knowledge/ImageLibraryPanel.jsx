@@ -120,7 +120,7 @@ const renderImageRow = (image, ctx) => {
         onClick={(e) => { e.stopPropagation(); handleGenerateCaption(image.id); }}
         disabled={captioningId === image.id}
         title="Generate caption with Vision LLM"
-        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:bg-violet-50 hover:text-violet-700 disabled:opacity-60"
+        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
       >
         {captioningId === image.id
           ? <Loader2 size={12} className="animate-spin" />
@@ -173,8 +173,8 @@ const ImageDetailPanel = ({ image }) => {
       )}
 
       {/* Caption */}
-      <div className="rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/60 to-white p-3">
-        <p className="text-[9px] font-black uppercase tracking-wider text-violet-600 mb-2">Vision Caption</p>
+      <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/60 to-white p-3">
+        <p className="text-[9px] font-black uppercase tracking-wider text-amber-600 mb-2">Vision Caption</p>
         {image.caption ? (
           <p className="text-xs text-slate-700 leading-relaxed">{image.caption}</p>
         ) : (
@@ -500,7 +500,7 @@ const ImageLibraryPanel = () => {
                     onClick={handleCaptionAll}
                     disabled={isCaptioningAll || images.every((i) => i.status === 'captioned')}
                     title="Generate captions for all uncaptioned images"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-500 to-fuchsia-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:from-violet-600 hover:to-fuchsia-700 disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-500 to-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:from-amber-600 hover:to-amber-700 disabled:opacity-60"
                   >
                     {isCaptioningAll ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                     {isCaptioningAll ? 'Captioning…' : 'Auto-Caption All'}

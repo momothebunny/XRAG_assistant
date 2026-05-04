@@ -194,7 +194,7 @@ const LiveIndexingCard = ({ fileName }) => {
             </div>
             <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
               <div
-                className="bg-gradient-to-r from-indigo-500 to-violet-400 h-full transition-all duration-500"
+                className="bg-gradient-to-r from-indigo-500 to-amber-400 h-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>

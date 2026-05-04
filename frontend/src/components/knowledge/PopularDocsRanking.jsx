@@ -1,4 +1,4 @@
-﻿import { CheckCircle2, FileText, Layers, Loader2, Maximize2, RefreshCw, X, Zap } from 'lucide-react';
+import { CheckCircle2, FileText, Layers, Loader2, Maximize2, RefreshCw, X, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { xragApi } from '../../services/xragApi';
 
@@ -32,7 +32,7 @@ const DocRow = ({ document, rank, compact = false }) => (
       <div className="flex items-center gap-1.5 shrink-0">
         {document.status === 'indexed' && <CheckCircle2 size={11} className="text-emerald-500" />}
         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500">
-          <Layers size={10} className="text-violet-400" />
+          <Layers size={10} className="text-amber-400" />
           {document.chunk_count || 0}
         </span>
         {!compact && (
@@ -42,7 +42,7 @@ const DocRow = ({ document, rank, compact = false }) => (
     </div>
     <div className="h-1 rounded-full bg-slate-200 overflow-hidden">
       <div
-        className="h-full rounded-full bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-500"
+        className="h-full rounded-full bg-gradient-to-r from-indigo-400 via-amber-400 to-yellow-500"
         style={{ width: `${Math.max(8, Math.min(100, Math.round((document.token_estimate || 50) / 20)))}%` }}
       />
     </div>
@@ -94,7 +94,7 @@ const PopularDocsRanking = ({ className = '' }) => {
         <header className="flex items-start justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Zap size={15} className="text-violet-500" />
+              <Zap size={15} className="text-amber-500" />
               <h3 className="text-sm font-black text-slate-800 tracking-tight">Most Content-Rich Documents</h3>
             </div>
             <p className="text-[11px] text-slate-500">Content ranking by tokens & chunk count</p>
@@ -143,7 +143,7 @@ const PopularDocsRanking = ({ className = '' }) => {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
           <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
             <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50">
-              <Zap size={18} className="text-violet-500 shrink-0" />
+              <Zap size={18} className="text-amber-500 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-black text-sm text-slate-800">Ă–sszes dokumentum â€” tartalomrangsor</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">{ranked.length} indexed documents, sorted by token and chunk count</p>

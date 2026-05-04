@@ -43,12 +43,12 @@ const PromptRow = ({ answer, isSelected, onSelect, onDelete }) => (
   <li
     data-doc-row="true"
     className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
-      isSelected ? 'bg-violet-50/60' : 'hover:bg-slate-50'
+      isSelected ? 'bg-amber-50/60' : 'hover:bg-slate-50'
     }`}
     onClick={() => onSelect(answer.id)}
   >
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-100 mt-0.5">
-      <MessageSquare size={14} className="text-violet-600" />
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 mt-0.5">
+      <MessageSquare size={14} className="text-amber-600" />
     </div>
 
     <div className="flex-1 min-w-0">
@@ -57,7 +57,7 @@ const PromptRow = ({ answer, isSelected, onSelect, onDelete }) => (
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-1.5">
         {answer.promptReference && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-100">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-100">
             <Link2 size={9} />
             {answer.promptReference}
           </span>
@@ -93,14 +93,14 @@ const PromptDetail = ({ answer }) => (
     className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-[280px] max-h-[70vh]"
   >
     {/* Header */}
-    <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-violet-50/80 to-indigo-50/50 shrink-0">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 shrink-0">
-        <Sparkles size={16} className="text-violet-600" />
+    <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-amber-50/80 to-indigo-50/50 shrink-0">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 shrink-0">
+        <Sparkles size={16} className="text-amber-600" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-black uppercase tracking-wider text-slate-700">AI Response</p>
         {answer.promptReference && (
-          <p className="text-[10px] text-violet-500 font-bold flex items-center gap-1 truncate mt-0.5">
+          <p className="text-[10px] text-amber-500 font-bold flex items-center gap-1 truncate mt-0.5">
             <Link2 size={9} /> {answer.promptReference}
           </p>
         )}
@@ -232,7 +232,7 @@ const SavedPromptsPanel = () => {
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-md">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-indigo-600 shadow-md">
             <BookMarked className="text-white" size={20} />
           </div>
           <div>
@@ -254,7 +254,7 @@ const SavedPromptsPanel = () => {
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total saved',    value: answers.length,      Icon: BookMarked,    tint: 'bg-violet-50 text-violet-600' },
+          { label: 'Total saved',    value: answers.length,      Icon: BookMarked,    tint: 'bg-amber-50 text-amber-600' },
           { label: 'This month',     value: totals.thisMonth,    Icon: CalendarDays,  tint: 'bg-indigo-50 text-indigo-600' },
           { label: 'With ref.',      value: totals.withRef,      Icon: Link2,         tint: 'bg-sky-50 text-sky-600' },
           { label: 'Total sources',  value: totals.sources,      Icon: BrainCircuit,  tint: 'bg-amber-50 text-amber-600' },
@@ -288,7 +288,7 @@ const SavedPromptsPanel = () => {
               <BookMarked size={14} className="text-slate-500" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-600">Saved prompts</h3>
               {answers.length > 0 && (
-                <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                   {answers.length}
                 </span>
               )}

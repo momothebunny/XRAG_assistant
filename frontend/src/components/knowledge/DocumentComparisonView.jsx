@@ -1,4 +1,4 @@
-﻿import {
+import {
   ArrowRightLeft,
   CalendarDays,
   FileText,
@@ -63,11 +63,11 @@ const CompareRow = ({ label, hint, aVal, bVal, format }) => {
         <span className="text-[10px] font-black text-blue-700 tabular-nums shrink-0 w-10 text-right">{fmt_(aVal)}</span>
       </div>
       <div className="flex items-center gap-1.5 min-w-0">
-        <span className="w-3.5 h-3.5 rounded-sm bg-violet-100 flex items-center justify-center text-[6px] font-black text-violet-600 shrink-0">B</span>
+        <span className="w-3.5 h-3.5 rounded-sm bg-amber-100 flex items-center justify-center text-[6px] font-black text-amber-600 shrink-0">B</span>
         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${bPct}%`, background: 'linear-gradient(90deg, #a78bfa, #c084fc)' }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${bPct}%`, background: 'linear-gradient(90deg, #fbbf24, #facc15)' }} />
         </div>
-        <span className="text-[10px] font-black text-violet-700 tabular-nums shrink-0 w-10 text-right">{fmt_(bVal)}</span>
+        <span className="text-[10px] font-black text-amber-700 tabular-nums shrink-0 w-10 text-right">{fmt_(bVal)}</span>
       </div>
     </div>
   );
@@ -91,11 +91,11 @@ const ScoreRow = ({ label, hint, scoreA, scoreB }) => {
         <span className="text-[10px] font-black text-blue-700 tabular-nums shrink-0 w-8 text-right">{pA}%</span>
       </div>
       <div className="flex items-center gap-1.5 min-w-0">
-        <span className="w-3.5 h-3.5 rounded-sm bg-violet-100 flex items-center justify-center text-[6px] font-black text-violet-600 shrink-0">B</span>
+        <span className="w-3.5 h-3.5 rounded-sm bg-amber-100 flex items-center justify-center text-[6px] font-black text-amber-600 shrink-0">B</span>
         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pB}%`, background: 'linear-gradient(90deg, #a78bfa, #c084fc)' }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pB}%`, background: 'linear-gradient(90deg, #fbbf24, #facc15)' }} />
         </div>
-        <span className="text-[10px] font-black text-violet-700 tabular-nums shrink-0 w-8 text-right">{pB}%</span>
+        <span className="text-[10px] font-black text-amber-700 tabular-nums shrink-0 w-8 text-right">{pB}%</span>
       </div>
     </div>
   );
@@ -109,7 +109,7 @@ const StatPair = ({ label, aVal, bVal }) => {
     );
     return side === 'a'
       ? <span className="text-[10px] font-black text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2.5 py-0.5 max-w-[10rem] truncate">{val}</span>
-      : <span className="text-[10px] font-black text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-2.5 py-0.5 max-w-[10rem] truncate">{val}</span>;
+      : <span className="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5 max-w-[10rem] truncate">{val}</span>;
   };
   return (
     <div className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-50 last:border-0">
@@ -339,13 +339,13 @@ const DocumentComparisonView = () => {
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-md bg-violet-500 flex items-center justify-center text-[9px] font-black text-white shadow-sm">B</span>
-            <label className="text-[10px] font-black uppercase tracking-wider text-violet-600">Document B</label>
+            <span className="w-5 h-5 rounded-md bg-amber-500 flex items-center justify-center text-[9px] font-black text-white shadow-sm">B</span>
+            <label className="text-[10px] font-black uppercase tracking-wider text-amber-600">Document B</label>
           </div>
           <select
             value={docB?.id ?? ''}
             onChange={(e) => setBId(e.target.value)}
-            className="w-full bg-white border-2 border-violet-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all shadow-sm"
+            className="w-full bg-white border-2 border-amber-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all shadow-sm"
           >
             {comparableDocs.map((d) => (<option key={d.id} value={d.id}>{d.name}</option>))}
           </select>
@@ -369,7 +369,7 @@ const DocumentComparisonView = () => {
             const circ = 2 * Math.PI * r;
             const dash = (pct / 100) * circ;
             return (
-              <div className="rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 p-5 text-white shadow-lg">
+              <div className="rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-amber-600 p-5 text-white shadow-lg">
                 <div className="flex items-center gap-5">
                   <div className="shrink-0 relative w-16 h-16 flex items-center justify-center">
                     <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
@@ -404,12 +404,12 @@ const DocumentComparisonView = () => {
             { label: 'Struct. similarity', value: `${Math.round(m.structSimilarity * 100)}%`, sub: 'cosine · volume vector', color: 'indigo', isNA: false },
             { label: 'Volume proximity',   value: `${Math.round(m.volumeProximity * 100)}%`,  sub: 'normalized metric distance',  color: 'indigo', isNA: false },
             { label: 'A freshness',        value: `${Math.round(m.aFreshness * 100)}%`,       sub: m.aUpdAge != null ? `updated ${m.aUpdAge}d ago` : '—', color: 'blue',   isNA: !docA.updated_at },
-            { label: 'B freshness',        value: `${Math.round(m.bFreshness * 100)}%`,       sub: m.bUpdAge != null ? `updated ${m.bUpdAge}d ago` : '—', color: 'violet', isNA: !docB.updated_at },
+            { label: 'B freshness',        value: `${Math.round(m.bFreshness * 100)}%`,       sub: m.bUpdAge != null ? `updated ${m.bUpdAge}d ago` : '—', color: 'amber', isNA: !docB.updated_at },
             ].map(({ label, value, sub, color, isNA }) => {
               const cfg = {
                 indigo: { card: 'bg-indigo-50/60 border-indigo-200', val: 'text-indigo-800', sub: 'text-indigo-400' },
                 blue:   { card: 'bg-blue-50 border-blue-200',        val: 'text-blue-800',   sub: 'text-blue-400' },
-                violet: { card: 'bg-violet-50 border-violet-200',    val: 'text-violet-800', sub: 'text-violet-400' },
+                violet: { card: 'bg-amber-50 border-amber-200',    val: 'text-amber-800', sub: 'text-amber-400' },
               }[color];
               return (
                 <div key={label} className={`rounded-2xl border-2 ${cfg.card} p-4 text-center shadow-sm`}>
@@ -427,7 +427,7 @@ const DocumentComparisonView = () => {
 
           {/* AI Content Summary */}
           <div className="rounded-2xl border border-indigo-200 overflow-hidden shadow-sm">
-            <div className="flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600">
+            <div className="flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-amber-600">
               <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center shrink-0">
                 <Sparkles size={11} className="text-white" />
               </div>
@@ -436,7 +436,7 @@ const DocumentComparisonView = () => {
                 <Loader2 size={12} className="ml-auto animate-spin text-white/70" />
               )}
             </div>
-            <div className="px-5 py-4 bg-gradient-to-br from-indigo-50/50 via-white to-violet-50/30 min-h-[64px] flex items-center">
+            <div className="px-5 py-4 bg-gradient-to-br from-indigo-50/50 via-white to-amber-50/30 min-h-[64px] flex items-center">
               {aiSummaryLoading ? (
                 <p className="text-xs italic text-slate-400">Generating AI summary…</p>
               ) : aiSummary ? (
@@ -522,7 +522,7 @@ const DocumentComparisonView = () => {
                 const DocCard = ({ doc, age, updAge, freshness, side }) => {
                   const isA = side === 'a';
                   const accent = isA ? { bg: 'bg-blue-50', border: 'border-blue-200', chip: 'bg-blue-500', label: 'text-blue-500', val: 'text-blue-800', bar: 'from-blue-400 to-indigo-400', letter: 'A' }
-                                     : { bg: 'bg-violet-50', border: 'border-violet-200', chip: 'bg-violet-500', label: 'text-violet-500', val: 'text-violet-800', bar: 'from-violet-400 to-purple-400', letter: 'B' };
+                                     : { bg: 'bg-amber-50', border: 'border-amber-200', chip: 'bg-amber-500', label: 'text-amber-500', val: 'text-amber-800', bar: 'from-amber-400 to-yellow-400', letter: 'B' };
                   const freshPct = Math.round(freshness * 100);
                   const rows = [
                     { lbl: 'Created', val: fmtAge(doc.created_at) },
@@ -633,9 +633,9 @@ const DocumentComparisonView = () => {
                   <span className="w-6 h-6 rounded-md bg-blue-500 flex items-center justify-center text-[9px] font-black text-white shrink-0">A</span>
                   <code className="text-[10px] font-mono text-blue-700 break-all leading-relaxed">{docA.content_hash || '—'}</code>
                 </div>
-                <div className="flex items-start gap-3 bg-violet-50 border border-violet-100 rounded-xl p-3">
-                  <span className="w-6 h-6 rounded-md bg-violet-500 flex items-center justify-center text-[9px] font-black text-white shrink-0">B</span>
-                  <code className="text-[10px] font-mono text-violet-700 break-all leading-relaxed">{docB.content_hash || '—'}</code>
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                  <span className="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center text-[9px] font-black text-white shrink-0">B</span>
+                  <code className="text-[10px] font-mono text-amber-700 break-all leading-relaxed">{docB.content_hash || '—'}</code>
                 </div>
                 {docA.content_hash && docB.content_hash && (
                   <div className={`text-xs font-black px-4 py-2.5 rounded-xl border ${docA.content_hash === docB.content_hash ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>

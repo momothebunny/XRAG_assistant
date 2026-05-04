@@ -64,11 +64,11 @@ const KnowledgeUploadProgress = ({ activeFile, progress, isFinishing, hasError, 
       ];
       const selectedDepth = depthConfigs[depthLayer];
       const purpleShades = [
-        'rgba(196,181,253,1)',
-        'rgba(167,139,250,1)',
-        'rgba(139,92,246,1)',
-        'rgba(124,58,237,1)',
-        'rgba(109,40,217,1)',
+        'rgba(252,211,77,1)',
+        'rgba(251,191,36,1)',
+        'rgba(245,158,11,1)',
+        'rgba(217,119,6,1)',
+        'rgba(180,83,9,1)',
       ];
       const greenShades = [
         'rgba(187,247,208,1)',

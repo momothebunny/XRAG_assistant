@@ -1,4 +1,4 @@
-﻿import { AlertCircle, AlertTriangle, BrainCircuit, CheckCircle2, ChevronDown, ChevronRight, Clock, Database, FileText, Files, Folder, FolderOpen, FolderUp, HardDrive, Layers, Loader2, RefreshCw, ShieldCheck, ShieldAlert, Sparkles, Trash2, Upload, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, BrainCircuit, CheckCircle2, ChevronDown, ChevronRight, Clock, Database, FileText, Files, Folder, FolderOpen, FolderUp, HardDrive, Layers, Loader2, RefreshCw, ShieldCheck, ShieldAlert, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { xragApi } from '../../services/xragApi';
 import { getCategoryColor } from '../../utils/categoryColor';
@@ -55,7 +55,7 @@ const renderDocumentRow = (document, ctx) => {
             <HardDrive size={10} />
             {formatBytes(document.size_bytes)}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-100">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-100">
             <Layers size={10} />
             {document.chunk_count} chunks
           </span>
@@ -100,7 +100,7 @@ const renderDocumentRow = (document, ctx) => {
         }}
         disabled={factCheckingId === document.id}
         title="Fact-check – currency check with LLM"
-        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:bg-violet-50 hover:text-violet-700 disabled:opacity-60"
+        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
       >
         {factCheckingId === document.id
           ? <Loader2 size={12} className="animate-spin" />
@@ -636,7 +636,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
     <section className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-amber-600 shadow-md">
             <Database className="text-white" size={20} />
           </div>
           <div>
@@ -679,7 +679,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
         {[
           { label: 'Documents', value: documents.length, Icon: Files, accent: 'from-indigo-500 to-indigo-600', tint: 'bg-indigo-50 text-indigo-600' },
           { label: 'Indexed', value: totals.indexed, Icon: CheckCircle2, accent: 'from-emerald-500 to-emerald-600', tint: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Total chunks', value: totals.chunks, Icon: Layers, accent: 'from-violet-500 to-violet-600', tint: 'bg-violet-50 text-violet-600' },
+          { label: 'Total chunks', value: totals.chunks, Icon: Layers, accent: 'from-amber-500 to-amber-600', tint: 'bg-amber-50 text-amber-600' },
           { label: 'Est. tokens', value: totals.tokens.toLocaleString('en-US'), Icon: BrainCircuit, accent: 'from-amber-500 to-amber-600', tint: 'bg-amber-50 text-amber-600' },
           { label: 'Total size', value: formatBytes(totals.bytes), Icon: HardDrive, accent: 'from-sky-500 to-sky-600', tint: 'bg-sky-50 text-sky-600' },
         ].map((stat) => {
@@ -792,7 +792,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                 <Files size={14} className="text-slate-500" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-600">Uploaded documents</h3>
                 {groupedDocuments.hasCategories && (
-                  <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                     {groupedDocuments.groups.length} folder(s)
                   </span>
                 )}
@@ -833,7 +833,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                         ? 'Classify new documents into existing folders; create new folders if needed'
                         : 'Builds up to 2-level folder structure from documents using LLM'
                     }
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-500 to-violet-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:from-indigo-600 hover:to-violet-700 disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-500 to-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:from-indigo-600 hover:to-amber-700 disabled:opacity-60"
                   >
                     {isClassifying ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                     {isClassifying
@@ -1051,7 +1051,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                           <div key={subKey}>
                             {hasSubName && (
                               <div
-                                className="flex w-full items-center gap-2 border-t border-slate-100 bg-white px-6 py-2 hover:bg-violet-50/40"
+                                className="flex w-full items-center gap-2 border-t border-slate-100 bg-white px-6 py-2 hover:bg-amber-50/40"
                               >
                                 <button
                                   type="button"
@@ -1063,7 +1063,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                                   ) : (
                                     <ChevronDown size={12} className="text-slate-400" />
                                   )}
-                                  <Folder size={12} className="text-violet-500" />
+                                  <Folder size={12} className="text-amber-500" />
                                   <span className="text-[11px] font-bold text-slate-600">{sub.name}</span>
                                 </button>
                                 <button
@@ -1086,7 +1086,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                                 >
                                   {isDeletingAll ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
                                 </button>
-                                <span className="rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">
+                                <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
                                   {sub.docs.length}
                                 </span>
                               </div>
@@ -1122,9 +1122,9 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
         {/* Detail / chunk preview */}
         {selectedDocumentId && (
         <div data-chunk-preview="true" className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-[280px] max-h-[70vh]">
-          <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-indigo-50/80 via-violet-50/60 to-transparent px-4 py-3">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-indigo-50/80 via-amber-50/60 to-transparent px-4 py-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-amber-600 text-white shadow-sm">
                 <Layers size={14} />
               </div>
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Chunk preview</h3>
@@ -1141,7 +1141,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
           {!selectedDocumentDetail ? (
             <div className="flex flex-col items-center gap-3 px-4 py-16 text-center text-xs text-slate-500">
               <div className="relative">
-                <div className="absolute inset-0 animate-pulse rounded-3xl bg-gradient-to-br from-indigo-100 to-violet-100 blur-xl opacity-60" />
+                <div className="absolute inset-0 animate-pulse rounded-3xl bg-gradient-to-br from-indigo-100 to-amber-100 blur-xl opacity-60" />
                 <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 text-slate-400 ring-1 ring-slate-200">
                   <FileText size={22} />
                 </div>
@@ -1171,7 +1171,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                     {formatBytes(selectedDocumentDetail.size_bytes || 0)}
                   </p>
                 </div>
-                <div className="rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 px-2.5 py-2">
+                <div className="rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-amber-50 px-2.5 py-2">
                   <p className="text-[9px] font-bold uppercase tracking-wider text-indigo-600">Chunks</p>
                   <p className="mt-0.5 text-sm font-black text-indigo-800">
                     {selectedDocumentDetail.chunk_count.toLocaleString()}
@@ -1190,7 +1190,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                     overlap <span className="text-indigo-600">{selectedDocumentDetail.chunking_config.overlap ?? '?'}</span>
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-700 ring-1 ring-slate-200">
-                    strategy <span className="text-violet-600">{selectedDocumentDetail.chunking_config.strategy ?? '?'}</span>
+                    strategy <span className="text-amber-600">{selectedDocumentDetail.chunking_config.strategy ?? '?'}</span>
                   </span>
                 </div>
               )}
@@ -1204,7 +1204,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                   >
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 px-1.5 text-[10px] font-black text-white shadow-sm">
+                        <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-amber-600 px-1.5 text-[10px] font-black text-white shadow-sm">
                           #{chunk.index}
                         </span>
                         <span className="truncate text-[10px] font-mono text-slate-400" title={chunk.id}>
@@ -1215,7 +1215,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                         <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-600">
                           {chunk.char_count} ch
                         </span>
-                        <span className="rounded-full bg-violet-50 px-1.5 py-0.5 text-[9px] font-bold text-violet-700">
+                        <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
                           ~{chunk.token_estimate} tok
                         </span>
                       </div>
@@ -1309,10 +1309,10 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                     </div>
                     {/* suggestion */}
                     <div className="flex gap-2 items-start">
-                      <span className="mt-0.5 shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 uppercase tracking-wide">
+                      <span className="mt-0.5 shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 uppercase tracking-wide">
                         Suggestion
                       </span>
-                      <p className="text-xs text-violet-800">{issue.suggestion}</p>
+                      <p className="text-xs text-amber-800">{issue.suggestion}</p>
                     </div>
                   </div>
                 ))}

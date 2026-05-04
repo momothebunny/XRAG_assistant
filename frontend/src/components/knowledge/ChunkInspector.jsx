@@ -91,7 +91,7 @@ const ChunkInspector = ({ document }) => {
 
   return (
     <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden w-full">
-      <header className="px-5 py-4 md:px-6 md:py-5 border-b border-slate-100 bg-gradient-to-r from-indigo-50/80 to-violet-50/60">
+      <header className="px-5 py-4 md:px-6 md:py-5 border-b border-slate-100 bg-gradient-to-r from-indigo-50/80 to-amber-50/60">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Interactive Chunk Inspector</p>
