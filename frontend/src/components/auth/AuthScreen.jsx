@@ -191,7 +191,10 @@ const RegisterModal = ({ initialStep, initialEmail, onClose, onAuthSuccess }) =>
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
-  const [devCode, setDevCode] = useState(null);
+  // NOTE: when SMTP isn't configured / dev mode is on, the backend still
+  // returns the verification code in the response body — but we no longer
+  // surface it in the UI. Developers can read it from the Network tab,
+  // from `fly logs --app aurelia-backend`, or from the JSON store.
 
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
@@ -225,7 +228,6 @@ const RegisterModal = ({ initialStep, initialEmail, onClose, onAuthSuccess }) =>
       });
       setStep('verify');
       setInfo(res.message);
-      if (res.verification_code) setDevCode(res.verification_code);
     } catch (err) {
       setError(err.message || 'Registration failed.');
     } finally {
@@ -256,7 +258,6 @@ const RegisterModal = ({ initialStep, initialEmail, onClose, onAuthSuccess }) =>
     try {
       const res = await xragApi.authResendCode(email.trim());
       setInfo(res.message);
-      if (res.verification_code) setDevCode(res.verification_code);
     } catch (err) {
       setError(err.message || 'Could not send a new code.');
     } finally {
@@ -327,19 +328,6 @@ const RegisterModal = ({ initialStep, initialEmail, onClose, onAuthSuccess }) =>
             <div className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[12px] font-semibold text-emerald-200">
               <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
               <span>{info}</span>
-            </div>
-          )}
-          {devCode && step === 'verify' && (
-            <div className="mb-4 rounded-xl border border-dashed border-amber-400/40 bg-amber-400/5 px-3 py-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300/80">
-                Verification code (dev preview)
-              </p>
-              <p className="mt-1 font-mono text-lg font-black tracking-[0.4em] text-amber-200">
-                {devCode}
-              </p>
-              <p className="mt-1 text-[10px] text-amber-300/60">
-                Shown because SMTP is not configured.
-              </p>
             </div>
           )}
 

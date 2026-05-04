@@ -555,6 +555,14 @@ def register(payload: RegisterRequest) -> RegisterResponse:
     code = secrets.token_hex(_VERIFICATION_CODE_BYTES).upper()
     store.set_verification(user["email"], code)
     delivered = _send_verification_email(user["email"], code)
+    if not delivered or _is_dev_mode():
+        # Surface the code to operators via the server log so it's
+        # discoverable through `fly logs` / docker logs / journalctl
+        # without having to crack open users.json.
+        logger.warning(
+            "[auth] verification code for %s = %s (delivered=%s, dev=%s)",
+            user["email"], code, delivered, _is_dev_mode(),
+        )
     return RegisterResponse(
         user=store.to_public(user),
         verification_required=True,
@@ -562,7 +570,7 @@ def register(payload: RegisterRequest) -> RegisterResponse:
         message=(
             "Account created. Please check your email for the verification code."
             if delivered
-            else "Account created. SMTP is not configured — the verification code is shown below (dev only)."
+            else "Account created. Please ask an administrator for your verification code."
         ),
     )
 
@@ -578,11 +586,16 @@ def resend_code(payload: ResendCodeRequest) -> RegisterResponse:
     code = secrets.token_hex(_VERIFICATION_CODE_BYTES).upper()
     store.set_verification(user["email"], code)
     delivered = _send_verification_email(user["email"], code)
+    if not delivered or _is_dev_mode():
+        logger.warning(
+            "[auth] resend code for %s = %s (delivered=%s, dev=%s)",
+            user["email"], code, delivered, _is_dev_mode(),
+        )
     return RegisterResponse(
         user=store.to_public(user),
         verification_required=True,
         verification_code=code if (_is_dev_mode() or not delivered) else None,
-        message="A new verification code has been sent." if delivered else "New code generated (SMTP not configured).",
+        message="A new verification code has been sent." if delivered else "A new code was generated. Please ask an administrator for it.",
     )
 
 
