@@ -57,7 +57,6 @@ import UrlScraperSettingsPanel from '../canvas/UrlScraperSettingsPanel';
 import QueryRewriterSettingsPanel from '../canvas/QueryRewriterSettingsPanel';
 import HybridMergeSettingsPanel from '../canvas/HybridMergeSettingsPanel';
 import ContextCompressionSettingsPanel from '../canvas/ContextCompressionSettingsPanel';
-import PIIRedactionSettingsPanel from '../canvas/PIIRedactionSettingsPanel';
 import HallucinationGuardSettingsPanel from '../canvas/HallucinationGuardSettingsPanel';
 import ReflectionLoopSettingsPanel from '../canvas/ReflectionLoopSettingsPanel';
 import KVSessionStoreSettingsPanel from '../canvas/KVSessionStoreSettingsPanel';
@@ -3616,7 +3615,7 @@ const CanvasBoard = () => {
   const isQueryRewriterNode = selectedNode?.data?.templateKey === 'process-query-rewriter';
   const isHybridMergeNode = selectedNode?.data?.templateKey === 'process-hybrid-merge';
   const isContextCompressionNode = selectedNode?.data?.templateKey === 'process-context-compression';
-  const isPIIRedactionNode = selectedNode?.data?.templateKey === 'process-pii-redaction';
+  const isPiiRedactionNode = selectedNode?.data?.templateKey === 'process-pii-redaction';
   const isHallucinationGuardNode = selectedNode?.data?.templateKey === 'process-hallucination-guard';
   const isReflectionLoopNode = selectedNode?.data?.templateKey === 'process-reflection-loop';
   const isKVStoreNode = selectedNode?.data?.templateKey === 'storage-keyvalue';
@@ -3625,7 +3624,6 @@ const CanvasBoard = () => {
   const isTTSNode = selectedNode?.data?.templateKey === 'brain-tts';
   const isModelRouterNode = selectedNode?.data?.templateKey === 'brain-router';
   const isGuardrailsNode = selectedNode?.data?.templateKey === 'brain-guardrails';
-  const isPiiRedactionNode = selectedNode?.data?.templateKey === 'process-pii-redaction';
   const isChatTesterNode = selectedNode?.data?.templateKey === 'output-chat';
   const isImageUploadNode = selectedNode?.data?.templateKey === 'input-image';
   const isVisionLLMNode = selectedNode?.data?.templateKey === 'brain-vision';
@@ -5455,8 +5453,6 @@ const CanvasBoard = () => {
                 <HybridMergeSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
               ) : isContextCompressionNode ? (
                 <ContextCompressionSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isPIIRedactionNode ? (
-                <PIIRedactionSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
               ) : isHallucinationGuardNode ? (
                 <HallucinationGuardSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
               ) : isReflectionLoopNode ? (
