@@ -5574,24 +5574,6 @@ const CanvasBoard = () => {
               <p className="text-[11px] text-slate-400 text-center py-1">No run executed yet.</p>
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setNodes(initialNodes);
-              setEdges(initialEdges);
-              setSelectedNodeId(initialNodes[0]?.id || null);
-              setSelectedNodeIds(initialNodes[0]?.id ? [initialNodes[0].id] : []);
-              setTestAnswer('');
-              setRunTrace([]);
-              setRunError('');
-              setRunDurationMs(null);
-              setActiveBackendFlowId(null);
-            }}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
-          >
-            <Plus size={14} /> Reset Default Pipeline
-          </button>
         </aside>
       </div>
 
