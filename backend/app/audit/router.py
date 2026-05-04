@@ -5,12 +5,15 @@ from __future__ import annotations
 import difflib
 import hashlib
 import logging
+import os
 import random
 import re
 import string
+import threading
 import urllib.parse
 import urllib.request
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from time import time
 from uuid import uuid4
 
@@ -22,6 +25,7 @@ from ..canvas.runner import CanvasFlowRunner, CanvasFlowError
 from ..canvas.store import CanvasFlowStore
 from .benchmark_store import BenchmarkStore
 from .models import (
+    MAX_BENCHMARK_ENTRIES,
     MAX_QUESTIONS_PER_SESSION,
     AuditFlowEntry,
     AuditQuestion,
@@ -49,6 +53,7 @@ from .store import AuditStore
 from .validation import (
     RagValidationScores,
     evaluate as rag_evaluate,
+    extract_retrieved_chunks,
     extract_retrieved_contexts,
 )
 
@@ -168,10 +173,15 @@ def ask_question(session_id: str, body: AskQuestionRequest, request_obj: Request
         try:
             exec_req = FlowExecutionRequest(question=body.question, inputs={})
             result = runner.run(exec_req, flow)
+            chunks = extract_retrieved_chunks(result.final_outputs or {})
             responses.append(BlindResponse(
                 blind_label=entry.blind_label,
                 answer=result.answer or "(no answer)",
                 duration_ms=result.duration_ms,
+                retrieved_contexts=[
+                    {**c, "index": i + 1, "text": (c.get("text") or "")[:1500]}
+                    for i, c in enumerate(chunks[:12])
+                ],
             ))
         except CanvasFlowError as exc:
             responses.append(BlindResponse(
@@ -396,10 +406,19 @@ def _build_benchmark_report(run_data: dict) -> BenchmarkReport:
         run_id=run_data["id"],
         run_name=run_data["name"],
         dataset_name=run_data["dataset_name"],
-        question_count=len({r.question_index for r in results}),
+        question_count=(
+            len({r.question_index for r in results})
+            or int((run_data.get("progress") or {}).get("total_questions") or 0)
+        ),
         flow_summaries=summaries,
         results=results,
         status=run_data["status"],
+        progress=run_data.get("progress") or {},
+        judge_model=run_data.get("judge_model", ""),
+        judge_mode=run_data.get("judge_mode", ""),
+        error_message=run_data.get("error_message"),
+        created_at=run_data.get("created_at", 0) or 0,
+        finished_at=run_data.get("finished_at"),
     )
 
 
@@ -463,12 +482,18 @@ def list_benchmark_runs(request_obj: Request):
             name=r["name"],
             dataset_name=r["dataset_name"],
             flow_count=len(r.get("flow_ids", [])),
-            question_count=len({
-                res["question_index"]
-                for res in r.get("results", [])
-            }),
+            question_count=(
+                r.get("_question_count_cached")
+                or len({
+                    res["question_index"]
+                    for res in r.get("results", [])
+                })
+                or int((r.get("progress") or {}).get("total_questions") or 0)
+            ),
             status=r["status"],
             created_at=r["created_at"],
+            progress=r.get("progress") or {},
+            finished_at=r.get("finished_at"),
         )
         for r in store.list_runs()
     ]
@@ -497,9 +522,9 @@ def run_benchmark(
     dataset_id: str, body: StartBenchmarkRunRequest, request_obj: Request
 ):
     """
-    Run a benchmark dataset against the selected flows and return the report.
-    This is a synchronous endpoint — it blocks until all questions are
-    answered by all flows.
+    Kick off a benchmark run in a background thread and return immediately
+    with status='running'. The frontend polls ``GET /benchmark-runs/{id}``
+    every ~1.5s and watches ``progress`` to render live activity.
     """
     bm_store: BenchmarkStore = _get_benchmark_store(request_obj)
     canvas_store: CanvasFlowStore = _get_canvas_store(request_obj)
@@ -513,7 +538,6 @@ def run_benchmark(
     if len(body.flow_ids) < 2:
         raise HTTPException(400, "At least 2 flows are required.")
 
-    # Validate flows
     flow_names: dict[str, str] = {}
     flow_objects: dict[str, object] = {}
     for fid in body.flow_ids:
@@ -524,84 +548,218 @@ def run_benchmark(
         flow_objects[fid] = flow
 
     run_id = f"bmr-{uuid4().hex[:10]}"
-    results: list[BenchmarkQuestionResult] = []
+    total_cells = len(dataset.entries) * len(body.flow_ids)
+    started_at_ms = int(time() * 1000)
 
-    for q_idx, entry in enumerate(dataset.entries):
-        for fid in body.flow_ids:
-            flow = flow_objects[fid]
-            t0 = time()
-            answer = ""
-            error = None
-            retrieved_contexts: list[str] = []
-            try:
-                exec_req = FlowExecutionRequest(question=entry.question, inputs={})
-                result = runner.run(exec_req, flow)
-                answer = result.answer or ""
-                duration_ms = int((time() - t0) * 1000)
-                # Pull the retrieved evidence from EVERY node bag — this is
-                # what makes the validator architecture-agnostic (works the
-                # same for Naive RAG, Self-RAG, GraphRAG, HyDE, Agentic, …).
-                retrieved_contexts = extract_retrieved_contexts(result.final_outputs or {})
-            except (CanvasFlowError, Exception) as exc:  # noqa: BLE001
-                answer = f"[Error: {exc}]"
-                duration_ms = int((time() - t0) * 1000)
-                error = str(exc)
-
-            exact, char_sim, tok_f1 = _compute_metrics(answer, entry.expected_answer)
-
-            # ── RAGAS + RAGChecker validation (architecture-agnostic).
-            if body.enable_rag_validation and not error:
-                rag_scores: RagValidationScores = rag_evaluate(
-                    question=entry.question,
-                    answer=answer,
-                    contexts=retrieved_contexts,
-                    ground_truth=entry.expected_answer,
-                    use_llm_judge=body.use_llm_judge,
-                )
-            else:
-                rag_scores = RagValidationScores()
-
-            results.append(BenchmarkQuestionResult(
-                question_index=q_idx,
-                question=entry.question,
-                expected_answer=entry.expected_answer,
-                flow_id=fid,
-                flow_name=flow_names[fid],
-                answer=answer,
-                duration_ms=duration_ms,
-                exact_match=exact,
-                char_similarity=char_sim,
-                token_f1=tok_f1,
-                faithfulness=rag_scores.faithfulness,
-                answer_relevancy=rag_scores.answer_relevancy,
-                context_precision=rag_scores.context_precision,
-                context_recall=rag_scores.context_recall,
-                answer_similarity=rag_scores.answer_similarity,
-                answer_correctness=rag_scores.answer_correctness,
-                claim_recall=rag_scores.claim_recall,
-                claim_precision=rag_scores.claim_precision,
-                hallucination_rate=rag_scores.hallucination_rate,
-                context_utilization=rag_scores.context_utilization,
-                overall_score=rag_scores.overall_score,
-                judge_mode=rag_scores.judge_mode,
-                retrieved_context_count=len(retrieved_contexts),
-                error=error,
-            ))
-
-    run = BenchmarkRun(
+    initial_run = BenchmarkRun(
         id=run_id,
         name=body.name,
         dataset_id=dataset_id,
         dataset_name=dataset.name,
-        flow_ids=body.flow_ids,
+        flow_ids=list(body.flow_ids),
         flow_names=flow_names,
-        status="finished",
-        results=results,
-        created_at=int(time() * 1000),
-        finished_at=int(time() * 1000),
+        status="running",
+        results=[],
+        created_at=started_at_ms,
+        finished_at=None,
+        progress={
+            "stage": "starting",
+            "current": 0,
+            "total": total_cells,
+            "total_questions": len(dataset.entries),
+            "total_flows": len(body.flow_ids),
+            "current_question_index": 0,
+            "current_question": dataset.entries[0].question if dataset.entries else "",
+            "current_flow_name": "",
+            "started_at": started_at_ms,
+            "last_step_at": started_at_ms,
+        },
+        judge_model=(body.judge_model or "").strip(),
+        judge_mode="",
     )
-    bm_store.save_run(run)
-    return _build_benchmark_report(run.model_dump())
+    bm_store.save_run(initial_run)
+
+    # Spawn worker thread. We do NOT touch `request_obj` inside the thread.
+    thread = threading.Thread(
+        target=_run_benchmark_worker,
+        args=(bm_store, runner, dataset, flow_objects, flow_names, body, initial_run),
+        name=f"benchmark-{run_id}",
+        daemon=True,
+    )
+    thread.start()
+
+    # Return the freshly-created (still empty) run so the UI can switch to
+    # the report view and start polling for live progress.
+    return _build_benchmark_report(initial_run.model_dump())
+
+
+def _run_benchmark_worker(
+    bm_store: BenchmarkStore,
+    runner: CanvasFlowRunner,
+    dataset: BenchmarkDataset,
+    flow_objects: dict[str, object],
+    flow_names: dict[str, str],
+    body: StartBenchmarkRunRequest,
+    run: BenchmarkRun,
+) -> None:
+    """Background executor — writes ``progress`` after every cell so the
+    polling UI can render live activity."""
+    log = logging.getLogger(__name__)
+    results: list[BenchmarkQuestionResult] = list(run.results)
+    total_cells = (run.progress or {}).get("total", len(dataset.entries) * len(body.flow_ids))
+    started_at_ms = (run.progress or {}).get("started_at", int(time() * 1000))
+    flow_ids = list(body.flow_ids)
+
+    def _persist(stage: str, idx: int, q_idx: int, fid: str | None, extra: dict | None = None) -> None:
+        prog = {
+            "stage": stage,
+            "current": idx,
+            "total": total_cells,
+            "total_questions": len(dataset.entries),
+            "total_flows": len(flow_ids),
+            "current_question_index": q_idx,
+            "current_question": dataset.entries[q_idx].question if 0 <= q_idx < len(dataset.entries) else "",
+            "current_flow_id": fid or "",
+            "current_flow_name": flow_names.get(fid, "") if fid else "",
+            "started_at": started_at_ms,
+            "last_step_at": int(time() * 1000),
+        }
+        if extra:
+            prog.update(extra)
+        run.progress = prog
+        run.results = results
+        bm_store.save_run(run)
+
+    try:
+        cell_idx = 0
+        # Per-cell wall-clock cap. Without this an Agentic flow that hangs
+        # in a long LLM call (or third-party API stall) blocks the entire
+        # benchmark forever. Configurable via ``XRAG_BENCHMARK_CELL_TIMEOUT``
+        # seconds — default 180s, which comfortably covers reasoning flows
+        # while still failing fast on a stuck request.
+        try:
+            cell_timeout_s = float(os.environ.get("XRAG_BENCHMARK_CELL_TIMEOUT", "180"))
+        except ValueError:
+            cell_timeout_s = 180.0
+        cell_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"bm-{run.id}-cell")
+        for q_idx, entry in enumerate(dataset.entries):
+            for fid in flow_ids:
+                _persist("executing", cell_idx, q_idx, fid)
+                flow = flow_objects[fid]
+                t0 = time()
+                answer = ""
+                error = None
+                retrieved_contexts: list[str] = []
+                retrieved_chunks: list[dict] = []
+                exec_req = FlowExecutionRequest(question=entry.question, inputs={})
+                future = cell_pool.submit(runner.run, exec_req, flow)
+                try:
+                    result = future.result(timeout=cell_timeout_s)
+                    answer = result.answer or ""
+                    duration_ms = int((time() - t0) * 1000)
+                    retrieved_chunks = extract_retrieved_chunks(result.final_outputs or {})
+                    retrieved_contexts = [c.get("text", "") for c in retrieved_chunks if c.get("text")]
+                except FutureTimeout:
+                    duration_ms = int((time() - t0) * 1000)
+                    error = f"Cell timed out after {int(cell_timeout_s)}s"
+                    answer = f"[Error: {error}]"
+                    log.warning(
+                        "Benchmark %s cell q=%d flow=%s timed out after %.0fs — moving on.",
+                        run.id, q_idx, fid, cell_timeout_s,
+                    )
+                    # We deliberately do NOT cancel the future — runner.run
+                    # is synchronous and may hold non-thread-safe resources.
+                    # The orphan thread will terminate when its LLM call
+                    # eventually returns; we rotate the executor below so a
+                    # stuck thread can't starve subsequent cells.
+                    cell_pool.shutdown(wait=False, cancel_futures=True)
+                    cell_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"bm-{run.id}-cell")
+                except (CanvasFlowError, Exception) as exc:  # noqa: BLE001
+                    answer = f"[Error: {exc}]"
+                    duration_ms = int((time() - t0) * 1000)
+                    error = str(exc)
+
+                exact, char_sim, tok_f1 = _compute_metrics(answer, entry.expected_answer)
+
+                if body.enable_rag_validation and not error:
+                    _persist("scoring", cell_idx, q_idx, fid)
+                    rag_scores: RagValidationScores = rag_evaluate(
+                        question=entry.question,
+                        answer=answer,
+                        contexts=retrieved_contexts,
+                        ground_truth=entry.expected_answer,
+                        use_llm_judge=body.use_llm_judge,
+                    )
+                    if not run.judge_mode and rag_scores.judge_mode:
+                        run.judge_mode = rag_scores.judge_mode
+                else:
+                    rag_scores = RagValidationScores()
+
+                results.append(BenchmarkQuestionResult(
+                    question_index=q_idx,
+                    question=entry.question,
+                    expected_answer=entry.expected_answer,
+                    flow_id=fid,
+                    flow_name=flow_names[fid],
+                    answer=answer,
+                    duration_ms=duration_ms,
+                    exact_match=exact,
+                    char_similarity=char_sim,
+                    token_f1=tok_f1,
+                    faithfulness=rag_scores.faithfulness,
+                    answer_relevancy=rag_scores.answer_relevancy,
+                    context_precision=rag_scores.context_precision,
+                    context_recall=rag_scores.context_recall,
+                    answer_similarity=rag_scores.answer_similarity,
+                    answer_correctness=rag_scores.answer_correctness,
+                    claim_recall=rag_scores.claim_recall,
+                    claim_precision=rag_scores.claim_precision,
+                    hallucination_rate=rag_scores.hallucination_rate,
+                    context_utilization=rag_scores.context_utilization,
+                    overall_score=rag_scores.overall_score,
+                    judge_mode=rag_scores.judge_mode,
+                    retrieved_context_count=len(retrieved_contexts),
+                    # Cap to first 12 chunks and 1500 chars each so the
+                    # persisted run JSON stays manageable while still
+                    # giving the UI enough material to render every
+                    # [n] citation popover.
+                    retrieved_contexts=[
+                        {**c, "index": i + 1, "text": (c.get("text") or "")[:1500]}
+                        for i, c in enumerate(retrieved_chunks[:12])
+                    ],
+                    error=error,
+                ))
+                cell_idx += 1
+                _persist("executing", cell_idx, q_idx, fid)
+
+        run.status = "finished"
+        run.finished_at = int(time() * 1000)
+        run.results = results
+        run.progress = {
+            **(run.progress or {}),
+            "stage": "finished",
+            "current": total_cells,
+            "total": total_cells,
+            "last_step_at": int(time() * 1000),
+        }
+        bm_store.save_run(run)
+        cell_pool.shutdown(wait=False, cancel_futures=True)
+    except Exception as exc:  # noqa: BLE001
+        log.exception("Benchmark run %s failed: %s", run.id, exc)
+        run.status = "error"
+        run.finished_at = int(time() * 1000)
+        run.error_message = str(exc)
+        run.results = results
+        run.progress = {
+            **(run.progress or {}),
+            "stage": "error",
+            "last_step_at": int(time() * 1000),
+        }
+        try:
+            cell_pool.shutdown(wait=False, cancel_futures=True)
+        except Exception:  # noqa: BLE001
+            pass
+        bm_store.save_run(run)
 
 
 @router.get("/benchmark-runs/{run_id}", response_model=BenchmarkReport)
@@ -1152,9 +1310,27 @@ def import_hf_benchmark(body: ImportHFRequest, request_obj: Request):
     document_count = 0
     if body.upload_documents:
         slug = _slugify(body.dataset.replace("/", "-")) or "hf"
+        # Guarantee the import produces *something* retrievable so RAG flows
+        # have a corpus to search against. When the dataset's ``context_field``
+        # was missing/empty for every row (common with QA-only HF datasets
+        # like ``LLukas22/fiqa`` that ship the corpus in a sibling subset),
+        # we fall back to synthesising a single "answer key" document that
+        # bundles every (question → gold answer) pair as paragraphs. This
+        # keeps benchmark scoring meaningful instead of returning 0 docs.
+        items = list(contexts_by_title.items())
+        if not items:
+            fallback_lines = [
+                f"Q: {e.question}\nA: {e.expected_answer}".strip()
+                for e in entries
+                if (e.question or e.expected_answer)
+            ]
+            if fallback_lines:
+                fallback_body = "\n\n".join(fallback_lines)
+                fallback_title = f"{slug}-answer-key"
+                items = [(fallback_title, fallback_body)]
         document_count = _provision_hf_documents(
             request_obj,
-            list(contexts_by_title.items()),
+            items,
             body.max_documents,
             category=body.document_category or "hf-import",
             name_prefix=slug,
@@ -1169,4 +1345,196 @@ def import_hf_benchmark(body: ImportHFRequest, request_obj: Request):
         skipped_duplicates=skipped_duplicates,
         resolved_config=config,
         resolved_split=body.split,
+    )
+
+
+# ── LLM-driven test-set generation (Ragas-style) ──────────────────────────
+# Mirrors the Ragas `TestsetGenerator` UX: take the user's already-uploaded
+# knowledge-base documents, pick representative chunks, and ask a strong LLM
+# to write a (question, gold answer) pair grounded in each chunk. The result
+# is saved as a regular ``BenchmarkDataset`` so it plugs straight into the
+# existing benchmark/audit pipeline.
+class GenerateTestsetRequest(BaseModel):
+    name: str
+    description: str = ""
+    document_ids: list[str] = Field(default_factory=list)  # empty = all docs
+    num_questions: int = Field(default=10, ge=1, le=MAX_BENCHMARK_ENTRIES)
+    model: str = "openai/gpt-4o-mini"
+    # Difficulty hint surfaced in the prompt so the LLM tailors the questions.
+    # "factual" = single-hop extractive; "reasoning" = multi-step / synthesis.
+    style: str = "factual"
+
+
+class GenerateTestsetResponse(BaseModel):
+    dataset_id: str
+    dataset_name: str
+    question_count: int
+    skipped_chunks: int
+    documents_used: int
+
+
+def _generate_qa_for_chunk(
+    *, context_text: str, source_label: str, model: str, style: str
+) -> dict[str, str] | None:
+    """Ask the LLM for one ``{question, expected_answer}`` pair from one chunk.
+
+    Returns None when the model output cannot be parsed or is empty. The
+    caller treats this as a skipped chunk and keeps going - we never fail
+    the whole request just because one chunk produced bad JSON.
+    """
+    from ..canvas.nodes import _call_openrouter_chat  # local import to avoid cycles
+
+    if style == "reasoning":
+        style_hint = (
+            "Generate a multi-hop reasoning or synthesis question whose answer "
+            "requires combining several facts from the passage."
+        )
+    else:
+        style_hint = (
+            "Generate a precise factual question whose answer is directly "
+            "supported by the passage."
+        )
+
+    sys_text = (
+        "You are a meticulous benchmark-author. Given one passage, produce ONE "
+        "high-quality test question and a concise gold answer that is fully "
+        "supported by the passage. The answer MUST be derivable solely from "
+        "the passage - never inject outside knowledge."
+    )
+    user_text = (
+        f"Source: {source_label}\n\n"
+        f"Passage:\n{context_text[:4000]}\n\n"
+        f"{style_hint}\n\n"
+        "Return ONLY valid JSON in this exact shape:\n"
+        '{"question": "...", "answer": "..."}'
+    )
+    try:
+        raw = _call_openrouter_chat(
+            [
+                {"role": "system", "content": sys_text},
+                {"role": "user", "content": user_text},
+            ],
+            model=model,
+            temperature=0.4,
+            max_tokens=400,
+            response_format="json_object",
+        ).strip()
+    except RuntimeError:
+        return None
+
+    import json as _json
+    text = raw
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.S)
+    try:
+        payload = _json.loads(text)
+    except (ValueError, _json.JSONDecodeError):
+        return None
+    question = str(payload.get("question") or "").strip()
+    answer = str(payload.get("answer") or "").strip()
+    if not question or not answer:
+        return None
+    return {"question": question, "expected_answer": answer}
+
+
+@router.post(
+    "/benchmarks/generate-testset",
+    response_model=GenerateTestsetResponse,
+    status_code=201,
+)
+def generate_testset(body: GenerateTestsetRequest, request_obj: Request):
+    """Generate a SQuAD-format test-set from the user's knowledge-base docs.
+
+    Inspired by Ragas' :class:`TestsetGenerator`: pick representative chunks
+    from the selected (or all) uploaded documents, call a strong LLM to
+    produce ``(question, gold_answer)`` pairs grounded in each chunk, and
+    save the result as a regular benchmark dataset.
+    """
+    bm_store: BenchmarkStore = _get_benchmark_store(request_obj)
+    knowledge_store = getattr(request_obj.app.state, "knowledge_store", None)
+    if knowledge_store is None:
+        raise HTTPException(503, "Knowledge store not configured.")
+
+    # Resolve which documents to draw from - empty list = use everything.
+    summaries = knowledge_store.list_documents()
+    if body.document_ids:
+        wanted = set(body.document_ids)
+        summaries = [s for s in summaries if s.id in wanted]
+    if not summaries:
+        raise HTTPException(
+            422,
+            "No knowledge documents available. Upload PDFs/text via the "
+            "Knowledge tab first, then come back here to generate a test-set.",
+        )
+
+    # Collect a flat (chunk_text, source_label) pool from every selected doc.
+    pool: list[tuple[str, str]] = []
+    documents_used = 0
+    for summary in summaries:
+        document = knowledge_store.get_document(summary.id)
+        if not document or not document.chunks:
+            continue
+        documents_used += 1
+        for chunk in document.chunks:
+            text = (chunk.text or "").strip()
+            if len(text) < 200:  # too short to base a question on
+                continue
+            pool.append((text, document.name or summary.id))
+
+    if not pool:
+        raise HTTPException(
+            422,
+            "No usable chunks found in the selected documents - try uploading "
+            "longer documents or selecting more of them.",
+        )
+
+    # Sample uniformly across the pool so a single huge document does not
+    # dominate the test-set. Over-sample slightly to absorb LLM failures.
+    rng = random.Random(int(time() * 1000))
+    rng.shuffle(pool)
+    target = body.num_questions
+    candidates = pool[: max(target * 2, target + 4)]
+
+    entries: list[BenchmarkEntry] = []
+    skipped = 0
+    for chunk_text, source_label in candidates:
+        if len(entries) >= target:
+            break
+        qa = _generate_qa_for_chunk(
+            context_text=chunk_text,
+            source_label=source_label,
+            model=body.model,
+            style=body.style,
+        )
+        if qa is None:
+            skipped += 1
+            continue
+        entries.append(BenchmarkEntry(**qa))
+
+    if not entries:
+        raise HTTPException(
+            502,
+            "The LLM did not return any valid (question, answer) pairs. "
+            "Check that OPENROUTER_API_KEY is set and the model id is valid.",
+        )
+
+    dataset = BenchmarkDataset(
+        id=f"bmd-{uuid4().hex[:10]}",
+        name=body.name or "Generated test-set",
+        description=(
+            body.description
+            or f"Auto-generated from {documents_used} knowledge document(s) "
+            f"using {body.model} ({body.style})."
+        ),
+        entries=entries,
+        created_at=int(time() * 1000),
+    )
+    bm_store.save_dataset(dataset)
+
+    return GenerateTestsetResponse(
+        dataset_id=dataset.id,
+        dataset_name=dataset.name,
+        question_count=len(entries),
+        skipped_chunks=skipped,
+        documents_used=documents_used,
     )

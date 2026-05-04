@@ -56,6 +56,38 @@
         ],
         "winner_label": null,
         "winner_flow_id": null
+      },
+      {
+        "question_index": 1,
+        "question": "In what country is Normandy located?",
+        "responses": [
+          {
+            "blind_label": "Flow A",
+            "answer": "Normandy is located in France. The name 'Normandy' comes from the Normans, who were Norse raiders that settled in the region during the 10th and 11th centuries [1].",
+            "duration_ms": 8627,
+            "error": null
+          },
+          {
+            "blind_label": "Flow B",
+            "answer": "Normandy is located in France [1].",
+            "duration_ms": 952,
+            "error": null
+          },
+          {
+            "blind_label": "Flow C",
+            "answer": "Normandy is a region in France [1][2].",
+            "duration_ms": 6805,
+            "error": null
+          },
+          {
+            "blind_label": "Flow D",
+            "answer": "The evidence needed to answer this question has not been provided. However, based on general knowledge, Normandy is located in France.",
+            "duration_ms": 952,
+            "error": null
+          }
+        ],
+        "winner_label": null,
+        "winner_flow_id": null
       }
     ],
     "status": "running",

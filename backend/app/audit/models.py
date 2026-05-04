@@ -26,6 +26,9 @@ class BlindResponse(BaseModel):
     answer: str
     duration_ms: int
     error: str | None = None
+    # Same per-question evidence the benchmark view ships, so the blind
+    # arena can also render clickable [n] citations on each card.
+    retrieved_contexts: list[dict] = Field(default_factory=list)
 
 
 class AuditQuestion(BaseModel):
@@ -178,6 +181,10 @@ class BenchmarkQuestionResult(BaseModel):
     overall_score: float = 0.0         # composite (mean of positive metrics)
     judge_mode: str = "lexical"        # "llm" | "lexical"
     retrieved_context_count: int = 0   # # chunks captured from the flow
+    # First N chunks (in order) the flow used as evidence — surfaced to the
+    # UI so the audit view can resolve clickable [1]…[N] citations back to
+    # the underlying passage. Capped server-side to keep payloads small.
+    retrieved_contexts: list[dict] = Field(default_factory=list)
 
     error: str | None = None
 
@@ -189,11 +196,18 @@ class BenchmarkRun(BaseModel):
     dataset_name: str
     flow_ids: list[str]
     flow_names: dict[str, str]          # flow_id → flow_name
-    status: str                         # "running" | "finished" | "error"
+    status: str                         # "pending" | "running" | "finished" | "error"
     results: list[BenchmarkQuestionResult] = Field(default_factory=list)
     error_message: str | None = None
     created_at: int
     finished_at: int | None = None
+    # Background-execution progress. ``current`` / ``total`` count
+    # individual (flow, question) cells; ``started_at`` is wall-clock ms.
+    progress: dict = Field(default_factory=dict)
+    # Effective LLM judge model + mode actually used for the run —
+    # surfaced so the UI can show what graded the answers.
+    judge_model: str = ""
+    judge_mode: str = ""  # "llm" | "lexical" | "" (not yet started)
 
 
 class BenchmarkRunSummary(BaseModel):
@@ -204,6 +218,8 @@ class BenchmarkRunSummary(BaseModel):
     question_count: int
     status: str
     created_at: int
+    progress: dict = Field(default_factory=dict)
+    finished_at: int | None = None
 
 
 class FlowBenchmarkSummary(BaseModel):
@@ -236,6 +252,12 @@ class BenchmarkReport(BaseModel):
     flow_summaries: list[FlowBenchmarkSummary]
     results: list[BenchmarkQuestionResult]
     status: str
+    progress: dict = Field(default_factory=dict)
+    judge_model: str = ""
+    judge_mode: str = ""
+    error_message: str | None = None
+    created_at: int = 0
+    finished_at: int | None = None
 
 
 class StartBenchmarkRunRequest(BaseModel):
@@ -247,3 +269,8 @@ class StartBenchmarkRunRequest(BaseModel):
     # fallback. Set to False to skip RAG validation entirely.
     enable_rag_validation: bool = True
     use_llm_judge: bool = True
+    # Optional override for the OpenRouter model used by the LLM judge.
+    # When empty falls back to the ``XRAG_JUDGE_MODEL`` env var (default
+    # ``openai/gpt-4o-mini``). Operators can pin a stronger model here
+    # for high-stakes audits without touching server config.
+    judge_model: str = ""

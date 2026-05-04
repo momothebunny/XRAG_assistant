@@ -50,7 +50,23 @@ MAX_CHUNKS_FOR_JUDGE = 8
 
 
 def _judge_available() -> bool:
-    return bool(os.environ.get("OPENROUTER_API_KEY", "").strip())
+    """LLM judge is available if any OpenRouter key is reachable.
+
+    Checks the env first (fast path) and falls back to the multi-key
+    store, so a freshly imported key from the Settings panel enables the
+    judge without requiring a server restart.
+    """
+    if os.environ.get("OPENROUTER_API_KEY", "").strip():
+        return True
+    try:
+        from ..api_keys import get_store as _get_api_key_store
+
+        store = _get_api_key_store()
+        if store is not None and store.keys_for_env("OPENROUTER_API_KEY"):
+            return True
+    except Exception:  # noqa: BLE001 — defensive
+        return False
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -121,8 +137,18 @@ def extract_retrieved_contexts(node_outputs: dict[str, dict[str, Any]]) -> list[
     Naive RAG, Self-RAG, GraphRAG, HyDE, Agentic, ... all funnel their
     retrieved evidence through chunk-shaped outputs.
     """
+    return [item["text"] for item in extract_retrieved_chunks(node_outputs)]
+
+
+def extract_retrieved_chunks(node_outputs: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Same as :func:`extract_retrieved_contexts` but keeps title/score metadata.
+
+    Returns a deduplicated list of ``{"title", "text", "score", "source"}``
+    dicts in the same order the flow produced them. Used by the audit UI
+    to render clickable [n] citations that reveal the underlying chunk.
+    """
     seen: set[str] = set()
-    out: list[str] = []
+    out: list[dict[str, Any]] = []
     for bag in node_outputs.values():
         if not isinstance(bag, dict):
             continue
@@ -132,6 +158,9 @@ def extract_retrieved_contexts(node_outputs: dict[str, dict[str, Any]]) -> list[
                 continue
             for item in value:
                 text = ""
+                title = ""
+                source = ""
+                score: float | None = None
                 if isinstance(item, str):
                     text = item
                 elif isinstance(item, dict):
@@ -142,6 +171,22 @@ def extract_retrieved_contexts(node_outputs: dict[str, dict[str, Any]]) -> list[
                         or item.get("passage")
                         or ""
                     )
+                    title = str(
+                        item.get("title")
+                        or item.get("document_title")
+                        or item.get("doc_title")
+                        or item.get("id")
+                        or ""
+                    )
+                    source = str(
+                        item.get("source")
+                        or item.get("document_id")
+                        or item.get("doc_id")
+                        or ""
+                    )
+                    raw_score = item.get("score") or item.get("similarity")
+                    if isinstance(raw_score, (int, float)):
+                        score = float(raw_score)
                 text = (text or "").strip()
                 if not text:
                     continue
@@ -149,7 +194,12 @@ def extract_retrieved_contexts(node_outputs: dict[str, dict[str, Any]]) -> list[
                 if fp in seen:
                     continue
                 seen.add(fp)
-                out.append(text)
+                out.append({
+                    "title": title,
+                    "text": text,
+                    "source": source,
+                    "score": score,
+                })
     return out
 
 
@@ -311,9 +361,11 @@ def _llm_judge(
     answer: str,
     contexts: list[str],
     ground_truth: str,
+    judge_model: str | None = None,
 ) -> dict[str, Any] | None:
     """One-shot LLM judge call. Returns ``None`` on any error so the caller
     can transparently fall back to the lexical scorer."""
+    model = (judge_model or "").strip() or JUDGE_MODEL
     try:
         raw = _call_openrouter_chat(
             messages=[
@@ -328,7 +380,7 @@ def _llm_judge(
                     ),
                 },
             ],
-            model=JUDGE_MODEL,
+            model=model,
             temperature=0.0,
             max_tokens=900,
             response_format="json",
@@ -472,6 +524,7 @@ def evaluate(
     contexts: list[str],
     ground_truth: str,
     use_llm_judge: bool = True,
+    judge_model: str | None = None,
 ) -> RagValidationScores:
     """Run the full RAGAS + RAGChecker suite on one sample.
 
@@ -497,6 +550,7 @@ def evaluate(
             answer=answer,
             contexts=trimmed_contexts,
             ground_truth=ground_truth,
+            judge_model=judge_model,
         )
         if data is not None:
             scores = RagValidationScores(
@@ -528,4 +582,6 @@ __all__ = [
     "RagValidationScores",
     "evaluate",
     "extract_retrieved_contexts",
+    "extract_retrieved_chunks",
+    "JUDGE_MODEL",
 ]

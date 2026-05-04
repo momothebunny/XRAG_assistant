@@ -41,13 +41,30 @@ def _call_openrouter_chat(
     response_format: str | None = None,
     timeout: float = 90.0,
 ) -> str:
-    """Synchronous OpenRouter chat completion.
+    """Synchronous OpenRouter chat completion with automatic key rotation.
 
-    Raises RuntimeError on any failure (caller decides whether to fall back).
-    Returns the assistant message content as a plain string.
+    The active ``OPENROUTER_API_KEY`` is tried first; on auth/credit
+    rejections (HTTP 401/402/403) we transparently fall back to other
+    OpenRouter keys stored via the API-key panel and promote the first
+    one that succeeds. Raises RuntimeError when every candidate fails.
     """
-    api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
-    if not api_key:
+    from ..api_keys import get_store as _get_api_key_store
+
+    # Build the candidate list: env var first (active key mirror), then any
+    # additional stored OpenRouter keys for rotation.
+    candidates: list[str] = []
+    env_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    if env_key:
+        candidates.append(env_key)
+
+    api_store = _get_api_key_store()
+    if api_store is not None:
+        for stored in api_store.keys_for_env("OPENROUTER_API_KEY"):
+            stored = (stored or "").strip()
+            if stored and stored not in candidates:
+                candidates.append(stored)
+
+    if not candidates:
         raise RuntimeError("OPENROUTER_API_KEY not set on the server.")
 
     body: dict[str, Any] = {
@@ -60,28 +77,53 @@ def _call_openrouter_chat(
     if response_format == "json" or response_format == "json_object":
         body["response_format"] = {"type": "json_object"}
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": os.environ.get("OPENROUTER_REFERER", "http://localhost:5173"),
-        "X-Title": os.environ.get("OPENROUTER_TITLE", "XRAG Assistant"),
-    }
-    try:
-        with httpx.Client(timeout=timeout) as client:
-            resp = client.post(
-                f"{OPENROUTER_BASE_URL}/chat/completions", headers=headers, json=body
+    last_error: str = ""
+    for index, api_key in enumerate(candidates):
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": os.environ.get("OPENROUTER_REFERER", "http://localhost:5173"),
+            "X-Title": os.environ.get("OPENROUTER_TITLE", "XRAG Assistant"),
+        }
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                resp = client.post(
+                    f"{OPENROUTER_BASE_URL}/chat/completions", headers=headers, json=body
+                )
+        except httpx.HTTPError as exc:
+            last_error = f"OpenRouter unreachable: {exc}"
+            continue
+
+        if resp.status_code in (401, 402, 403):
+            # Auth / credit / forbidden — try the next stored key.
+            last_error = (
+                f"OpenRouter rejected key #{index + 1} ({resp.status_code}): "
+                f"{resp.text[:160]}"
             )
-    except httpx.HTTPError as exc:
-        raise RuntimeError(f"OpenRouter unreachable: {exc}") from exc
-    if resp.status_code != 200:
-        raise RuntimeError(
-            f"OpenRouter chat failed ({resp.status_code}): {resp.text[:300]}"
-        )
-    payload = resp.json()
-    try:
-        return payload["choices"][0]["message"]["content"] or ""
-    except (KeyError, IndexError, TypeError) as exc:
-        raise RuntimeError(f"Unexpected OpenRouter payload: {exc}") from exc
+            continue
+
+        if resp.status_code != 200:
+            # Non-auth error (rate limit, server error, bad request…) — surface it.
+            raise RuntimeError(
+                f"OpenRouter chat failed ({resp.status_code}): {resp.text[:300]}"
+            )
+
+        # Success: promote the working key so subsequent calls start from it.
+        if api_store is not None and index > 0:
+            try:
+                api_store.promote_key("OPENROUTER_API_KEY", api_key)
+            except Exception:  # noqa: BLE001 — promotion is best-effort
+                pass
+
+        payload = resp.json()
+        try:
+            return payload["choices"][0]["message"]["content"] or ""
+        except (KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError(f"Unexpected OpenRouter payload: {exc}") from exc
+
+    raise RuntimeError(
+        f"All OpenRouter API keys failed. Last error: {last_error or 'unknown'}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -270,16 +312,197 @@ def _collect_chunks(inputs: dict[str, Any]) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 
+# Tool catalogue mirrored from the frontend UserSettingsPanel. Keep in sync.
+_USER_TOOL_CATALOGUE: set[str] = {
+    "retrieve",
+    "rerank",
+    "cite",
+    "tools_exec",
+    "raw_chunks",
+    "index_admin",
+}
+
+# Roles that may hold elevated tools (e.g. mutate the index).
+_USER_PRIVILEGED_ROLES: set[str] = {"admin", "service"}
+
+
 def _exec_user(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
-    return {"actor": node.config.get("persona", "enterprise-user")}
+    """User node — establishes the *actor* of the conversation.
+
+    Emits a typed ``user_context`` payload that downstream nodes
+    (Guardrails / Router / LLM) read to make RBAC, tenancy and tool-gating
+    decisions. Also publishes the resolved context onto
+    ``context.scratch['user_context']`` so any node can read it without
+    requiring a direct edge from the User node.
+
+    The executor is intentionally non-side-effecting: rate-limiting and auth
+    enforcement happen at the FastAPI gateway layer. This node only exposes
+    the *intent* declared in the canvas, plus a couple of validation
+    warnings so misconfigurations surface in the run trace.
+    """
+    cfg = node.config or {}
+
+    # ----- Identity ------------------------------------------------------
+    role = str(cfg.get("role") or "user").strip().lower() or "user"
+    display_name = (cfg.get("displayName") or "").strip()
+    tenant_id = (cfg.get("tenantId") or "").strip() or None
+    user_id = (cfg.get("userId") or "").strip() or None
+    require_auth = bool(cfg.get("requireAuth", True))
+
+    # ----- Access control ------------------------------------------------
+    raw_tools = cfg.get("allowedTools")
+    if isinstance(raw_tools, list):
+        allowed_tools: list[str] = []
+        seen: set[str] = set()
+        for item in raw_tools:
+            value = str(item).strip().lower()
+            if not value or value in seen:
+                continue
+            if value not in _USER_TOOL_CATALOGUE:
+                # Skip silently — keep forward compatibility for new tools.
+                continue
+            seen.add(value)
+            allowed_tools.append(value)
+    else:
+        allowed_tools = []
+
+    try:
+        rate_limit_rpm = max(0, int(cfg.get("rateLimitRpm", 60)))
+    except (TypeError, ValueError):
+        rate_limit_rpm = 60
+
+    # ----- Validation warnings ------------------------------------------
+    warnings: list[str] = []
+    if role == "guest" and require_auth:
+        warnings.append("Guest role declared with require_auth=true.")
+    if "index_admin" in allowed_tools and role not in _USER_PRIVILEGED_ROLES:
+        warnings.append("Tool 'index_admin' should only be granted to admin/service roles.")
+    if not allowed_tools:
+        warnings.append("No tools allowed — downstream nodes have nothing to call.")
+    if rate_limit_rpm == 0 and role not in _USER_PRIVILEGED_ROLES:
+        warnings.append("Unlimited rate (rpm=0) is only safe for admin/service roles.")
+
+    actor_id = user_id or (f"anonymous@{tenant_id}" if tenant_id else "anonymous")
+
+    user_context = {
+        "actor": actor_id,
+        "preset": cfg.get("preset") or "custom",
+        "identity": {
+            "display_name": display_name or None,
+            "role": role,
+            "tenant_id": tenant_id,
+            "user_id": user_id,
+            "require_auth": require_auth,
+        },
+        "access": {
+            "allowed_tools": allowed_tools,
+            "rate_limit_rpm": rate_limit_rpm,
+        },
+        "warnings": warnings,
+    }
+
+    # Publish to shared scratch so nodes without a direct edge can still
+    # read who is asking (used by Router / Guardrails / LLM).
+    context.scratch["user_context"] = user_context
+    context.scratch["allowed_tools"] = list(allowed_tools)
+
+    return {
+        "step_type": "user_context",
+        "actor": actor_id,
+        "user_context": user_context,
+        "metadata": user_context,
+    }
 
 
 def _exec_question(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
-    text = context.question or _first_text(inputs, context)
-    max_length = int(node.config.get("maxLength", 4000))
-    text = (text or "")[:max_length]
+    """Question node — the *query-input contract* of the pipeline.
+
+    Mirrors the frontend QuestionSettingsPanel:
+        1. Resolve the raw query text (from RunContext or upstream input).
+        2. Apply pre-processing flags (trim, collapse, NFC, strip emoji,
+           casefold).
+        3. Validate against length bounds + blocklist regex.
+        4. Publish on ``context.scratch`` for downstream nodes.
+
+    The executor is non-fatal: validation failures are surfaced as
+    ``warnings`` in the returned payload and on the run trace, but the
+    (possibly trimmed) query is still emitted so dependent nodes can choose
+    how strictly to honour it.
+    """
+    import re
+    import unicodedata
+
+    cfg = node.config or {}
+    text = context.question or _first_text(inputs, context) or ""
+
+    # ----- Pre-processing (order matters) -------------------------------
+    if cfg.get("normalizeUnicode", True):
+        text = unicodedata.normalize("NFC", text)
+    if cfg.get("stripEmoji", False):
+        # Drop characters in the Symbol-Other / Symbol-Math categories that
+        # cover most emoji ranges (cheap, no external dependency).
+        text = "".join(
+            ch for ch in text
+            if unicodedata.category(ch) not in {"So", "Sk", "Cn"}
+        )
+    if cfg.get("collapseWhitespace", True):
+        text = re.sub(r"\s+", " ", text)
+    if cfg.get("trimWhitespace", True):
+        text = text.strip()
+    if cfg.get("caseFold", False):
+        text = text.casefold()
+
+    # ----- Length clamp --------------------------------------------------
+    try:
+        max_length = max(1, int(cfg.get("maxLength", 4000)))
+    except (TypeError, ValueError):
+        max_length = 4000
+    try:
+        min_length = max(0, int(cfg.get("minLength", 0)))
+    except (TypeError, ValueError):
+        min_length = 0
+    if len(text) > max_length:
+        text = text[:max_length]
+
+    # ----- Validation ----------------------------------------------------
+    warnings: list[str] = []
+    required = bool(cfg.get("required", True))
+    if required and not text:
+        warnings.append("Empty query rejected by Question.required=true.")
+    if min_length and len(text) < min_length:
+        warnings.append(f"Query shorter than min_length={min_length}.")
+
+    blocklist_pattern = cfg.get("blocklistRegex") or ""
+    blocked = False
+    if blocklist_pattern:
+        try:
+            if re.search(blocklist_pattern, text):
+                blocked = True
+                warnings.append("Query matched blocklist regex — flagged for Guardrails.")
+        except re.error as exc:
+            warnings.append(f"Invalid blocklist regex compiled at runtime: {exc}")
+
+    language = cfg.get("language", "auto")
+    history_turns = max(0, int(cfg.get("historyTurns", 0) or 0)) if cfg.get("appendHistory", False) else 0
+
+    # ----- Publish to shared scratch ------------------------------------
     context.scratch["query"] = text
-    return {"text": text, "query": text, "language": node.config.get("language", "auto")}
+    context.scratch["query_input"] = {
+        "text": text,
+        "language": language,
+        "blocked": blocked,
+        "history_turns": history_turns,
+    }
+
+    return {
+        "step_type": "query_input",
+        "text": text,
+        "query": text,
+        "language": language,
+        "history_turns": history_turns,
+        "blocked": blocked,
+        "warnings": warnings,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1050,33 +1273,264 @@ def _exec_pii(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> 
     return {"chunks": redacted, "pii_redacted": True}
 
 
+# ---- Grounding helpers ----------------------------------------------------
+
+# Common English/Hungarian stop-words excluded from token-overlap scoring so
+# that filler words like "the/and/of" don't artificially inflate (or deflate)
+# the grounding ratio. Kept inline to avoid adding NLTK as a dependency.
+_GROUNDING_STOPWORDS = frozenset({
+    # English
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has",
+    "have", "in", "is", "it", "its", "of", "on", "or", "that", "the", "to",
+    "was", "were", "will", "with", "this", "these", "those", "they", "them",
+    "their", "there", "which", "who", "whom", "what", "when", "where", "why",
+    "how", "but", "not", "no", "if", "then", "than", "so", "such", "also",
+    "into", "about", "over", "under", "between", "during", "after", "before",
+    # Hungarian (top function words)
+    "a", "az", "egy", "és", "vagy", "de", "hogy", "mert", "ha", "is", "nem",
+    "van", "volt", "lesz", "csak", "még", "már", "már", "ezt", "azt", "ez",
+    "az", "ezek", "azok", "ki", "mi", "mit", "miért", "hol", "mikor",
+})
+
+
+# Matches literal placeholder citations like [n], [N], [i], [x], [k] that
+# weaker LLMs emit when they don't substitute the bracket index. We strip
+# them rather than rendering them \u2014 they're never useful to the user and
+# they break the click-to-popover citation chip.
+_PLACEHOLDER_CITATION_RE = re.compile(r"\[\s*[a-zA-Z]\s*\]")
+
+
+def _sanitize_citations(text: str) -> str:
+    """Remove literal `[n]` / `[i]` placeholders the LLM forgot to substitute.
+
+    Real numeric citations like ``[1]``, ``[2]`` are preserved untouched so
+    the front-end's :class:`AnswerWithCitations` chip renderer keeps working.
+    Trailing whitespace and double-spaces left behind by the strip are
+    collapsed so the final answer reads cleanly.
+    """
+    if not text or "[" not in text:
+        return text or ""
+    cleaned = _PLACEHOLDER_CITATION_RE.sub("", text)
+    # Collapse double-spaces / spaces before punctuation introduced by the strip.
+    cleaned = re.sub(r" {2,}", " ", cleaned)
+    cleaned = re.sub(r" ([.,;:!?])", r"\1", cleaned)
+    return cleaned.strip()
+
+
+def _grounding_score(answer: str, chunks: list[dict[str, Any]]) -> tuple[float, list[str]]:
+    """Return (score, unsupported_terms) for an answer against retrieval chunks.
+
+    Score = fraction of *content* tokens in the answer that appear at least
+    once in the concatenated chunk text. Citations like [1], URLs, numbers
+    and stop-words are ignored. With no chunks we can't judge — score 1.0.
+    """
+    if not chunks:
+        return 1.0, []
+
+    cleaned_answer = re.sub(r"\[\d+\]", " ", answer or "")  # strip citation tags
+    answer_tokens = [
+        tok for tok in re.findall(r"[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű][\w\-]+", cleaned_answer.lower())
+        if tok not in _GROUNDING_STOPWORDS and len(tok) > 2
+    ]
+    if not answer_tokens:
+        return 1.0, []
+
+    grounded_vocab: set[str] = set()
+    for chunk in chunks:
+        text = (chunk.get("text") or "").lower()
+        grounded_vocab.update(
+            tok for tok in re.findall(r"[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű][\w\-]+", text)
+            if tok not in _GROUNDING_STOPWORDS and len(tok) > 2
+        )
+
+    matched = [tok for tok in answer_tokens if tok in grounded_vocab]
+    score = len(matched) / max(1, len(answer_tokens))
+
+    # Surface up to 8 most prominent unsupported terms (deduped, preserving order).
+    unsupported_seen: set[str] = set()
+    unsupported: list[str] = []
+    for tok in answer_tokens:
+        if tok not in grounded_vocab and tok not in unsupported_seen:
+            unsupported.append(tok)
+            unsupported_seen.add(tok)
+            if len(unsupported) >= 8:
+                break
+
+    return score, unsupported
+
+
 def _exec_hallucination_guard(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
+    """Score the answer against the retrieved evidence.
+
+    The guard never mutates the answer text — it surfaces a structured
+    ``passed`` / ``grounding_score`` / ``unsupported_terms`` payload so
+    downstream nodes (Reflection Loop, Output Response) can decide what to
+    do. This keeps the user-visible answer clean even when the score is
+    below the threshold.
+    """
     min_score = float(node.config.get("minGroundingScore", 0.75))
     answer = _first_text(inputs, context)
-    chunks = _collect_chunks(inputs) or context.scratch.get("evidence", [])
-    grounded_terms = set()
-    for chunk in chunks:
-        grounded_terms.update(re.findall(r"\w+", chunk.get("text", "").lower()))
-    answer_terms = set(re.findall(r"\w+", answer.lower()))
-    if not answer_terms:
-        score = 1.0
-    else:
-        score = len(answer_terms & grounded_terms) / len(answer_terms)
+    chunks = _collect_chunks(inputs) or context.scratch.get("evidence", []) or []
+
+    score, unsupported = _grounding_score(answer, chunks)
     passed = score >= min_score or not chunks
+
+    # Persist for the Reflection Loop and the LLM scratch so a later revision
+    # pass can target the unsupported terms specifically.
+    context.scratch["grounding_score"] = round(score, 3)
+    context.scratch["grounding_passed"] = passed
+    context.scratch["grounding_unsupported"] = unsupported
+    context.scratch["answer"] = answer  # always keep the clean answer in scratch
+
     return {
-        "answer": answer if passed else f"[grounding {score:.2f} < {min_score:.2f}] {answer}",
+        "answer": answer,
+        "text": answer,
+        "chunks": chunks,
         "grounding_score": round(score, 3),
+        "min_score": min_score,
         "passed": passed,
+        "unsupported_terms": unsupported,
+        "guard_status": "ok" if passed else "weakly_grounded",
     }
 
 
 def _exec_reflection(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
-    max_iters = int(node.config.get("maxReflections", 2))
+    """Critique-and-revise loop driven by an actual LLM call.
+
+    For each iteration the model is asked to (1) identify factual gaps or
+    unsupported claims against the retrieved evidence and (2) emit a
+    revised answer. The loop stops early when the critique reports no
+    issues or when grounding stops improving. If no API key is available,
+    the input answer is returned unchanged — never with synthetic
+    ``[reflected#N]`` markers.
+    """
+    max_iters = max(1, int(node.config.get("maxReflections", 2)))
+    critique_prompt = str(node.config.get("critiquePrompt", "")).strip()
+    model = str(node.config.get("model", "openai/gpt-4o-mini"))
+    temperature = float(node.config.get("temperature", 0.1))
+    max_tokens = int(node.config.get("maxTokens", 1024))
+
     answer = _first_text(inputs, context)
-    revised = answer
-    for index in range(max_iters):
-        revised = f"{revised} [reflected#{index + 1}]"
-    return {"answer": revised, "iterations": max_iters}
+    chunks = _collect_chunks(inputs) or context.scratch.get("evidence", []) or []
+    question = context.scratch.get("query") or context.question or ""
+
+    iterations_run = 0
+    critiques: list[str] = []
+    revised = (answer or "").strip()
+    last_score, _ = _grounding_score(revised, chunks)
+    initial_score = last_score
+    improved = False
+    used_llm = False
+    error: str | None = None
+
+    has_api_key = bool(os.environ.get("OPENROUTER_API_KEY"))
+    can_call_llm = has_api_key and bool(revised) and bool(question)
+
+    if can_call_llm:
+        # Build a compact evidence block once — the model sees the same
+        # context the upstream LLM had so it can correct unsupported claims.
+        evidence_lines: list[str] = []
+        for idx, chunk in enumerate(chunks[:6], start=1):
+            title = chunk.get("title") or chunk.get("id") or f"chunk-{idx}"
+            text = (chunk.get("text") or "").strip()
+            if len(text) > 1200:
+                text = text[:1200] + "…"
+            evidence_lines.append(f"[{idx}] {title}\n{text}")
+        evidence_block = "\n\n".join(evidence_lines) or "(no evidence available)"
+
+        guidance = critique_prompt or (
+            "Identify any factual claims in the draft that are not supported by "
+            "the evidence, missing citations, or unclear phrasing."
+        )
+
+        for index in range(max_iters):
+            score_now, unsupported = _grounding_score(revised, chunks)
+            unsupported_hint = (
+                f"Unsupported terms detected: {', '.join(unsupported)}.\n"
+                if unsupported else ""
+            )
+            sys_text = (
+                "You are a meticulous fact-checking reviser for a RAG system. "
+                "Critique the draft answer, then output an improved version. "
+                "Always ground every claim in the supplied evidence and cite "
+                "sources inline as [n]. If the evidence does not support a "
+                "claim, remove it. Reply STRICTLY as JSON with keys "
+                "`critique` (string, may be empty if the draft is already "
+                "correct) and `answer` (the revised answer). Do not add any "
+                "prose outside the JSON object."
+            )
+            user_text = (
+                f"Question:\n{question}\n\n"
+                f"Evidence:\n{evidence_block}\n\n"
+                f"Draft answer (iteration {index + 1}):\n{revised}\n\n"
+                f"Reviewer guidance: {guidance}\n"
+                f"{unsupported_hint}"
+                "Return JSON now."
+            )
+            try:
+                raw = _call_openrouter_chat(
+                    [
+                        {"role": "system", "content": sys_text},
+                        {"role": "user", "content": user_text},
+                    ],
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format="json_object",
+                ).strip()
+            except RuntimeError as exc:
+                error = str(exc).splitlines()[0]
+                break
+
+            used_llm = True
+            iterations_run += 1
+
+            # Parse JSON robustly — strip code fences if present.
+            payload_text = raw
+            if payload_text.startswith("```"):
+                payload_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", payload_text, flags=re.S)
+            try:
+                payload = json.loads(payload_text)
+            except (json.JSONDecodeError, ValueError):
+                # Last-resort: treat the whole reply as the new answer.
+                payload = {"critique": "", "answer": payload_text}
+
+            critique_text = str(payload.get("critique") or "").strip()
+            new_answer = str(payload.get("answer") or "").strip() or revised
+            new_answer = _sanitize_citations(new_answer)
+            critiques.append(critique_text)
+
+            new_score, _ = _grounding_score(new_answer, chunks)
+
+            # Accept the revision when grounding doesn't regress.
+            if new_score + 1e-6 >= last_score:
+                if new_answer != revised:
+                    improved = True
+                revised = new_answer
+                last_score = new_score
+
+            # Early stop: model reports nothing to fix and grounding is solid.
+            if not critique_text and last_score >= 0.85:
+                break
+    elif not has_api_key:
+        error = "OPENROUTER_API_KEY not set — reflection skipped, draft returned unchanged."
+
+    # Persist the cleaned, possibly improved answer.
+    context.scratch["answer"] = revised
+
+    return {
+        "answer": revised,
+        "text": revised,
+        "chunks": chunks,
+        "iterations": iterations_run,
+        "max_iterations": max_iters,
+        "critiques": critiques,
+        "improved": improved,
+        "initial_grounding_score": round(initial_score, 3),
+        "grounding_score": round(last_score, 3),
+        "used_llm": used_llm,
+        "warnings": [error] if error else [],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1328,7 +1782,10 @@ def _exec_llm(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> 
     evidence = "\n".join(evidence_lines)
 
     citation_hint = (
-        " Cite each fact as [n] referencing the evidence list."
+        " Cite supporting facts inline using bracketed numbers like [1], [2], [3] "
+        "that match the evidence list above. Use the actual number, never the "
+        "literal placeholder text 'n'. Every factual sentence must end with at "
+        "least one citation."
         if citation_mode and chunks
         else ""
     )
@@ -1346,7 +1803,14 @@ def _exec_llm(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> 
             "Be concise and accurate."
         )
         if citation_mode and chunks:
-            sys_text += " Cite supporting facts inline as [n] referencing the evidence list."
+            sys_text += (
+                " Cite supporting facts inline using bracketed evidence numbers "
+                "like [1], [2], [3] that match the numbered evidence list. "
+                "Always use the actual number — never write the literal letter "
+                "'n' inside the brackets. Every factual claim should end with at "
+                "least one citation. If you cannot ground a claim in the evidence, "
+                "say so explicitly instead of fabricating."
+            )
 
         # Use longer evidence snippets for the actual LLM (preview above is
         # capped at 200 chars only to keep the trace readable).
@@ -1376,6 +1840,7 @@ def _exec_llm(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> 
                 top_p=top_p,
                 response_format="json_object" if response_format == "json" else None,
             ).strip()
+            answer = _sanitize_citations(answer)
             used_llm = True
         except RuntimeError as exc:
             # Compact, single-line reason so the placeholder below stays clean
@@ -1666,8 +2131,55 @@ def _exec_vision(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) 
 
 
 _REGISTRATIONS: list[NodeSpec] = [
-    NodeSpec("user-actor", "Interaction", "User", "End-user actor", [], ["actor"], {"persona": "enterprise-user"}, _exec_user),
-    NodeSpec("input-question", "Interaction", "Question", "User query input", ["text"], ["text", "query"], {"language": "auto", "maxLength": 4000}, _exec_question),
+    NodeSpec(
+        "user-actor",
+        "Interaction",
+        "User",
+        "Actor of the conversation — identity, RBAC, allowed tools, rate limit.",
+        [],
+        ["user_context"],
+        {
+            "preset": "standard",
+            "displayName": "",
+            "role": "user",
+            "tenantId": "acme-corp",
+            "userId": "",
+            "requireAuth": True,
+            "allowedTools": ["retrieve", "rerank", "cite"],
+            "rateLimitRpm": 60,
+        },
+        _exec_user,
+    ),
+    NodeSpec(
+        "input-question",
+        "Interaction",
+        "Question",
+        "Query-input contract — shape, validation, pre-processing, multi-turn.",
+        ["text"],
+        ["text", "query", "query_input"],
+        {
+            "mode": "free_text",
+            "language": "auto",
+            "placeholder": "Ask your question…",
+            "sampleQuery": "",
+            "multipleChoiceOptions": "",
+            "minLength": 3,
+            "maxLength": 4000,
+            "required": True,
+            "blocklistRegex": "",
+            "trimWhitespace": True,
+            "collapseWhitespace": True,
+            "normalizeUnicode": True,
+            "stripEmoji": False,
+            "caseFold": False,
+            "spellCheck": False,
+            "appendHistory": True,
+            "historyTurns": 4,
+            "voiceInput": False,
+            "enableSttFallback": False,
+        },
+        _exec_question,
+    ),
     NodeSpec(
         "input-upload",
         "Input",
@@ -1776,8 +2288,32 @@ _REGISTRATIONS: list[NodeSpec] = [
     NodeSpec("process-hybrid-merge", "Process", "Hybrid Merge", "BM25 + vector blend", ["chunks"], ["chunks"], {"bm25Weight": 0.4, "vectorWeight": 0.6}, _exec_hybrid_merge),
     NodeSpec("process-context-compression", "Process", "Context Compression", "Compact context", ["chunks"], ["chunks"], {"maxTokens": 2200, "keepCitations": True}, _exec_compression),
     NodeSpec("process-pii-redaction", "Process", "PII Redaction", "Mask sensitive fields", ["chunks"], ["chunks"], {"redactEmails": True, "redactPhones": True, "redactIds": True}, _exec_pii),
-    NodeSpec("process-hallucination-guard", "Process", "Hallucination Guard", "Validate grounding", ["text", "chunks"], ["answer"], {"minGroundingScore": 0.75}, _exec_hallucination_guard),
-    NodeSpec("process-reflection-loop", "Process", "Reflection Loop", "Critique + revise", ["text"], ["answer"], {"maxReflections": 2}, _exec_reflection),
+    NodeSpec(
+        "process-hallucination-guard",
+        "Process",
+        "Hallucination Guard",
+        "Score answer grounding against retrieved evidence (non-destructive)",
+        ["text", "chunks"],
+        ["answer", "chunks"],
+        {"minGroundingScore": 0.75},
+        _exec_hallucination_guard,
+    ),
+    NodeSpec(
+        "process-reflection-loop",
+        "Process",
+        "Reflection Loop",
+        "LLM-driven critique + revise loop grounded in the retrieved chunks",
+        ["text", "chunks"],
+        ["answer", "chunks"],
+        {
+            "maxReflections": 2,
+            "model": "openai/gpt-4o-mini",
+            "temperature": 0.1,
+            "maxTokens": 1024,
+            "critiquePrompt": "Identify any factual claims in the draft that are not supported by the evidence, missing citations, or unclear phrasing.",
+        },
+        _exec_reflection,
+    ),
     NodeSpec(
         "storage-vector",
         "Storage",

@@ -63,9 +63,21 @@ class BenchmarkStore:
     # ── Runs ──────────────────────────────────────────────────────────────
 
     def list_runs(self) -> list[dict]:
-        """Return summaries (no results array) for list view."""
+        """Return summaries (no results array) for list view.
+
+        We strip the heavy ``results`` array but pre-compute and inject a
+        ``_question_count_cached`` field so callers can render the row
+        without paying the deserialisation cost \u2014 useful for legacy runs
+        that were written before the ``progress`` block existed.
+        """
         runs = self._read(self._runs_path)
-        return [{k: v for k, v in r.items() if k != "results"} for r in runs]
+        out: list[dict] = []
+        for r in runs:
+            qc = len({res["question_index"] for res in r.get("results", [])})
+            stripped = {k: v for k, v in r.items() if k != "results"}
+            stripped["_question_count_cached"] = qc
+            out.append(stripped)
+        return out
 
     def get_run(self, run_id: str) -> Optional[dict]:
         return next(

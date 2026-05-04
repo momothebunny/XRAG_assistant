@@ -1,33 +1,5 @@
 [
   {
-    "id": "bmd-0349d70067",
-    "name": "SQuAD v2 - smoke",
-    "description": "Imported from HuggingFace dataset rajpurkar/squad_v2 (validation split).",
-    "entries": [
-      {
-        "question": "In what country is Normandy located?",
-        "expected_answer": "France"
-      },
-      {
-        "question": "When were the Normans in Normandy?",
-        "expected_answer": "10th and 11th centuries"
-      },
-      {
-        "question": "From which countries did the Norse originate?",
-        "expected_answer": "Denmark, Iceland and Norway"
-      },
-      {
-        "question": "Who was the Norse leader?",
-        "expected_answer": "Rollo"
-      },
-      {
-        "question": "What century did the Normans first gain their separate identity?",
-        "expected_answer": "10th century"
-      }
-    ],
-    "created_at": 1777794215956
-  },
-  {
     "id": "bmd-a16e188f62",
     "name": "NQ open 10q",
     "description": "Imported from HuggingFace dataset google-research-datasets/nq_open (nq_open/validation).",
@@ -734,5 +706,93 @@
       }
     ],
     "created_at": 1777795896132
+  },
+  {
+    "id": "bmd-effec61db4",
+    "name": "FiQA — sample",
+    "description": "Imported from HuggingFace dataset LLukas22/fiqa (default/train).",
+    "entries": [
+      {
+        "question": "What do brokers do with bad stock?",
+        "expected_answer": "For every seller, there's a buyer. Buyers may have any reason for wanting to buy (bargain shopping, foolish belief in a crazy business, etc).  The party (brokerage, market maker, individual) owning the stock at the time the company goes out of business is the loser . But in a general panic, not every company is going to go out of business. So the party owning those stocks can expect to recover some, or all, of the value at some point in the future. Brokerages all reserve the right to limit margin trading (required for short selling), and during a panic would likely not allow you to short a stock they feel is a high risk for them."
+      },
+      {
+        "question": "Why do investors buy stock that had appreciated?",
+        "expected_answer": "You seem to prefer to trade like I do: \"Buy low, sell high.\" But there are some people that prefer a different way: \"Buy high, sell higher.\" A stock that has \"just appreciated\" is \"in motion.\" That is a \"promise\" (not always kept) that it will continue to go higher. Some people want stocks that not only go higher, but also SOON. The disadvantage of \"buy low, sell high\" is that the stock can stay low for some time. So that's a strategy for patient investors like you and me."
+      },
+      {
+        "question": "Is it ever a good idea to close credit cards?",
+        "expected_answer": "Yes, it can be a good idea to close unused credit cards.  I am going to give some reasons why it can be a good idea to close unused accounts, and then I will talk about why it is NOT necessarily a bad idea. Why it can be a good idea to close unused accounts \"I'd like to close the cards.\"  That is reason enough.   Simplifying your financial life is a good thing.  Fewer accounts let you focus your energy on the accounts that you actually use. Unused accounts still need to be monitored for fraud. You mentioned that you have high credit card balances that you are carrying.  This may indicate that you have trouble using credit responsibly, and having more credit available to you might be a temptation for you. If these unused cards have annual fees, keeping them open will cost money. Unused cards sometimes get closed by the bank due to inactivity.  As a result, the advice often given is that, in addition to not closing them, you are supposed to charge something to it every month.  This, of course, takes more of your time and energy to worry about, as well as giving you another monthly bill to pay. Why it is NOT necessarily a bad idea to close unused accounts Other answers will tell you that it may hurt your credit score for two reasons: it would increase your utilization and lower your average account age.  Before we talk about the validity of these two points, we need to discuss the importance of the credit score. Depending on what your credit score currently is, these actions may have minimal impact on your life.  If you are in the mid 700's or higher, your score is excellent, and closing these cards will likely not impact anything for you in a significant way. If you aren't that high in your score yet, do you have an immediate need for a high score?  Are you planning on getting more credit cards, or take out any more loans?  I would suggest that, since you have credit card debt, you shouldn't be taking out any new loans until you get that cleaned up.  So your score in the mean time is not very important. Are you currently working on eliminating this credit card debt?  If so, your utilization number will improve, even after you close these accounts, when you get those paid off.  Utilization has only a temporary effect on your score; when your utilization improves, your score improves immediately. Your average account age may or may not improve when you close these accounts, depending on how old they are compared to the accounts you are leaving open.  However, the impact of this might not be as much as you think. I realize that this advice is different from other answers, or other things that you may read online.  But in my own life, I do a lot of things that are supposedly bad for the credit score: I only have two credit cards, ages 2.5 and 1.5 years.  (I closed my other cards when I got these.)  My typical monthly utilization is around 25% on these cards, although I pay off the balance in full each month, never paying interest.  I have no car loan anymore, and my mortgage is only 4 months old.  No other debt.  Despite those \"terrible\" credit practices, my credit score is very high. Conclusion Make your payments on time, get out of debt, and your score will be fine.  Don't keep unwanted accounts open just because someone told you that you should."
+      },
+      {
+        "question": "If something is coming into my account will it be debit or credit in my account?",
+        "expected_answer": "The bank will make this even more confusing because they use the terms from their own perspective. From the bank's perspective  (printed on your statements) credit: Money into your account  (increases the bank's liabilities) debit: Money out of your account  (decrease bank liabilities) From your perspective: It depends on the nature of the transfer of money, but here are the most common for a personal account. Income into your account: Credit Expenses out of your account: Debit Payment on a loan made for an asset (house/car): Credit for the loan account, debit for the equity account for the car/house/etc. Yes, it's complicated. Neither credits nor debits are always a + or -. That's why I agree with the advice of the others here that double-entry accounting is overkill for your personal finances. Note: I simplified the above examples for the purpose of clarity. Technically every transaction in double entry accounting includes both a credit and a debit (hence the \"double\" in the name). In fact, sometimes a transaction involves more than one credit or debit, but always at least one of each. Also, this is for EACH party. So any transaction between you and your bank involves at least FOUR debits and/or credits when all involved are considered."
+      },
+      {
+        "question": "What one bit of financial advice do you wish you could've given yourself five years ago?",
+        "expected_answer": "When I was contracting I wish I had joined a tax efficient umbrella organisation rather than just work as a sole trader. I also wish I had put money aside to pay my taxes rather than just spend it all. :("
+      },
+      {
+        "question": "When investing, is the risk/reward tradeoff linear?",
+        "expected_answer": "Ditto Bill and I upvoted his answer. But let me add a bit. If everyone knew exactly what the risk was for every investment, then prices would be bid up or down until every stock (or bond or derivative or whatever) was valued at exactly risk times potential profit. (Or more precisely, integral of risk times potential profit.) If company A was 100% guaranteed to make $1 million profit this year, while company B had 50% change to make a $2 million profit and 50% to make $0, and every investor in the world knew that, then I'd expect the total price of all shares of the two stocks to stabilize at the same value. The catch to that, though, is that no one really knows the risk. The risk isn't like, we're going to roll a die and if it comes up even the company makes $1 million and if it comes up odd the company makes $0, so we could calculate the exact probability. The risk comes from lack of information. Will consumers want to buy this new product? How many? What are they willing to pay? How capable is the new CEO? Etc. It's very hard to calculate probabilities on these things. How can you precisely calculate the probability that unforeseen events will occur? So in real life prices are muddled. The risk/reward ratio should be roughly sort of approximately linear, but that's about the most one can say."
+      },
+      {
+        "question": "How can I transfer and consolidate my 401k's and other options?",
+        "expected_answer": "The simplest way to consolidate the funds your old 401(k) plans is by doing what's called a Direct Rollover (whereby the funds go directly into the new plan and skips you completely) from each of the old plans into either an IRA that you establish with a provider of your choice or even into your current employer's 401(k) plan if that is available. That way, the funds are in one central account and available to invest. Plus it eliminates the mandatory 20% withholding if the rollover is indirect and is sent to you first before the deposit into the new plan. It is important to bear in mind that you have 60 calendar days from the date of distribution to get the full amount into the new plan and a rollover is considered a tax reportable, but not necessarily a taxable event provided you deposit the funds within the time frame allotted."
+      },
+      {
+        "question": "What market conditions favor small cap stocks over medium cap stocks?",
+        "expected_answer": "I think to answer this question it is best for you to learn more about why people diversify through asset allocation. Look at related questions involving Asset Allocation here.   I've asked a couple questions about asset allocation - I think you'll find the top rated answer on this post useful."
+      },
+      {
+        "question": "Why I cannot find a \"Pure Cash\" option in 401k investments?",
+        "expected_answer": "The short term bond fund, which you are pretty certain to have as an option, functions in this capacity.  Its return will be low, but positive, in all but the most dramatic of rising rate scenarios. I recall a year in the 90's when rates rose enough that the bond fund return was zero or very slightly negative. It's not likely that you'd have access to simple money market or cash option."
+      },
+      {
+        "question": "Why would a bank need to accept deposits from private clients if it can just borrow from the Federal Reserve?",
+        "expected_answer": "Borrowing money from the Federal Reserve (or other central banks) requires full collateral, generally in terms of treasury bonds. In that sense it is only a source of liquidity - getting short term money by pledging guaranteed future cash flows, not random commercial loans. To get a dollar from FR today requires freezing a dollar that you already had. Private deposits, on the other hand, require only a keeping a fraction of them as reserves, so you can use the rest of the money for new loans."
+      },
+      {
+        "question": "I have $12k in a Chase checking account, but want to start earning interest/saving/investing/etc to make more money. What should I do?",
+        "expected_answer": "First thing's first: migrate your savings to an interest-bearing savings account (such as from Ally Bank). While it still lags behind inflation, 0.84% is still better than 0.00%. Short-term CDs are also an option. I've personally thought about experimenting with peer-to-peer lending, but a few thousand in savings isn't all that much in the grand scheme of things, and you don't want it tied up in a risky, speculative loan when you might need it the most. As the others have said, the general savings rules apply too: pay off high-interest debt, divert more money into your 401k (especially if you aren't hitting the match yet), then work on either whittling down other debts or saving more for a big purchase in the future."
+      },
+      {
+        "question": "How do I figure out if I will owe taxes",
+        "expected_answer": "Do you have a regular job, where you work for somebody else and they pay you a salary? If so, they should be deducting estimated taxes from your paychecks and sending them in to the government. How much they deduct depends on your salary and what you put down on your W-4. Assuming you filled that out accurately, they will withhold an amount that should closely match the taxes you would owe if you took the standard deduction, have no income besides this job, and no unusual deductions. If that's the case, come next April 15 you will probably get a small refund. If you own a small business or are an independent contractor, then you have to estimate the taxes you will owe and make quarterly payments. If you're worried that the amount they're withholding doesn't sound right, then as GradeEhBacon says, get a copy of last year's tax forms (or this year's if they're out by now) -- paper or electronic -- fill them out by estimating what your total income will be for the year, etc, and see what the tax comes out to be."
+      },
+      {
+        "question": "Opening and funding an IRA in three days - is this feasible?",
+        "expected_answer": "A few years ago, I did something like this at a Wells Fargo; I realized I could put money into an IRA a few days before 4/15, and was able to walk in to the main branch and do the whole thing in under an hour."
+      },
+      {
+        "question": "Does the stock market create any sort of value?",
+        "expected_answer": "It's not a ponzi scheme, and it does create value. I think you are confusing \"creating value\" and \"producing something\". The stock market does create value, but not in the same way as Toyota creates value by making a car. The stock market does not produce anything. The main way money enters the stock market is through investors investing and taking money out.   The only other cash flow is in through dividends and out when businesses go public.  &  The stock market goes up only when more people invest in it. Although the stock market keeps tabs on Businesses, the profits of Businesses do not actually flow into the Stock Market. Earnings are the in-flow that you are missing here. Business profits DO flow back into the stock market through earnings and dividends. Think about a private company: if it has $100,000 in profits for the year then the company keeps $100,000, but if that same company is publicly traded with  100,000 shares outstanding then, all else being equal, each of those shares went up by $1. When you buy stock, it is claimed that you own a small portion of the company. This statement has no backing, as you cannot exchange your stock for the company's assets. You can't go to an Apple store and try to pay with a stock certificate, but that doesn't mean the certificate doesn't have value. Using your agriculture example, you wouldn't be able to pay with a basket of tomatoes either. You wouldn't even be able to pay with a lump of gold! We used to do that. It was called the barter system.  Companies also do buy shares back from the market using company cash. Although they usually do it through clearing-houses that are capable of moving blocks of 1,000 shares at a time."
+      },
+      {
+        "question": "How much time would I have to spend trading to turn a profit?",
+        "expected_answer": "It depends on how you define trading.  If you're looking at day-trading, where you're probably going to be in a highly-leveraged position for minutes or hours, the automated traders are probably going to kill you.  But, if you have a handful (less than a dozen) equities, and spend about an hour or so every week conducting research, you have a good chance of doing pretty well. You need to understand the market, listen to the earnings calls, and understand the factors that contribute to the bottom line of your investments.  You should not be trading for the sake of trading, you're trading to try to achieve the best returns. Beware of dogmatists and people selling products that align with their dogma. Warren Buffet invests in companies for an extremely long investment window. Mr. Buffet also expends significant resources to gain a deep understanding of the fundamentals of the businesses that he invests in and the factors affecting those fundamentals. Buffet does not buy an S&P 500 index fund and whistle dixie."
+      },
+      {
+        "question": "Is dividend taxation priced in derivatives?",
+        "expected_answer": "No. Black Scholes includes a number of variables to calculate the value of the derivative but taxation isn't one of them. Whether you are trading options or futures, the dividend itelf may be part of the equation, but not the tax on said dividend."
+      },
+      {
+        "question": "Why do people buy stocks that pay no dividend?",
+        "expected_answer": "There are many stocks that don't have dividends. Their revenue, growth, and reinvestment help these companies to grow, and my share of such companies represent say, one billionth of a growing company, and therefore worth more over time.  Look up the details of Berkshire Hathaway. No dividend, but a value of over $100,000. Not a typo, over one hundred thousand dollars per share."
+      },
+      {
+        "question": "Stopping Payment on a Check--How Long Does it Take?",
+        "expected_answer": "Is this a USA bank to a USA bank transaction?  If so, it will clear in one to two business days.  Once cleared, the landlord cannot stop pay it.  He can, however, dishonestly claim it was a fraudulent check and attempt a chargeback. If you want absolute certainty the money will not be recalled, go to the landlord's bank and cash the check as a non-customer.  You will have to pay a small fee, but you will walk out with cash.  I suggest you take a photocopy of the check, and staple your receipt to it as evidence that the check was cashed for any impending legal proceedings."
+      },
+      {
+        "question": "My boss wants to buy me a gift. How do I account for taxes for this?",
+        "expected_answer": "Gifts given and received between business partners or employers/employees are treated as income, if they are beyond minimal value. If your boss gives you a gift, s/he should include it as part of your taxable wages for payroll purposes - which means that some of your wages should be withheld to cover income, social security, and Medicare taxes on it. At the end of the year, the value of the gift should be included in Box 1 (wages) of your form W-2. Assuming that's the case, you don't need to do anything special. A 1099-MISC would not be appropriate because you are an employee of your boss - so the two of you need to address the full panoply of employment taxes, not just income tax, which would be the result if the payment were reported on 1099-MISC. If the employer wants to cover the cost to you of the taxes on the gift, they'll need to \"gross up\" your pay to cover it. Let's say your employer gives you a gift worth $100, and you're in a 25% tax bracket. Your employer has to give you $125 so that you end up with a gain of $100. But the extra $25 is taxable, too, so your employer will need to add on an extra $6.25 to cover the 25% tax on the $25. But, wait, now we've gotta pay 25% tax on the $6.25, so they add an extra $1.56 to cover that tax. And now they've gotta pay an extra $.39 . . .  The formula to calculate the gross-up amount is: where [TAX RATE] is the tax rate expressed as a percentage. So, to get the grossed-up amount for a $100 gift in a 25% bracket, we'd calculate 1/(1-.25), or 1/.75, or 1.333, multiply that by the target gift amount of $100, and end up with $133.33.  The equation is a little uglier if you have to pay state income taxes that are deductible on the federal return but it's a similar principle.  The entire $133.33 would then be reported as income, but the net effect on the employee is that they're $100 richer after taxes. The \"gross-up\" idea can be quite complicated if you dig into the details - there are some circumstances where an additional few dollars of income can have an unexpected impact on a tax return, in a fashion not obvious from looking at the tax table.  If the employer doesn't include the gift in Box 1 on the W-2 but you want to pay taxes on it anyway, include the amount in Line 7 on the 1040 as if it had been on a W-2, and fill out form 8919 to calculate the FICA taxes that should have been withheld."
+      },
+      {
+        "question": "Deductions greater than Income : Traditional IRA to Roth Conversion?",
+        "expected_answer": "Yes. A most emphatic yes.  I suggest you look at your 2014 return and project what 2015 will look like. I'd convert enough to \"top off\" the 15% bracket. Note, if you overshoot it, and in April 2016, see that you are say $5K into the 25% rate, you can just recharacterize the amount you went over and nail the bracket to the dollar.  If you have the time and patience, you can convert into 2 different Roth accounts. One account for one asset class, say large cap stocks/funds, the other, cash/bonds. In April, keep the account that outperformed, and only recharacterize the lagger. Roth Roulette is my name for this strategy. It's risk free, and has the potential to boost the value of your conversions.  Edit - To be clear, you are permitted to recharacterize (undo) any or all of the converted amount. You actually have until tax time (4/15 or so) plus the 6 month extension. You can recharacterize for any reason - A personal anecdote - I manage my mother in law's money. She is well under the 25% bracket cutoff. Each year I convert, and each April, recharacterize just enough to be at the top of the 15% bracket. Over $100K has been shifted from Traditional IRA to Roth by now. Taxed at 15% so her daughters will 'not' pay 25% when they withdraw. $10K in tax saved from uncle sam, for my effort of filling out paper twice a year for 12 years now. Well worth my effort."
+      }
+    ],
+    "created_at": 1777883148950
   }
 ]
