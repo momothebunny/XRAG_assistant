@@ -234,7 +234,7 @@ const DataStrategyPanel = ({ aiConfig, onAiConfigChange, retrievalConfig, onRetr
       <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100">
           <div className="flex items-center gap-2 text-slate-800">
-            <SlidersHorizontal size={16} className="text-violet-600" />
+            <SlidersHorizontal size={16} className="text-amber-600" />
             <h4 className="text-sm font-black uppercase tracking-wide">LLM Configuration</h4>
           </div>
           <p className="text-xs text-slate-500 mt-1">Control model behavior, style, and grounding constraints.</p>

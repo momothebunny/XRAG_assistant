@@ -58,7 +58,7 @@ const HISTORY_BUCKET_MS = 5 * 60 * 1000; // 5 min buckets on the X-axis
 // Latency SLO ceiling — anything close to this is considered "hot". Used by
 // the percentage badge on the Latency Trends card to flag at-risk models.
 const LATENCY_SLO_MS = 2000;
-const CHART_PALETTE = ['#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+const CHART_PALETTE = ['#6366f1', '#eab308', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
 // Separate, broadcast-friendly key consumed by the Canvas LLM picker so it
 // can hide HF model ids that probed as `unsupported` (no Inference Provider).
 const UNSUPPORTED_KEY = 'xrag.health.unsupported';
@@ -594,7 +594,7 @@ const HealthTab = () => {
           <button
             type="button"
             onClick={addEntry}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:from-indigo-600 hover:to-violet-700"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-amber-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:from-indigo-600 hover:to-amber-700"
           >
             <Plus size={14} />
             Add to Dashboard

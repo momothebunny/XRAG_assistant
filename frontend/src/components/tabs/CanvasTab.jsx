@@ -22,14 +22,24 @@ import {
   ChevronsRight,
   Database,
   FileInput,
+  FolderOpen,
+  Layers,
   Link2,
+  Loader2,
   Network,
+  Pencil,
+  Play,
   Plus,
+  RefreshCw,
   Search,
   Share2,
+  Sparkles,
   Trash2,
+  Wand2,
+  X,
 } from 'lucide-react';
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import DocumentSettingsPanel from '../canvas/DocumentSettingsPanel';
 import UploadedDocumentsSettingsPanel from '../canvas/UploadedDocumentsSettingsPanel';
 import ChunkingSettingsPanel from '../canvas/ChunkingSettingsPanel';
@@ -75,12 +85,17 @@ import {
   groupedNodeLibrary,
   visibleNodeLibrary,
   templateByKey,
+  registerCustomTemplate,
+  unregisterCustomTemplate,
+  CUSTOM_NODE_ICON_MAP,
 } from './canvas/canvasConfig';
 import { saveUserSharedFlow } from '../../data/sharedFlows';
 import CanvasBoardErrorBoundary from './canvas/CanvasBoardErrorBoundary';
 import { isPreviewElementId, nodeTypes, paletteFromColorClass } from './canvas/nodeTypes';
 import { edgeTypes } from './canvas/edgeTypes';
 import CanvasConnectionLine from './canvas/CanvasConnectionLine';
+import CustomNodeEditorModal from './canvas/CustomNodeEditorModal';
+import CustomNodeSettingsPanel from './canvas/CustomNodeSettingsPanel';
 import { xragApi } from '../../services/xragApi';
 
 const createPairLink = (sourceNode, targetNode) => {
@@ -902,8 +917,8 @@ const makeEdgePayload = ({ type, ...payload }) => ({
   ...payload,
   animated: true,
   type: type || 'step',
-  markerEnd: { type: MarkerType.ArrowClosed, color: '#7c3aed' },
-  style: { strokeWidth: 2.6, stroke: '#7c3aed' },
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#d97706' },
+  style: { strokeWidth: 2.6, stroke: '#d97706' },
 });
 
 const buildBlueprintEdges = (blueprintNodes, existingNodes = [], existingEdges = []) => {
@@ -1109,8 +1124,14 @@ const CanvasBoard = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState(() => (initialNodes[0]?.id ? [initialNodes[0].id] : []));
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const [selectionBox, setSelectionBox] = useState(null);
-  const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
-  const [paletteTab, setPaletteTab] = useState('nodes'); // 'nodes' | 'blueprints'
+
+  const [paletteTab, setPaletteTab] = useState('nodes'); // 'nodes' | 'blueprints' | 'custom'
+
+  // ── Custom user-defined nodes ──────────────────────────────────────────
+  const [customNodes, setCustomNodes] = useState([]);
+  const [customNodesStatus, setCustomNodesStatus] = useState('idle'); // idle | loading | error
+  const [customEditorOpen, setCustomEditorOpen] = useState(false);
+  const [customEditorDraft, setCustomEditorDraft] = useState(null); // null | CustomNode draft
   // ── Resizable side panels ──────────────────────────────────────────────
   // Both side asides are user-resizable via thin drag handles. Widths are
   // persisted in localStorage so the layout survives reloads. When the
@@ -1191,7 +1212,10 @@ const CanvasBoard = () => {
   const [backendFlows, setBackendFlows] = useState([]);
   const [backendFlowsStatus, setBackendFlowsStatus] = useState('idle'); // idle | loading | error
   const [activeBackendFlowId, setActiveBackendFlowId] = useState(null);
+  const [saveFeedback, setSaveFeedback] = useState(''); // visible "Saved as…" notice
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [browseFlowsOpen, setBrowseFlowsOpen] = useState(false);
+  const [browseFlowsQuery, setBrowseFlowsQuery] = useState('');
   const [shareMeta, setShareMeta] = useState({ name: '', description: '', author: '', tags: '' });
   const [nodeTypeMap, setNodeTypeMap] = useState({});
   const nodeTypeMapRef = useRef(nodeTypeMap);
@@ -1204,6 +1228,7 @@ const CanvasBoard = () => {
   const invalidConnectionTimerRef = useRef(null);
   const pendingConnectionRef = useRef(null);
   const selectionStartFlowPointRef = useRef(null);
+  const suppressNextPaneClickRef = useRef(false);
   const canvasViewportRef = useRef(null);
   const selectionToolbarRef = useRef(null);
   const nodesRef = useRef(nodes);
@@ -1440,9 +1465,11 @@ const CanvasBoard = () => {
     (overrides = {}) => {
       const realNodes = nodes.filter((node) => !isPreviewElementId(node.id));
       const realEdges = edges.filter((edge) => !isPreviewElementId(edge.id));
+      const hasIdOverride = Object.prototype.hasOwnProperty.call(overrides, 'id');
+      const hasNameOverride = Object.prototype.hasOwnProperty.call(overrides, 'name');
       return {
-        id: overrides.id ?? activeBackendFlowId ?? null,
-        name: overrides.name ?? draftName.trim() ?? 'Canvas Flow',
+        id: hasIdOverride ? overrides.id : (activeBackendFlowId ?? null),
+        name: hasNameOverride ? overrides.name : (draftName.trim() || 'Canvas Flow'),
         description: overrides.description ?? 'Saved from XRAG canvas UI',
         nodes: realNodes.map((node) => ({
           id: node.id,
@@ -1478,6 +1505,30 @@ const CanvasBoard = () => {
   useEffect(() => {
     refreshBackendFlows();
   }, [refreshBackendFlows]);
+
+  // ── Custom user-defined nodes — fetch + register so drag/drop & rendering
+  // see them the same way as built-in templates.
+  const refreshCustomNodes = useCallback(async () => {
+    setCustomNodesStatus('loading');
+    try {
+      const list = await xragApi.listCustomNodes();
+      const items = Array.isArray(list) ? list : [];
+      // Mutate the templateByKey registry so the canvas runtime resolves
+      // these by id (drop handler, ragNode icon lookup, etc.).
+      items.forEach((cn) => registerCustomTemplate(cn));
+      setCustomNodes(items);
+      setCustomNodesStatus('idle');
+    } catch (error) {
+      setCustomNodesStatus('error');
+      // Non-fatal — surface in console only; the rest of the canvas works.
+      // eslint-disable-next-line no-console
+      console.warn('Custom nodes list failed:', error.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshCustomNodes();
+  }, [refreshCustomNodes]);
 
   useEffect(() => {
     nodeTypeMapRef.current = nodeTypeMap;
@@ -1544,15 +1595,26 @@ const CanvasBoard = () => {
 
   const saveCanvasFlowToBackend = useCallback(async () => {
     setRunError('');
+    setSaveFeedback('');
     try {
-      const payload = buildBackendFlowPayload();
+      // Saving from the inspector ALWAYS creates a new architecture entry.
+      // (Overwriting existing flows is intentionally disabled here so the
+      // user never accidentally clobbers a blueprint or a previous save.)
+      const overrides = { id: null };
+      if (!draftName.trim()) {
+        overrides.name = `My RAG Flow ${new Date().toLocaleTimeString()}`;
+      }
+      const payload = buildBackendFlowPayload(overrides);
       const saved = await xragApi.saveCanvasFlow(payload);
       setActiveBackendFlowId(saved.id || null);
+      setDraftName('');
+      setSaveFeedback(`Saved as “${saved.name}”`);
+      window.setTimeout(() => setSaveFeedback(''), 3500);
       await refreshBackendFlows();
     } catch (error) {
       setRunError(`Backend save failed: ${error.message}`);
     }
-  }, [buildBackendFlowPayload, refreshBackendFlows]);
+  }, [buildBackendFlowPayload, draftName, refreshBackendFlows]);
 
   const applyFlowData = useCallback(
     (flow) => {
@@ -1832,7 +1894,7 @@ const CanvasBoard = () => {
     }, 80);
 
     return () => window.clearTimeout(resizeEvent);
-  }, [fitView, isPaletteCollapsed]);
+  }, [fitView]);
 
   // NOTE: Delete/Backspace is handled by React Flow's built-in deleteKeyCode
   // mechanism, which dispatches onEdgesDelete / onNodesDelete callbacks based
@@ -1936,8 +1998,8 @@ const CanvasBoard = () => {
           targetHandle: entry.targetHandle,
           type: entry.type || 'step',
           animated: true,
-          markerEnd: { type: MarkerType.ArrowClosed, color: '#7c3aed' },
-          style: { strokeWidth: 2.6, stroke: '#7c3aed' },
+          markerEnd: { type: MarkerType.ArrowClosed, color: '#d97706' },
+          style: { strokeWidth: 2.6, stroke: '#d97706' },
           data: entry.data,
         }));
 
@@ -1958,6 +2020,60 @@ const CanvasBoard = () => {
     window.addEventListener('keydown', onClipboardKey);
     return () => window.removeEventListener('keydown', onClipboardKey);
   }, [edges, setEdges, setNodes]);
+
+  // Robust Delete/Backspace handler. React Flow's built-in deleteKeyCode
+  // relies on its internal `node.selected` state, which can fall out of sync
+  // with our marquee/multi-selection. Using `selectedNodeIdsRef` here means
+  // delete always acts on whatever the user last selected.
+  useEffect(() => {
+    const isTypingTarget = (target) => {
+      if (!target) return false;
+      const tag = target.tagName;
+      return (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target.getAttribute?.('contenteditable') === 'true'
+      );
+    };
+
+    const onDeleteKey = (event) => {
+      if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+      if (isTypingTarget(document.activeElement) || isTypingTarget(event.target)) return;
+
+      const nodeIds = selectedNodeIdsRef.current.filter((id) => !isPreviewElementId(id));
+      const edgeId = selectedEdgeIdRef.current && !isPreviewElementId(selectedEdgeIdRef.current)
+        ? selectedEdgeIdRef.current
+        : null;
+
+      if (nodeIds.length === 0 && !edgeId) return;
+      event.preventDefault();
+
+      if (nodeIds.length > 0) {
+        const idsToDelete = new Set();
+        nodeIds.forEach((nodeId) => {
+          const cascadeIds = getCascadeDeleteNodeIds(nodeId, nodesRef.current);
+          cascadeIds.forEach((id) => idsToDelete.add(id));
+        });
+        setNodes((currentNodes) => currentNodes.filter((node) => !idsToDelete.has(node.id)));
+        setEdges((currentEdges) =>
+          currentEdges.filter((edge) => !idsToDelete.has(edge.source) && !idsToDelete.has(edge.target))
+        );
+        selectedNodeIdsRef.current = [];
+        setSelectedNodeIds([]);
+        setSelectedNodeId(null);
+      }
+
+      if (edgeId) {
+        setEdges((currentEdges) => currentEdges.filter((edge) => edge.id !== edgeId));
+        selectedEdgeIdRef.current = null;
+        setSelectedEdgeId(null);
+      }
+    };
+
+    window.addEventListener('keydown', onDeleteKey);
+    return () => window.removeEventListener('keydown', onDeleteKey);
+  }, [setEdges, setNodes]);
 
   useEffect(() => {
     if (!selectedEdgeId) {
@@ -2012,6 +2128,16 @@ const CanvasBoard = () => {
           selected: selectedIdSet.has(node.id),
         }))
       );
+      // Sync refs synchronously so the trailing pane-click guard and any
+      // immediate Delete/Backspace press see the new selection.
+      selectedNodeIdsRef.current = selectedIds;
+      selectedEdgeIdRef.current = null;
+      // After a marquee selection, the browser also fires a click event on
+      // the pane. Without this guard, onPaneClick would wipe the selection
+      // we just made one tick later.
+      if (selectedIds.length > 0) {
+        suppressNextPaneClickRef.current = true;
+      }
       setSelectedNodeIds(selectedIds);
       setSelectedNodeId(selectedIds[0] || null);
       setSelectedEdgeId(null);
@@ -3501,6 +3627,8 @@ const CanvasBoard = () => {
   const isChatTesterNode = selectedNode?.data?.templateKey === 'output-chat';
   const isImageUploadNode = selectedNode?.data?.templateKey === 'input-image';
   const isVisionLLMNode = selectedNode?.data?.templateKey === 'brain-vision';
+  const selectedTemplate = selectedNode ? templateByKey[selectedNode.data?.templateKey] : null;
+  const isCustomNode = Boolean(selectedTemplate?.isCustom);
 
   // For a Chunking node, walk the edges in BOTH directions to find a
   // connected Embedding node and translate its config into a profile. The
@@ -3835,7 +3963,7 @@ const CanvasBoard = () => {
 
     return edges.map((edge) => {
       const isSelected = edge.id === selectedEdgeId;
-      const sourceColor = nodeColorById.get(edge.source) || '#7c3aed';
+      const sourceColor = nodeColorById.get(edge.source) || '#d97706';
       const targetColor = nodeColorById.get(edge.target) || sourceColor;
       // If a run status has been written into the edge data, the arrow head
       // must take the status color so it visually matches the green/red wipe
@@ -4232,33 +4360,31 @@ const CanvasBoard = () => {
     <div className="h-full w-full bg-slate-100 p-4 md:p-6 overflow-visible">
       <div className="h-full w-full flex gap-2 min-w-0">
         <aside
-          className="relative flex-none overflow-visible transition-[width] duration-200 ease-in-out"
-          style={{ width: isPaletteCollapsed ? 64 : paletteWidth }}
+          className="relative flex-none overflow-visible"
+          style={{ width: paletteWidth }}
         >
-          <button
-            type="button"
-            onClick={() => setIsPaletteCollapsed((previous) => !previous)}
-            aria-label={isPaletteCollapsed ? 'Open node palette' : 'Collapse node palette'}
-            className="absolute -right-3 top-5 z-30 flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg hover:bg-slate-50 transition-colors"
-          >
-            {isPaletteCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
-          </button>
-
           <div className="h-full rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div
-              className={`h-full transition-all duration-300 ease-in-out ${
-                isPaletteCollapsed ? 'opacity-0 -translate-x-6 pointer-events-none' : 'opacity-100 translate-x-0'
-              }`}
-            >
-              {/* Tab switcher */}
-              <div className="flex border-b border-slate-200 bg-slate-50/80">
+            <div className="h-full">
+              {/* Tab switcher — gold themed with sliding pill indicator */}
+              <div className="relative flex border-b border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 p-1.5 gap-1">
+                <span
+                  aria-hidden
+                  className="absolute top-1.5 bottom-1.5 left-1.5 rounded-xl bg-amber-500 shadow-md shadow-amber-500/40 transition-transform duration-300 ease-out"
+                  style={{
+                    width: 'calc(33.333% - 0.292rem)',
+                    transform:
+                      paletteTab === 'nodes'
+                        ? 'translateX(0%)'
+                        : paletteTab === 'blueprints'
+                        ? 'translateX(calc(100% + 0.25rem))'
+                        : 'translateX(calc(200% + 0.5rem))',
+                  }}
+                />
                 <button
                   type="button"
                   onClick={() => setPaletteTab('nodes')}
-                  className={`flex-1 py-2.5 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                    paletteTab === 'nodes'
-                      ? 'text-indigo-700 border-b-2 border-indigo-500 bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                  className={`relative flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors duration-200 ${
+                    paletteTab === 'nodes' ? 'text-white' : 'text-amber-800 hover:text-amber-900'
                   }`}
                 >
                   Nodes
@@ -4266,18 +4392,31 @@ const CanvasBoard = () => {
                 <button
                   type="button"
                   onClick={() => setPaletteTab('blueprints')}
-                  className={`flex-1 py-2.5 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                    paletteTab === 'blueprints'
-                      ? 'text-indigo-700 border-b-2 border-indigo-500 bg-white'
-                      : 'text-slate-500 hover:text-slate-700'
+                  className={`relative flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors duration-200 ${
+                    paletteTab === 'blueprints' ? 'text-white' : 'text-amber-800 hover:text-amber-900'
                   }`}
                 >
                   Blueprints
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setPaletteTab('custom')}
+                  className={`relative flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors duration-200 ${
+                    paletteTab === 'custom' ? 'text-white' : 'text-amber-800 hover:text-amber-900'
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
 
-              {paletteTab === 'nodes' && (
-                <div className="p-4 h-[calc(100%-44px)] overflow-y-auto">
+              {/* Animated panel container — crossfade + slide between tabs */}
+              <div className="relative h-[calc(100%-56px)] overflow-hidden">
+                <div
+                  key={paletteTab}
+                  className="xrag-palette-pane h-full"
+                >
+                  {paletteTab === 'nodes' && (
+                    <div className="p-4 h-full overflow-y-auto">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Node Palette</h3>
                     <span className="text-[10px] text-slate-400 font-black uppercase">Drag to canvas</span>
@@ -4362,163 +4501,180 @@ const CanvasBoard = () => {
               )}
 
               {paletteTab === 'blueprints' && (
-                <div className="p-4 h-[calc(100%-44px)] overflow-y-auto">
-                  <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="p-4 h-full overflow-y-auto">
+                  <div className="flex items-center justify-between gap-3 mb-1">
                     <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Blueprints</h3>
-                    <span className="text-[10px] text-slate-400 font-black uppercase">Drag to canvas</span>
+                    <span className="text-[10px] text-slate-400 font-black uppercase">Static templates</span>
                   </div>
-                  {backendFlowsStatus === 'loading' && (
-                    <p className="text-[11px] text-slate-500">Loading…</p>
-                  )}
-                  {backendFlowsStatus !== 'loading' && backendFlows.length === 0 && (
-                    <p className="text-[11px] text-slate-500">No flows on backend yet.</p>
-                  )}
-                  <div className="space-y-2">
-                    {backendFlows.map((flow) => (
-                      <div
-                        key={flow.id}
-                        draggable
-                        onDragStart={(event) => {
-                          event.dataTransfer.setData('application/xrag-flow', flow.id);
-                          event.dataTransfer.effectAllowed = 'move';
-                        }}
-                        className="group w-full text-left rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-3 cursor-grab active:cursor-grabbing transition-all duration-150 hover:-translate-y-px"
-                        style={{ boxShadow: '0 2px 8px rgba(99,102,241,0.10), 0 0 0 1px rgba(99,102,241,0.18)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(99,102,241,0.18), 0 0 0 2px rgba(99,102,241,0.35)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(99,102,241,0.10), 0 0 0 1px rgba(99,102,241,0.18)'; }}
-                      >
-                        <div className="flex items-start gap-2.5">
-                          <div className="shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-sm" style={{ width: 34, height: 34 }}>
-                            <Network size={15} style={{ color: '#fff' }} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-black text-slate-800 truncate leading-snug">{flow.name || flow.id}</p>
-                            {flow.description && (
-                              <p className="text-[10px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{flow.description}</p>
-                            )}
-                            <p className="text-[10px] text-indigo-500 font-black mt-1">{flow.node_count} nodes · {flow.edge_count} edges</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {isPaletteCollapsed && (
-              <div className="h-full bg-gradient-to-b from-slate-50 to-white text-slate-700 flex flex-col items-center justify-between py-4 px-2 border-r border-slate-200">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-9 h-9 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm text-indigo-600">
-                    <FileInput size={16} />
-                  </div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400 rotate-180 [writing-mode:vertical-rl]">
-                    Palette
+                  <p className="text-[10px] text-slate-500 mb-4 leading-snug">
+                    Pre-built reference architectures. Click to drop one onto the canvas.
                   </p>
-                </div>
-
-                <div className="flex flex-col items-center gap-2">
-                  {visibleNodeLibrary.slice(0, 5).map((template) => {
-                    const Icon = template.icon;
-                    return (
-                      <button
-                        key={template.key}
-                        type="button"
-                        title={template.label}
-                        draggable
-                        onDragStart={(event) => {
-                          event.dataTransfer.setData('application/xrag-node', buildPalettePayload(template));
-                          event.dataTransfer.effectAllowed = 'move';
-                        }}
-                        className={`w-9 h-9 rounded-2xl border flex items-center justify-center ${template.colorClass}`}
-                      >
-                        <Icon size={15} />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="w-9 h-9 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <button type="button" onClick={() => setIsPaletteCollapsed(false)} aria-label="Open node palette" className="h-full w-full flex items-center justify-center">
-                    <ChevronsRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* Drag handle: palette ↔ canvas. Disabled when palette is collapsed
-            so the rail can't be resized to a useless width. */}
-        {!isPaletteCollapsed && (
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize node palette"
-            onPointerDown={beginResize('palette')}
-            className="group relative flex-none w-1.5 cursor-col-resize self-stretch"
-          >
-            <div className="absolute inset-y-2 left-1/2 -translate-x-1/2 w-0.5 rounded-full bg-slate-200 group-hover:bg-indigo-400 group-active:bg-indigo-500 transition-colors" />
-          </div>
-        )}
-
-        <section className="min-h-0 flex-1 min-w-0 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-12 border-b border-slate-100 px-4 flex items-center justify-between bg-slate-50/80">
-            <p className="text-xs font-black text-slate-700 uppercase tracking-wider">RAG Architecture Canvas</p>
-            <div className="flex items-center gap-3">
-              {!isPreviewOpen && (
-                <button
-                  type="button"
-                  onClick={packSelectedNodes}
-                  title="Pack selected nodes into a Sub-graph"
-                  disabled={!canPackSelection}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
-                    canPackSelection
-                      ? 'border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100'
-                      : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-                  }`}
-                >
-                  <Network size={12} /> Pack
-                </button>
-              )}
-              <p className="hidden lg:block text-[10px] font-black text-violet-600 uppercase tracking-wider">Delete or Backspace removes selected edges</p>
-              <p className="hidden xl:block text-[10px] font-black text-indigo-500 uppercase tracking-wider">Drag on empty canvas to multi-select</p>
-              <p className="hidden 2xl:block text-[10px] font-black text-slate-400 uppercase tracking-wider">Ctrl/Cmd-click nodes to add to selection</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Connect nodes to define pipeline</p>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsBlueprintMenuOpen((previous) => !previous)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-indigo-200 bg-indigo-50 text-[10px] font-black uppercase tracking-wider text-indigo-700 hover:bg-indigo-100"
-                >
-                  Insert RAG blueprint
-                </button>
-
-                {isBlueprintMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-slate-200 bg-white shadow-xl z-30 p-2">
+                  <div className="space-y-2">
                     {RAG_BLUEPRINTS.map((blueprint) => (
                       <button
                         key={blueprint.id}
                         type="button"
                         onClick={() => insertBlueprint(blueprint.id)}
-                        className="w-full text-left rounded-xl px-3 py-2 hover:bg-indigo-50 transition-colors"
+                        className="group w-full text-left rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-3 transition-all duration-150 hover:-translate-y-px"
+                        style={{ boxShadow: '0 2px 8px rgba(245,158,11,0.10), 0 0 0 1px rgba(245,158,11,0.18)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(245,158,11,0.18), 0 0 0 2px rgba(245,158,11,0.35)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.10), 0 0 0 1px rgba(245,158,11,0.18)'; }}
                       >
-                        <p className="text-xs font-black text-slate-800">{blueprint.label}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{blueprint.description}</p>
+                        <div className="flex items-start gap-2.5">
+                          <div className="shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 shadow-sm" style={{ width: 34, height: 34 }}>
+                            <Network size={15} style={{ color: '#fff' }} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-black text-slate-800 truncate leading-snug">{blueprint.label}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{blueprint.description}</p>
+                            <p className="text-[10px] text-amber-600 font-black mt-1">{blueprint.templateKeys?.length || 0} nodes</p>
+                          </div>
+                        </div>
                       </button>
                     ))}
                   </div>
-                )}
+                </div>
+              )}
+
+              {paletteTab === 'custom' && (
+                <div className="p-4 h-full overflow-y-auto">
+                  <div className="flex items-center justify-between gap-3 mb-1">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Custom Nodes</h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomEditorDraft(null);
+                        setCustomEditorOpen(true);
+                      }}
+                      title="Create a new custom node"
+                      className="inline-flex items-center gap-1 rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-amber-500/40 hover:bg-amber-600 transition-colors"
+                    >
+                      <Plus size={12} /> New
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mb-4 leading-snug">
+                    Build your own nodes with code, dependencies, color & icon. Optionally let the AI assistant generate one from a description.
+                  </p>
+
+                  {customNodesStatus === 'loading' && (
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <Loader2 size={12} className="animate-spin" /> Loading custom nodes…
+                    </div>
+                  )}
+
+                  {customNodes.length === 0 && customNodesStatus !== 'loading' && (
+                    <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/50 p-4 text-center">
+                      <Wand2 size={20} className="mx-auto text-amber-500" />
+                      <p className="text-[11px] font-black text-slate-700 mt-2">No custom nodes yet</p>
+                      <p className="text-[10px] text-slate-500 mt-1 leading-snug">
+                        Click <span className="font-black text-amber-700">+ New</span> to create one or use the AI assistant inside the editor.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    {customNodes.map((cn) => {
+                      const Icon = CUSTOM_NODE_ICON_MAP[cn.icon] || Wand2;
+                      const colorClass = `bg-${['amber','sky','cyan','emerald','violet','fuchsia','rose','indigo','slate'].includes(cn.color) ? cn.color : 'indigo'}-50 border-${['amber','sky','cyan','emerald','violet','fuchsia','rose','indigo','slate'].includes(cn.color) ? cn.color : 'indigo'}-200 text-${['amber','sky','cyan','emerald','violet','fuchsia','rose','indigo','slate'].includes(cn.color) ? cn.color : 'indigo'}-700`;
+                      const pal = paletteFromColorClass(colorClass);
+                      return (
+                        <div
+                          key={cn.id}
+                          className="group relative rounded-xl overflow-hidden"
+                          style={{
+                            borderTop: `3px solid ${pal.accent}`,
+                            borderLeft: `1px solid ${pal.accent}60`,
+                            borderRight: `1px solid ${pal.accent}60`,
+                            borderBottom: `1px solid ${pal.accent}60`,
+                            background: `linear-gradient(145deg, ${pal.accent}14 0%, #f8fafc 55%)`,
+                            boxShadow: `0 2px 8px rgba(0,0,0,0.09), 0 0 0 1px ${pal.accent}40`,
+                          }}
+                        >
+                          <button
+                            type="button"
+                            draggable
+                            onDragStart={(event) => {
+                              event.dataTransfer.setData(
+                                'application/xrag-node',
+                                JSON.stringify({ templateKey: cn.id })
+                              );
+                              event.dataTransfer.effectAllowed = 'move';
+                            }}
+                            className="w-full text-left cursor-grab active:cursor-grabbing"
+                          >
+                            <div className="flex items-center gap-3 p-3">
+                              <div
+                                className="shrink-0 flex items-center justify-center rounded-xl"
+                                style={{
+                                  width: 36, height: 36,
+                                  background: `linear-gradient(140deg, ${pal.accent2} 0%, ${pal.accent} 100%)`,
+                                  boxShadow: `0 2px 6px ${pal.accent}50`,
+                                }}
+                              >
+                                <Icon size={16} style={{ color: '#ffffff' }} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-black text-slate-800 truncate leading-snug">{cn.name}</p>
+                                <p className="text-[10px] leading-snug mt-0.5 truncate" style={{ color: pal.accent2 }}>{cn.description || 'No description'}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5 truncate">{cn.category}</p>
+                              </div>
+                            </div>
+                          </button>
+                          <div className="flex border-t border-slate-200/60 bg-white/40">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCustomEditorDraft(cn);
+                                setCustomEditorOpen(true);
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                            >
+                              <Pencil size={10} /> Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!confirm(`Delete custom node "${cn.name}"?`)) return;
+                                try {
+                                  await xragApi.deleteCustomNode(cn.id);
+                                  unregisterCustomTemplate(cn.id);
+                                  await refreshCustomNodes();
+                                } catch (err) {
+                                  alert(`Delete failed: ${err.message}`);
+                                }
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors border-l border-slate-200/60"
+                            >
+                              <Trash2 size={10} /> Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsPaletteCollapsed((previous) => !previous)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50"
-              >
-                {isPaletteCollapsed ? <ChevronsRight size={12} /> : <ChevronsLeft size={12} />}
-                {isPaletteCollapsed ? 'Show palette' : 'Hide palette'}
-              </button>
             </div>
+
+          </div>
+        </aside>
+
+        {/* Drag handle: palette ↔ canvas */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize node palette"
+          onPointerDown={beginResize('palette')}
+          className="group relative flex-none w-1.5 cursor-col-resize self-stretch"
+        >
+          <div className="absolute inset-y-2 left-1/2 -translate-x-1/2 w-0.5 rounded-full bg-slate-200 group-hover:bg-indigo-400 group-active:bg-indigo-500 transition-colors" />
+        </div>
+
+        <section className="min-h-0 flex-1 min-w-0 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="h-12 border-b border-slate-100 px-4 flex items-center justify-between bg-slate-50/80">
+            <p className="text-xs font-black text-slate-700 uppercase tracking-wider">RAG Architecture Canvas</p>
           </div>
 
           <div
@@ -4564,7 +4720,7 @@ const CanvasBoard = () => {
               <ReactFlow
                 nodes={renderNodes}
                 edges={renderEdges}
-                deleteKeyCode={['Delete', 'Backspace']}
+                deleteKeyCode={null}
                 onNodesChange={onCanvasNodesChange}
                 onEdgesChange={onCanvasEdgesChange}
                 onEdgesDelete={(deletedEdges) => {
@@ -4635,10 +4791,10 @@ const CanvasBoard = () => {
                 defaultEdgeOptions={{
                   type: 'gradient',
                   animated: true,
-                  markerEnd: { type: MarkerType.ArrowClosed, color: '#a78bfa', width: 12, height: 12 },
-                  style: { strokeWidth: 5.5, stroke: '#a78bfa' },
+                  markerEnd: { type: MarkerType.ArrowClosed, color: '#fbbf24', width: 12, height: 12 },
+                  style: { strokeWidth: 5.5, stroke: '#fbbf24' },
                 }}
-                connectionLineStyle={{ stroke: '#a78bfa', strokeWidth: 5.5 }}
+                connectionLineStyle={{ stroke: '#fbbf24', strokeWidth: 5.5 }}
                 connectionLineType="step"
                 connectionLineComponent={CanvasConnectionLine}
                 elementsSelectable
@@ -4651,6 +4807,10 @@ const CanvasBoard = () => {
                 fitView
                 minZoom={0.3}
                 onPaneClick={() => {
+                  if (suppressNextPaneClickRef.current) {
+                    suppressNextPaneClickRef.current = false;
+                    return;
+                  }
                   setSelectionMetaState([], null);
                 }}
                 onSelectionChange={({ nodes: selectedNodes, edges: selectedEdges }) => {
@@ -5048,7 +5208,7 @@ const CanvasBoard = () => {
                     type="button"
                     onClick={packSelectedNodes}
                     title="Pack selected nodes into a Sub-graph"
-                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-violet-700 transition-colors hover:bg-violet-100"
+                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-700 transition-colors hover:bg-amber-100"
                   >
                     <Network size={12} /> Pack
                   </button>
@@ -5103,43 +5263,52 @@ const CanvasBoard = () => {
         </div>
 
         <aside
-          className="bg-white rounded-3xl border border-slate-200 shadow-sm p-3 overflow-y-auto space-y-3 flex-none"
+          className="bg-white rounded-3xl border border-slate-200 shadow-sm p-3 overflow-y-auto space-y-4 flex-none"
           style={{ width: inspectorWidth }}
         >
-          <div>
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Node Inspector</h3>
-            {!selectedNode && <p className="text-xs text-slate-500 mt-2">Select a node to edit its settings.</p>}
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-slate-800">Canvas Memory</p>
-                <p className="text-[11px] text-slate-500">Save your current RAG draft and reload it later.</p>
+          {/* Inspector header — merged with Save / Browse / Run controls.
+              Gold/amber themed. The list of saved architectures lives only
+              in the Browse modal (FolderOpen icon). */}
+          <div className="relative overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 p-3 shadow-sm">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-300/40 blur-2xl"
+            />
+            <div className="relative flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white shadow-md shadow-amber-500/40">
+                <Layers size={16} />
               </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-amber-800">Node Inspector</h3>
+                <p className="text-[10px] text-amber-700/80 truncate">
+                  {selectedNode ? 'Editing selected node' : 'Select a node to edit'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { refreshBackendFlows(); setBrowseFlowsOpen(true); }}
+                title="Browse saved architectures"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-amber-300 bg-white/80 text-amber-700 hover:bg-amber-100 transition-colors shadow-sm"
+              >
+                <FolderOpen size={14} />
+              </button>
             </div>
 
-            <div className="space-y-2">
+            <div className="relative mt-3 flex items-stretch gap-1.5">
               <input
                 type="text"
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value)}
-                placeholder="Draft name (optional)"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+                placeholder="Architecture name…"
+                className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-white/90 px-2.5 py-1.5 text-xs text-slate-700 placeholder-amber-400/70 outline-none focus:bg-white focus:ring-2 focus:ring-amber-400"
               />
               <button
                 type="button"
-                onClick={saveCanvasDraft}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-black uppercase tracking-widest text-white hover:bg-indigo-700"
-              >
-                <Plus size={14} /> Save draft to memory
-              </button>
-              <button
-                type="button"
                 onClick={saveCanvasFlowToBackend}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100"
+                title="Save current canvas as a new architecture"
+                className="inline-flex items-center gap-1 rounded-xl bg-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm shadow-amber-500/30 hover:bg-amber-600"
               >
-                <Database size={14} /> Save flow to backend
+                <Plus size={12} /> Save
               </button>
               <button
                 type="button"
@@ -5147,97 +5316,43 @@ const CanvasBoard = () => {
                   setShareMeta({ name: draftName || '', description: '', author: '', tags: '' });
                   setShareModalOpen(true);
                 }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black uppercase tracking-widest text-violet-700 hover:bg-violet-100"
+                title="Share to community"
+                className="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-white/80 px-2.5 py-1.5 text-amber-700 hover:bg-amber-100"
               >
-                <Share2 size={14} /> Share to community
+                <Share2 size={12} />
               </button>
-              {activeBackendFlowId && (
-                <p className="text-[10px] text-slate-500 truncate">Active backend flow: <span className="font-mono text-slate-700">{activeBackendFlowId}</span></p>
-              )}
             </div>
 
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Backend flows</p>
-                <button
-                  type="button"
-                  onClick={refreshBackendFlows}
-                  className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100"
-                  disabled={backendFlowsStatus === 'loading'}
-                >
-                  {backendFlowsStatus === 'loading' ? '...' : 'Refresh'}
-                </button>
-              </div>
-              {backendFlows.length === 0 ? (
-                <p className="text-[11px] text-slate-500">No flows on backend yet.</p>
-              ) : (
-                backendFlows.map((flow) => (
-                  <div key={flow.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-black text-slate-700 truncate">{flow.name || flow.id}</p>
-                      <p className="text-[10px] text-slate-500">{flow.node_count} nodes / {flow.edge_count} edges</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => loadCanvasFlowFromBackend(flow.id)}
-                        className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-indigo-700 hover:bg-indigo-100"
-                      >
-                        Load
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteCanvasFlowFromBackend(flow.id)}
-                        className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100"
-                      >
-                        Del
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="space-y-2">
-              {savedDrafts.length === 0 ? (
-                <p className="text-[11px] text-slate-500">No saved drafts yet. Create one to restore later.</p>
-              ) : (
-                savedDrafts.map((draft) => (
-                  <div key={draft.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-xs font-black text-slate-800 truncate">{draft.name}</p>
-                        <p className="text-[10px] text-slate-500">{new Date(draft.createdAt).toLocaleString()}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => loadCanvasDraft(draft)}
-                          className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-indigo-700 hover:bg-indigo-100"
-                        >
-                          Load
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteCanvasDraft(draft.id)}
-                          className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={runChatSimulation}
+              disabled={runStatus === 'running'}
+              title="Saving is recommended but not required to run the flow"
+              className="relative mt-2 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Play size={13} /> {runStatus === 'running' ? 'Testing…' : 'Test flow'}
+            </button>
+            {saveFeedback ? (
+              <p className="relative mt-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-700 font-black uppercase tracking-wider text-center px-2 py-1">
+                {saveFeedback}
+              </p>
+            ) : (
+              <p className="relative mt-1 text-[10px] text-amber-700/70 text-center">Save not required, but recommended.</p>
+            )}
           </div>
 
           {selectedNode && (
-            <div className="space-y-3 rounded-2xl border border-slate-200 p-3 bg-slate-50/60">
+            <div
+              className={`space-y-3 rounded-2xl border p-3 transition-colors ${
+                selectedTemplate?.colorClass
+                  ? `${selectedTemplate.colorClass} bg-opacity-60`
+                  : 'border-slate-200 bg-slate-50/60'
+              }`}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-slate-800">{selectedNode.data.label}</p>
-                  <p className="text-[11px] text-slate-500">{selectedNode.data.description}</p>
+                  <p className="text-[11px] text-slate-600">{selectedNode.data.description}</p>
                   {selectedNodeIds.length > 1 && <p className="text-[10px] mt-1 font-black uppercase tracking-wider text-indigo-600">{selectedNodeIds.length} nodes selected</p>}
                 </div>
                 <button
@@ -5362,6 +5477,12 @@ const CanvasBoard = () => {
                 <ImageUploadSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
               ) : isVisionLLMNode ? (
                 <VisionLLMSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+              ) : isCustomNode ? (
+                <CustomNodeSettingsPanel
+                  template={selectedTemplate}
+                  value={selectedNode.data.config}
+                  onChange={updateSelectedNodeConfig}
+                />
               ) : (
                 activeConfigEntries.map(([fieldName, fieldValue]) => {
                   const normalizedField = String(fieldName);
@@ -5419,33 +5540,15 @@ const CanvasBoard = () => {
           )}
 
           <div className="rounded-2xl border border-slate-200 p-3 bg-white space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Search size={14} className="text-indigo-600" />
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">Output Chat Test</h4>
-              </div>
-              {runDurationMs != null && (
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{runDurationMs} ms</span>
-              )}
-            </div>
-            <textarea
-              value={testPrompt}
-              onChange={(event) => setTestPrompt(event.target.value)}
-              rows={3}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
-            />
-            <button
-              type="button"
-              onClick={runChatSimulation}
-              disabled={runStatus === 'running'}
-              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-black hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Link2 size={14} /> {runStatus === 'running' ? 'Running on backend...' : 'Run on backend'}
-            </button>
             {runError && (
               <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-2">{runError}</p>
             )}
-            {testAnswer && <pre className="whitespace-pre-wrap text-xs text-slate-600 leading-relaxed rounded-xl bg-slate-50 p-3 border border-slate-200">{testAnswer}</pre>}
+            {runDurationMs != null && (
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Last run</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{runDurationMs} ms</span>
+              </div>
+            )}
             {runTrace.length > 0 && (
               <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/60 p-2">
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Execution trace</p>
@@ -5466,6 +5569,9 @@ const CanvasBoard = () => {
                   </div>
                 ))}
               </div>
+            )}
+            {!runError && runDurationMs == null && runTrace.length === 0 && (
+              <p className="text-[11px] text-slate-400 text-center py-1">No run executed yet.</p>
             )}
           </div>
 
@@ -5489,13 +5595,132 @@ const CanvasBoard = () => {
         </aside>
       </div>
 
+      {/* Browse Saved Architectures modal */}
+      {browseFlowsOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4"
+          onClick={() => setBrowseFlowsOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl max-h-[80vh] flex flex-col rounded-3xl border border-slate-200 bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 p-5 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                  <FolderOpen size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-slate-800">Browse Saved Architectures</p>
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">
+                    {backendFlows.length} flow{backendFlows.length === 1 ? '' : 's'} available
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBrowseFlowsOpen(false)}
+                className="h-8 w-8 flex items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="px-5 pt-3 pb-2">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={browseFlowsQuery}
+                  onChange={(e) => setBrowseFlowsQuery(e.target.value)}
+                  placeholder="Search by name or id…"
+                  autoFocus
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2 text-xs text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-1.5">
+              {backendFlowsStatus === 'loading' ? (
+                <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-3 py-6 text-center text-[11px] text-slate-500">
+                  Loading…
+                </p>
+              ) : (() => {
+                const blueprintFlowIds = new Set(
+                  RAG_BLUEPRINTS.map((bp) => bp.backendFlowId).filter(Boolean)
+                );
+                const q = browseFlowsQuery.trim().toLowerCase();
+                const filtered = backendFlows
+                  .filter((flow) => !blueprintFlowIds.has(flow.id))
+                  .filter((flow) => {
+                    if (!q) return true;
+                    return (
+                      String(flow.name || '').toLowerCase().includes(q) ||
+                      String(flow.id || '').toLowerCase().includes(q)
+                    );
+                  });
+                if (filtered.length === 0) {
+                  return (
+                    <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-3 py-6 text-center text-[11px] text-slate-500">
+                      {q ? 'No matches.' : 'No saved architectures yet.'}
+                    </p>
+                  );
+                }
+                return filtered.map((flow) => {
+                  const isActive = flow.id === activeBackendFlowId;
+                  return (
+                    <div
+                      key={flow.id}
+                      className={`group relative flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
+                        isActive
+                          ? 'border-indigo-300 bg-indigo-50/70'
+                          : 'border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/40'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-black text-slate-800 truncate">{flow.name || flow.id}</p>
+                        <p className="text-[10px] text-slate-500 font-mono truncate">{flow.id}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          {flow.node_count} nodes · {flow.edge_count} edges
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            loadCanvasFlowFromBackend(flow.id);
+                            setBrowseFlowsOpen(false);
+                          }}
+                          className="rounded-full bg-amber-500 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white hover:bg-amber-600"
+                        >
+                          Load
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteCanvasFlowFromBackend(flow.id)}
+                          title="Delete"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Share to Community modal */}
-      {shareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+      {shareModalOpen && createPortal(
+        <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-2xl bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-600">
+                <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
                   <Share2 size={16} />
                 </div>
                 <div>
@@ -5516,7 +5741,7 @@ const CanvasBoard = () => {
                   value={shareMeta.name}
                   onChange={(e) => setShareMeta((p) => ({ ...p, name: e.target.value }))}
                   placeholder="e.g. My Production RAG"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
               <div>
@@ -5526,7 +5751,7 @@ const CanvasBoard = () => {
                   onChange={(e) => setShareMeta((p) => ({ ...p, description: e.target.value }))}
                   placeholder="What does this pipeline do?"
                   rows={3}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400 resize-none"
                 />
               </div>
               <div>
@@ -5536,7 +5761,7 @@ const CanvasBoard = () => {
                   value={shareMeta.author}
                   onChange={(e) => setShareMeta((p) => ({ ...p, author: e.target.value }))}
                   placeholder="e.g. RAG_Master_42"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
               <div>
@@ -5546,7 +5771,7 @@ const CanvasBoard = () => {
                   value={shareMeta.tags}
                   onChange={(e) => setShareMeta((p) => ({ ...p, tags: e.target.value }))}
                   placeholder="e.g. enterprise, reranker, pinecone"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
             </div>
@@ -5593,14 +5818,33 @@ const CanvasBoard = () => {
                   setShareModalOpen(false);
                   window.dispatchEvent(new CustomEvent('xrag-shared-flow-added'));
                 }}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-violet-700"
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-amber-700"
               >
                 <Share2 size={13} /> Publish
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
+
+      <CustomNodeEditorModal
+        open={customEditorOpen}
+        initial={customEditorDraft}
+        onClose={() => {
+          setCustomEditorOpen(false);
+          setCustomEditorDraft(null);
+        }}
+        onSaved={(saved) => {
+          if (saved) {
+            registerCustomTemplate(saved);
+          }
+          refreshCustomNodes();
+        }}
+        builtinTemplateKeys={Object.entries(templateByKey)
+          .filter(([, t]) => !t?.isCustom)
+          .map(([key, t]) => ({ key, label: t?.label || key, category: t?.category || 'Other' }))}
+      />
     </div>
   );
 };

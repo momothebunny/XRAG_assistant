@@ -46,7 +46,7 @@ const DocumentsTab = ({ documents }) => {
           onClick={() => setActiveSection('prompts')}
           className={`flex items-center gap-2 px-5 py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
             activeSection === 'prompts'
-              ? 'text-violet-700 border-violet-500'
+              ? 'text-amber-700 border-amber-500'
               : 'text-slate-500 border-transparent hover:text-slate-700'
           }`}
         >
@@ -89,7 +89,7 @@ const DocumentsTab = ({ documents }) => {
                   onClick={() => canCompare && setIsCompareOpen((v) => !v)}
                   className={`w-full flex items-center justify-between gap-4 px-6 py-5 md:px-8 md:py-6 text-left transition-colors ${
                     canCompare
-                      ? 'bg-gradient-to-r from-blue-50/80 to-violet-50/70 hover:from-blue-100/60 hover:to-violet-100/60 cursor-pointer'
+                      ? 'bg-gradient-to-r from-blue-50/80 to-amber-50/70 hover:from-blue-100/60 hover:to-amber-100/60 cursor-pointer'
                       : 'bg-gradient-to-r from-slate-50 to-slate-50/60 cursor-not-allowed'
                   }`}
                 >

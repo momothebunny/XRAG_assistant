@@ -21,24 +21,24 @@ import { SHARED_FLOWS, loadUserSharedFlows } from '../../data/sharedFlows';
 const SORT_OPTIONS = [
   { key: 'likes',   label: 'Most Liked',  Icon: Heart,      accent: 'rose'   },
   { key: 'views',   label: 'Most Viewed', Icon: Eye,        accent: 'sky'    },
-  { key: 'newest',  label: 'Newest',      Icon: TrendingUp, accent: 'violet' },
+  { key: 'newest',  label: 'Newest',      Icon: TrendingUp, accent: 'amber' },
 ];
 
 const SORT_ACCENTS = {
   rose:   { ring: 'border-rose-300 bg-rose-50 text-rose-800',       dot: 'bg-rose-500',    soft: 'text-rose-600'    },
   sky:    { ring: 'border-sky-300 bg-sky-50 text-sky-800',          dot: 'bg-sky-500',     soft: 'text-sky-600'     },
-  violet: { ring: 'border-violet-300 bg-violet-50 text-violet-800', dot: 'bg-violet-500',  soft: 'text-violet-600'  },
+  violet: { ring: 'border-amber-300 bg-amber-50 text-amber-800', dot: 'bg-amber-500',  soft: 'text-amber-600'  },
 };
 
 const ALL_TAGS = [...new Set(SHARED_FLOWS.flatMap((f) => f.tags))].sort();
 
 const TAG_COLORS = {
   enterprise: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  compliance: 'bg-violet-50 text-violet-700 border-violet-200',
-  reranker: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+  compliance: 'bg-amber-50 text-amber-700 border-amber-200',
+  reranker: 'bg-amber-50 text-amber-700 border-amber-200',
   pinecone: 'bg-sky-50 text-sky-700 border-sky-200',
   multilingual: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-  hyde: 'bg-purple-50 text-purple-700 border-purple-200',
+  hyde: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   support: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   helpdesk: 'bg-teal-50 text-teal-700 border-teal-200',
   legal: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -52,18 +52,18 @@ const TAG_COLORS = {
   finance: 'bg-blue-50 text-blue-700 border-blue-200',
   reports: 'bg-sky-50 text-sky-700 border-sky-200',
   'query-rewriter': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  citations: 'bg-violet-50 text-violet-700 border-violet-200',
+  citations: 'bg-amber-50 text-amber-700 border-amber-200',
   code: 'bg-slate-100 text-slate-700 border-slate-300',
   review: 'bg-zinc-50 text-zinc-700 border-zinc-200',
-  'reflection-loop': 'bg-purple-50 text-purple-700 border-purple-200',
+  'reflection-loop': 'bg-yellow-50 text-yellow-700 border-yellow-200',
   devops: 'bg-orange-50 text-orange-700 border-orange-200',
-  agentic: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+  agentic: 'bg-amber-50 text-amber-700 border-amber-200',
   router: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   guardrails: 'bg-red-50 text-red-700 border-red-200',
   saas: 'bg-sky-50 text-sky-700 border-sky-200',
   research: 'bg-teal-50 text-teal-700 border-teal-200',
   arxiv: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-  reflection: 'bg-purple-50 text-purple-700 border-purple-200',
+  reflection: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   academic: 'bg-indigo-50 text-indigo-700 border-indigo-200',
 };
 
@@ -274,7 +274,7 @@ const SharedSpaceTab = () => {
         {/* Clipped blob layer */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-16 -left-16 h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl" />
-          <div className="absolute -bottom-16 right-0 h-80 w-80 rounded-full bg-violet-600/15 blur-3xl" />
+          <div className="absolute -bottom-16 right-0 h-80 w-80 rounded-full bg-amber-600/15 blur-3xl" />
           <div className="absolute top-10 right-1/3 h-40 w-40 rounded-full bg-cyan-500/10 blur-2xl" />
         </div>
 

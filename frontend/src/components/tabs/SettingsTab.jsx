@@ -1,6 +1,7 @@
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { SafeDatabase, VECTOR_PROVIDERS } from '../../data/constants';
 import DataStrategyPanel from '../settings/DataStrategyPanel';
+import ApiKeyImportPanel from '../settings/ApiKeyImportPanel';
 
 const SettingsTab = ({ selectedDB, onSelectDB, aiConfig, onAiConfigChange, retrievalConfig, onRetrievalConfigChange }) => {
   return (
@@ -71,6 +72,8 @@ const SettingsTab = ({ selectedDB, onSelectDB, aiConfig, onAiConfigChange, retri
           </div>
         </div>
       </section>
+
+      <ApiKeyImportPanel />
 
       <DataStrategyPanel
         aiConfig={aiConfig}
