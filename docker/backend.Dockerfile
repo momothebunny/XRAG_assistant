@@ -83,10 +83,10 @@ EXPOSE 8001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl --fail --silent http://localhost:8001/health || exit 1
 
-# Single-process uvicorn. Scale horizontally via a process manager or
-# multiple containers behind a reverse proxy rather than --workers, since
+# Single-process uvicorn launched through ``app/_serve.py`` so we can
+# create one dual-stack socket (IPv4 + IPv6 with ``IPV6_V6ONLY=0``).
+# This is required on Fly.io where the public edge proxy reaches the
+# machine via IPv4 NAT but the internal ``*.internal`` network is
+# IPv6-only ULA. Scale horizontally rather than using --workers, since
 # the JSON file stores rely on per-process file locks.
-# Bind to "::" so the container is reachable on both IPv4 *and* IPv6
-# (Fly's internal app-to-app network is IPv6-only ULA, while the public
-# edge proxy / docker-compose bridge uses IPv4).
-CMD ["uvicorn", "app.main:app", "--host", "::", "--port", "8001"]
+CMD ["python", "-m", "app._serve"]
