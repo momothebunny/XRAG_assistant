@@ -1,31 +1,47 @@
 /**
- * VectorDatabaseSettingsPanel — LangFlow-inspired vector store inspector,
- * extra'd with smart awakening.
+ * VectorDatabaseSettingsPanel — LangFlow-inspired vector store inspector.
  *
- * UX contract (mirrors ChunkingSettingsPanel):
- *   • SLEEPING: when no upstream Embedding node is connected, the panel
- *     shows a dashed lock card asking the user to wire one up. We refuse to
- *     accept any data so the user can't ship a misconfigured vector index.
- *   • AWAKE: when an Embedding profile is provided, the panel reveals the
- *     full provider catalog. The output dimension and (suggested) metric
- *     are LOCKED to the upstream model — the canonical RAG mistake of
- *     mixing dimensions across embedders is impossible by construction.
+ * Visual language: same modern atoms as the LLM / Retriever panels
+ * (hero card, upstream contract pills, quick-preset grid, sectioned cards,
+ * ToggleChip pills, validation strip, payload preview, footer),
+ * EMERALD palette to mirror the storage-vector node colour
+ * (`bg-emerald-50 border-emerald-200 text-emerald-700`).
+ *
+ * UX contract:
+ *   • SLEEPING when no upstream Embedding node is connected — the panel
+ *     refuses any data so a misconfigured vector index can't ship.
+ *   • AWAKE when an Embedding profile is provided — full provider catalog
+ *     reveals; output dimension and (suggested) metric are LOCKED to the
+ *     upstream model so dimension mismatches are impossible by construction.
  *
  * SECURITY:
  *   We never collect or store provider API keys in the browser. The user
- *   only picks an environment variable NAME (e.g. PINECONE_API_KEY) and
- *   the backend reads the secret from its own environment.
+ *   only picks an environment variable NAME (e.g. PINECONE_API_KEY) and the
+ *   backend reads the secret from its own environment.
  *
- * Output payload mirrors `default_config` of `storage-vector` in
- * `backend/app/canvas/nodes.py`.
+ * BACKEND CONTRACT (UNCHANGED — `default_config` of `storage-vector` in
+ * `backend/app/canvas/nodes.py` depends on these field names):
+ *   { provider, indexName, namespace, collection, metric, dimensions,
+ *     cloud, region, environment, persistDirectory, url,
+ *     shards, replicas, hybridSearch, metadataFields, upsertBatchSize,
+ *     apiKeyEnvVar, embeddingProfile }
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
+  CheckCircle2,
   CircleHelp,
+  Cloud,
+  Compass,
   Database,
+  Globe,
+  HardDrive,
   Layers,
   Lock,
+  Network,
+  RefreshCw,
+  Server,
   ShieldCheck,
   Sparkles,
   Zap,
@@ -33,22 +49,19 @@ import {
 
 import { xragApi } from '../../services/xragApi';
 
-// ─────────────────────────────────────────────────────────────────────────
-// FALLBACK provider catalog. The real source of truth lives in
-// `backend/data/vector_providers_registry.json` and is fetched at mount
-// time via `xragApi.fetchVectorProvidersRegistry()`. This baked-in copy is
-// only used when the backend is unreachable (offline dev, slow network)
-// so the panel never renders empty.
-// ─────────────────────────────────────────────────────────────────────────
+// ─── FALLBACK provider catalog ───────────────────────────────────────────
+// Real source of truth: `backend/data/vector_providers_registry.json`
+// fetched via `xragApi.fetchVectorProvidersRegistry()`. This baked-in copy
+// is only used when the backend is unreachable so the panel never empties.
 const FALLBACK_REGISTRY = {
   providers: [
-    { id: 'pinecone', label: 'Pinecone', badge: 'Managed', description: 'Serverless or pod-based managed vector DB.', fields: ['indexName', 'namespace', 'cloud', 'region', 'environment', 'apiKeyEnvVar', 'hybridSearch'], supportedMetrics: ['cosine', 'dotproduct', 'euclidean'], defaultApiKeyEnvVar: 'PINECONE_API_KEY' },
-    { id: 'chroma', label: 'Chroma', badge: 'Local · OSS', description: 'Embeddable, runs in-process or via local server.', fields: ['collection', 'persistDirectory', 'url'], supportedMetrics: ['cosine', 'l2', 'ip'], defaultApiKeyEnvVar: null },
-    { id: 'qdrant', label: 'Qdrant', badge: 'OSS · Hybrid', description: 'High-perf Rust DB with native sparse + dense hybrid.', fields: ['collection', 'url', 'apiKeyEnvVar', 'shards', 'replicas', 'hybridSearch'], supportedMetrics: ['cosine', 'euclidean', 'dot'], defaultApiKeyEnvVar: 'QDRANT_API_KEY' },
-    { id: 'weaviate', label: 'Weaviate', badge: 'Hybrid · OSS', description: 'GraphQL-native, hybrid search with BM25 baked in.', fields: ['collection', 'url', 'apiKeyEnvVar', 'hybridSearch'], supportedMetrics: ['cosine', 'l2-squared', 'dot'], defaultApiKeyEnvVar: 'WEAVIATE_API_KEY' },
-    { id: 'milvus', label: 'Milvus', badge: 'OSS · Scale', description: 'Distributed billion-scale vector store.', fields: ['collection', 'url', 'shards', 'replicas'], supportedMetrics: ['cosine', 'l2', 'ip'], defaultApiKeyEnvVar: null },
-    { id: 'pgvector', label: 'pgvector', badge: 'Postgres', description: 'Bring vector search to existing Postgres.', fields: ['indexName', 'url', 'apiKeyEnvVar'], supportedMetrics: ['cosine', 'l2', 'ip'], defaultApiKeyEnvVar: 'POSTGRES_URL' },
-    { id: 'faiss', label: 'FAISS', badge: 'In-memory', description: 'Local Facebook AI similarity search index.', fields: ['persistDirectory'], supportedMetrics: ['cosine', 'l2', 'ip'], defaultApiKeyEnvVar: null },
+    { id: 'pinecone', label: 'Pinecone', badge: 'Managed',     description: 'Serverless or pod-based managed vector DB.',         fields: ['indexName', 'namespace', 'cloud', 'region', 'environment', 'apiKeyEnvVar', 'hybridSearch'], supportedMetrics: ['cosine', 'dotproduct', 'euclidean'], defaultApiKeyEnvVar: 'PINECONE_API_KEY' },
+    { id: 'chroma',   label: 'Chroma',   badge: 'Local · OSS', description: 'Embeddable, runs in-process or via local server.',   fields: ['collection', 'persistDirectory', 'url'],                                              supportedMetrics: ['cosine', 'l2', 'ip'],               defaultApiKeyEnvVar: null },
+    { id: 'qdrant',   label: 'Qdrant',   badge: 'OSS · Hybrid',description: 'High-perf Rust DB with native sparse + dense hybrid.', fields: ['collection', 'url', 'apiKeyEnvVar', 'shards', 'replicas', 'hybridSearch'],         supportedMetrics: ['cosine', 'euclidean', 'dot'],       defaultApiKeyEnvVar: 'QDRANT_API_KEY' },
+    { id: 'weaviate', label: 'Weaviate', badge: 'Hybrid · OSS',description: 'GraphQL-native, hybrid search with BM25 baked in.',  fields: ['collection', 'url', 'apiKeyEnvVar', 'hybridSearch'],                                  supportedMetrics: ['cosine', 'l2-squared', 'dot'],      defaultApiKeyEnvVar: 'WEAVIATE_API_KEY' },
+    { id: 'milvus',   label: 'Milvus',   badge: 'OSS · Scale', description: 'Distributed billion-scale vector store.',            fields: ['collection', 'url', 'shards', 'replicas'],                                            supportedMetrics: ['cosine', 'l2', 'ip'],               defaultApiKeyEnvVar: null },
+    { id: 'pgvector', label: 'pgvector', badge: 'Postgres',    description: 'Bring vector search to existing Postgres.',          fields: ['indexName', 'url', 'apiKeyEnvVar'],                                                   supportedMetrics: ['cosine', 'l2', 'ip'],               defaultApiKeyEnvVar: 'POSTGRES_URL' },
+    { id: 'faiss',    label: 'FAISS',    badge: 'In-memory',   description: 'Local Facebook AI similarity search index.',         fields: ['persistDirectory'],                                                                   supportedMetrics: ['cosine', 'l2', 'ip'],               defaultApiKeyEnvVar: null },
   ],
   metricLabels: {
     cosine: 'Cosine similarity', dotproduct: 'Dot product', dot: 'Dot product', ip: 'Inner product',
@@ -64,11 +77,11 @@ const FALLBACK_REGISTRY = {
   },
 };
 
-// In-module memoisation so we only hit the backend once per page load even
-// if multiple Vector DB nodes are open in sequence.
+// In-module memoisation so we hit the backend once per page load even if
+// multiple Vector DB nodes are opened in sequence.
 let _registryPromise = null;
-const loadRegistry = () => {
-  if (!_registryPromise) {
+const loadRegistry = (force = false) => {
+  if (force || !_registryPromise) {
     _registryPromise = xragApi
       .fetchVectorProvidersRegistry()
       .catch(() => FALLBACK_REGISTRY);
@@ -76,58 +89,76 @@ const loadRegistry = () => {
   return _registryPromise;
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-// UI primitives — mirror Chunking/Embedding panel style.
-// ─────────────────────────────────────────────────────────────────────────
+// Per-provider icon to liven up the cards.
+const PROVIDER_ICONS = {
+  pinecone: Cloud,
+  chroma:   HardDrive,
+  qdrant:   Network,
+  weaviate: Globe,
+  milvus:   Server,
+  pgvector: Database,
+  faiss:    HardDrive,
+};
+
+// ─── Shared atoms (emerald palette) ──────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/50';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{title}</label>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+      {title}
+    </label>
     {help && (
-      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
+      <span title={help} className="cursor-help text-slate-300 hover:text-emerald-500">
         <CircleHelp size={11} />
-      </button>
+      </span>
     )}
   </div>
 );
 
-const SectionHeading = ({ children, color = 'text-slate-600' }) => (
-  <h4 className={`text-[10px] font-black uppercase tracking-wider ${color}`}>{children}</h4>
+const ToggleChip = ({ checked, onChange, label, help }) => (
+  <button
+    type="button"
+    title={help}
+    aria-pressed={Boolean(checked)}
+    onClick={() => onChange?.(!checked)}
+    className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+      checked
+        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-sm shadow-emerald-200/40'
+        : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-200 hover:text-emerald-700'
+    }`}
+  >
+    <span
+      aria-hidden
+      className={`inline-block h-2 w-2 rounded-full transition ${
+        checked ? 'bg-emerald-500' : 'bg-slate-300 group-hover:bg-emerald-300'
+      }`}
+    />
+    {label}
+  </button>
 );
 
-const Toggle = ({ value, onChange, label, help }) => (
-  <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
-    <div className="flex min-w-0 items-center gap-1">
-      <p className="truncate text-[11px] font-bold text-slate-700">{label}</p>
-      {help && (
-        <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
-          <CircleHelp size={12} />
-        </button>
-      )}
-    </div>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={value}
-      onClick={() => onChange(!value)}
-      className={`relative inline-block h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors ${
-        value ? 'bg-emerald-600' : 'bg-slate-300'
+function UpstreamPill({ label, ok, hint, Icon }) {
+  return (
+    <div
+      className={`rounded-lg border px-2 py-1.5 text-[10px] ${
+        ok
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+          : 'border-slate-200 bg-white text-slate-500'
       }`}
     >
-      <span
-        className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow transition-[left] duration-200"
-        style={{ left: value ? '18px' : '2px' }}
-      />
-    </button>
-  </div>
-);
+      <div className="flex items-center gap-1">
+        <Icon size={10} />
+        <p className="font-bold">{label}</p>
+      </div>
+      <p className="mt-0.5 truncate font-mono text-[9px]">{hint}</p>
+    </div>
+  );
+}
 
-// ─────────────────────────────────────────────────────────────────────────
-// Pure payload builder. Reused by canvas runtime so downstream nodes see
-// the same shape as the inspector.
-// ─────────────────────────────────────────────────────────────────────────
+// ─── Pure payload builder. Reused by canvas runtime so downstream nodes
+// see the same shape as the inspector. (Field names preserved.)
 export const buildVectorDatabasePayload = (config, embeddingProfile) => {
   if (!embeddingProfile) {
     return { ...config, embeddingProfile: null };
@@ -144,24 +175,43 @@ export const buildVectorDatabasePayload = (config, embeddingProfile) => {
   };
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────
-export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embeddingProfile }) {
+// ─── Component ───────────────────────────────────────────────────────────
+export default function VectorDatabaseSettingsPanel({
+  value = {},
+  onChange,
+  embeddingProfile,
+}) {
   const isAwake = Boolean(embeddingProfile?.modelId);
 
-  // Single source of truth lives on the backend. We fetch it once, fall back
-  // to the baked-in copy if the network fails.
+  // Single source of truth lives on the backend.
   const [registry, setRegistry] = useState(FALLBACK_REGISTRY);
+  const [registryError, setRegistryError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     loadRegistry().then((data) => {
-      if (!cancelled && data) setRegistry(data);
+      if (cancelled) return;
+      if (data) setRegistry(data);
+      if (data === FALLBACK_REGISTRY) {
+        setRegistryError('Backend unreachable — using built-in catalog.');
+      }
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
+
+  const refresh = () => {
+    setRefreshing(true);
+    setRegistryError(null);
+    loadRegistry(true)
+      .then((data) => {
+        if (data) setRegistry(data);
+        if (data === FALLBACK_REGISTRY) {
+          setRegistryError('Backend unreachable — using built-in catalog.');
+        }
+      })
+      .finally(() => setRefreshing(false));
+  };
 
   const providers = registry.providers || FALLBACK_REGISTRY.providers;
   const metricLabels = registry.metricLabels || FALLBACK_REGISTRY.metricLabels;
@@ -185,9 +235,8 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
     if (native && Number(value.dimensions) !== native) {
       setField('dimensions', native);
     }
-    // Snap metric to a value the provider actually supports. We respect the
-    // embedding's preferred metric when possible, otherwise fall back to the
-    // provider's first supported one.
+    // Snap metric to a value the provider supports. Respect the embedding's
+    // preferred metric when possible, otherwise fall back to provider's first.
     const preferred = embeddingProfile.metric || 'cosine';
     const normalized = preferred === 'dot_product' ? 'dotproduct' : preferred;
     const supported = provider.supportedMetrics;
@@ -195,8 +244,7 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
     if (value.metric !== next) {
       setField('metric', next);
     }
-    // Keep the apiKeyEnvVar in sync with the provider's suggested env name
-    // when the user hasn't customised it.
+    // Keep apiKeyEnvVar in sync with provider default when user hasn't customised.
     if (provider.defaultApiKeyEnvVar && !value.apiKeyEnvVar) {
       setField('apiKeyEnvVar', provider.defaultApiKeyEnvVar);
     }
@@ -217,112 +265,254 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embeddingProfile?.modelId, embeddingProfile?.nativeDimension, provider.id]);
 
-  // ─── SLEEPING STATE ─────────────────────────────────────────────────────
+  // Payload preview memo — declared BEFORE any early return so the React
+  // hook order stays stable across the sleeping/awake transition.
+  const payload = useMemo(
+    () => buildVectorDatabasePayload(value, embeddingProfile),
+    [value, embeddingProfile],
+  );
+
+  // ─── Sleeping state ────────────────────────────────────────────────────
   if (!isAwake) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-4">
-        <div className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm">
-            <Lock size={16} className="text-slate-500" />
+      <div className="space-y-3">
+        <div className="rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 p-4">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-white shadow-sm ring-1 ring-emerald-200">
+              <Lock size={18} className="text-emerald-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                Vector DB · idle
+              </p>
+              <p className="text-xs font-semibold text-slate-700">
+                Connect an Embedding model to wake this node.
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-              Vector DB · idle / sleeping
-            </p>
-            <p className="text-xs font-semibold text-slate-700">
-              Connect an Embedding model to continue.
-            </p>
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-500">
+            <Layers size={12} />
+            <span className="font-bold">Embedding profile</span>
+            <span className="ml-auto font-mono text-[10px] text-emerald-600">missing</span>
           </div>
-        </div>
-        <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
-          The vector database's dimension and metric depend on the upstream
-          embedding model. Drop in an <span className="font-bold text-amber-700">Embedding</span>
-          {' '}node, wire it to this store, and the panel will auto-wake.
-        </p>
-        <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-white/70 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-          <Sparkles size={11} />
-          Only <span className="font-mono">embedded_chunks</span> input is allowed
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
+            The vector DB's dimension and metric depend on the upstream embedding
+            model. Drop in an{' '}
+            <span className="font-bold text-amber-700">Embedding</span> node, wire it
+            here, and the panel auto-wakes.
+          </p>
+          <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-white/70 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <Sparkles size={11} className="text-emerald-500" />
+            Only <span className="font-mono">embedded_chunks</span> input is allowed
+          </div>
         </div>
       </div>
     );
   }
 
-  // ─── AWAKE STATE ────────────────────────────────────────────────────────
+  // ─── Validation ────────────────────────────────────────────────────────
+  const warnings = [];
+  if (!value.indexName && provider.fields.includes('indexName')) {
+    warnings.push('Index name is required for this provider.');
+  }
+  if (!value.collection && provider.fields.includes('collection')) {
+    warnings.push('Collection name is required for this provider.');
+  }
+  if (provider.fields.includes('url') && !value.url && provider.id !== 'chroma') {
+    warnings.push('Endpoint URL is required for this provider.');
+  }
+  if (provider.fields.includes('apiKeyEnvVar') && !value.apiKeyEnvVar) {
+    warnings.push('API key env-var name is required for this provider.');
+  }
+  if (
+    embeddingProfile?.metric &&
+    value.metric &&
+    embeddingProfile.metric !== value.metric &&
+    !(embeddingProfile.metric === 'dot_product' && value.metric === 'dotproduct')
+  ) {
+    warnings.push(`Metric drift: embedding=${embeddingProfile.metric}, store=${value.metric}.`);
+  }
+
+  // ─── Payload preview ───────────────────────────────────────────────────
+  // (memo declared earlier — before the sleeping early return)
+
+  const ProviderIcon = PROVIDER_ICONS[provider.id] || Database;
+  const metricLabel = metricLabels[value.metric] || value.metric || '—';
+
+  // ─── Awake state ───────────────────────────────────────────────────────
   return (
     <div className="space-y-3">
-      {/* ── Embedding handshake card ────────────────────────────────────── */}
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck size={14} className="text-emerald-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-emerald-800">
-            Vector space · auto-synced
-          </p>
-        </div>
-        <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-          <div className="rounded-lg bg-white/70 px-2 py-1.5">
-            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Upstream model</p>
-            <p className="truncate font-mono text-[11px] font-bold text-slate-800" title={embeddingProfile.modelId}>
-              {embeddingProfile.modelId}
+      {/* ── Hero card ───────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-300 via-emerald-400 to-teal-300"
+        />
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 ring-1 ring-emerald-200/60">
+            <ProviderIcon size={20} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-bold text-slate-800">{provider.label}</p>
+            <p className="truncate font-mono text-[10.5px] text-slate-500">
+              {value.indexName || value.collection || 'unnamed'} ·{' '}
+              {value.dimensions || embeddingProfile.nativeDimension || '—'}d
             </p>
           </div>
-          <div className="rounded-lg bg-white/70 px-2 py-1.5">
-            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Dimension</p>
-            <p className="font-mono text-[11px] font-bold text-slate-800">
-              {embeddingProfile.nativeDimension || '—'}
-            </p>
+          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+            <span className="text-[10.5px] font-bold text-emerald-700">{metricLabel}</span>
+            <span className="font-mono text-[10px] text-slate-500">
+              {provider.badge.toLowerCase()}
+            </span>
           </div>
         </div>
-        <p className="mt-2 text-[10px] leading-relaxed text-emerald-900/80">
-          The dimension and suggested metric come from the upstream model —
-          not editable, to prevent an incompatible index.
+        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-500">
+          The <span className="font-semibold text-slate-700">storage hop</span> — persists
+          embedded chunks for similarity search; dimension and metric are inherited from
+          the upstream embedder so an incompatible index can't be built.
         </p>
       </div>
 
+      {/* ── Upstream contract ───────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3">
+        <div className="flex items-start gap-2">
+          <ShieldCheck size={14} className="text-emerald-700" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800">
+              Upstream contract · auto-synced
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              <UpstreamPill
+                label="Embedding"
+                ok={Boolean(embeddingProfile?.modelId)}
+                hint={embeddingProfile?.modelId || 'missing'}
+                Icon={Layers}
+              />
+              <UpstreamPill
+                label="Dimension"
+                ok={Boolean(embeddingProfile?.nativeDimension)}
+                hint={
+                  embeddingProfile?.nativeDimension
+                    ? `${embeddingProfile.nativeDimension}d`
+                    : '—'
+                }
+                Icon={Compass}
+              />
+              <UpstreamPill
+                label="Metric"
+                ok={Boolean(value.metric)}
+                hint={metricLabel}
+                Icon={ShieldCheck}
+              />
+            </div>
+            <p className="mt-2 text-[10px] leading-relaxed text-emerald-900/80">
+              Dimension &amp; suggested metric are{' '}
+              <span className="font-bold">locked</span> to the upstream model — no
+              dimension drift possible.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* ── Provider picker ─────────────────────────────────────────────── */}
-      <div>
-        <SectionHeading color="text-emerald-700">Provider</SectionHeading>
-        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Database size={12} className="text-emerald-500" />
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+              Provider
+            </h4>
+            <span className="rounded-full bg-emerald-100 px-1.5 py-px text-[9px] font-bold text-emerald-700">
+              {providers.length}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50"
+          >
+            <RefreshCw size={10} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </header>
+        {registryError && (
+          <p className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-800">
+            <AlertTriangle size={10} className="mt-0.5 shrink-0" />
+            {registryError}
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-1.5">
           {providers.map((entry) => {
             const selected = entry.id === provider.id;
+            const Icon = PROVIDER_ICONS[entry.id] || Database;
             return (
               <button
                 key={entry.id}
                 type="button"
                 onClick={() => setField('provider', entry.id)}
-                className={`flex flex-col items-start gap-0.5 rounded-lg border px-2 py-1.5 text-left transition ${
+                className={`group flex flex-col items-start gap-1 rounded-xl border p-2 text-left transition ${
                   selected
-                    ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300'
-                    : 'border-slate-200 bg-white hover:border-emerald-300'
+                    ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200/60'
+                    : 'border-slate-200 bg-white hover:border-emerald-200'
                 }`}
               >
-                <div className="flex w-full items-center justify-between gap-1">
-                  <span className="text-[11px] font-bold text-slate-800">{entry.label}</span>
-                  <Database size={11} className="text-slate-400" />
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-md transition ${
+                      selected
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-500'
+                    }`}
+                  >
+                    <Icon size={11} />
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold ${selected ? 'text-emerald-900' : 'text-slate-800'}`}
+                  >
+                    {entry.label}
+                  </span>
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">
+                <span
+                  className={`text-[9px] font-bold uppercase tracking-wider ${
+                    selected ? 'text-emerald-700' : 'text-slate-500'
+                  }`}
+                >
                   {entry.badge}
                 </span>
               </button>
             );
           })}
         </div>
-        <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">{provider.description}</p>
-      </div>
+        <p className="text-[10px] leading-relaxed text-slate-500">{provider.description}</p>
+      </section>
 
       {/* ── Locked dimension + metric ───────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <FieldLabel title="Dimensions" help="Locked to the upstream embedding's native vector size." />
-          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
-            <Lock size={11} className="text-slate-400" />
-            <span className="font-mono text-xs font-bold text-slate-700">
-              {value.dimensions || embeddingProfile.nativeDimension || '—'}
-            </span>
+      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center gap-2">
+          <Lock size={12} className="text-emerald-500" />
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            Vector space (locked)
+          </h4>
+        </header>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <FieldLabel
+              title="Dimensions"
+              help="Locked to the upstream embedding's native vector size."
+            />
+            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
+              <Lock size={11} className="text-slate-400" />
+              <span className="font-mono text-xs font-bold text-slate-700">
+                {value.dimensions || embeddingProfile.nativeDimension || '—'}
+              </span>
+            </div>
           </div>
-        </div>
-        <div>
-          <FieldLabel title="Distance metric" help="Constrained to metrics the chosen provider supports." />
-          <div className="relative">
+          <div>
+            <FieldLabel
+              title="Distance metric"
+              help="Constrained to metrics the chosen provider supports."
+            />
             <select
               value={value.metric || provider.supportedMetrics[0]}
               onChange={(event) => setField('metric', event.target.value)}
@@ -336,11 +526,16 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
             </select>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Provider-specific fields ─────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <SectionHeading>Index / Collection</SectionHeading>
+      {/* ── Index / Collection ──────────────────────────────────────────── */}
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center gap-2">
+          <Database size={12} className="text-emerald-500" />
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            Index / Collection
+          </h4>
+        </header>
 
         {provider.fields.includes('indexName') && (
           <div>
@@ -391,7 +586,9 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
                 className={inputClass}
               >
                 {pineconeClouds.map((cloud) => (
-                  <option key={cloud.id} value={cloud.id}>{cloud.label}</option>
+                  <option key={cloud.id} value={cloud.id}>
+                    {cloud.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -402,9 +599,13 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
                 onChange={(event) => setField('region', event.target.value)}
                 className={inputClass}
               >
-                {(pineconeRegionsByCloud[value.cloud] || pineconeRegionsByCloud.aws || []).map((region) => (
-                  <option key={region} value={region}>{region}</option>
-                ))}
+                {(pineconeRegionsByCloud[value.cloud] || pineconeRegionsByCloud.aws || []).map(
+                  (region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
           </div>
@@ -412,7 +613,10 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
 
         {provider.fields.includes('environment') && provider.id === 'pinecone' && (
           <div>
-            <FieldLabel title="Pod environment (legacy)" help="Optional. Leave blank for serverless." />
+            <FieldLabel
+              title="Pod environment (legacy)"
+              help="Optional. Leave blank for serverless."
+            />
             <input
               type="text"
               value={value.environment || ''}
@@ -477,29 +681,36 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
             )}
           </div>
         )}
-      </div>
+      </section>
 
       {/* ── Indexing behaviour ──────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <SectionHeading>
-          <span className="inline-flex items-center gap-1">
-            <Layers size={11} /> Indexing behaviour
-          </span>
-        </SectionHeading>
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center gap-2">
+          <Layers size={12} className="text-emerald-500" />
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            Indexing behaviour
+          </h4>
+        </header>
 
         <div>
-          <FieldLabel title="Metadata fields" help="Comma-separated chunk metadata keys to index alongside vectors." />
+          <FieldLabel
+            title="Metadata fields"
+            help="Comma-separated chunk metadata keys to index alongside vectors."
+          />
           <input
             type="text"
             value={value.metadataFields || ''}
             onChange={(event) => setField('metadataFields', event.target.value)}
-            className={inputClass}
+            className={`${inputClass} font-mono`}
             placeholder="source,title,page"
           />
         </div>
 
         <div>
-          <FieldLabel title="Upsert batch size" help="How many vectors to send per write request." />
+          <FieldLabel
+            title="Upsert batch size"
+            help="How many vectors to send per write request."
+          />
           <input
             type="number"
             min={1}
@@ -511,26 +722,35 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
         </div>
 
         {provider.fields.includes('hybridSearch') && (
-          <Toggle
-            value={Boolean(value.hybridSearch)}
-            onChange={(next) => setField('hybridSearch', next)}
-            label="Hybrid search (sparse + dense)"
-            help="Combine BM25/sparse vectors with dense embeddings at query time."
-          />
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <ToggleChip
+              checked={Boolean(value.hybridSearch)}
+              onChange={(next) => setField('hybridSearch', next)}
+              label="Hybrid search (sparse + dense)"
+              help="Combine BM25/sparse vectors with dense embeddings at query time."
+            />
+          </div>
         )}
-      </div>
+      </section>
 
       {/* ── Credentials (env-var name only) ─────────────────────────────── */}
       {provider.fields.includes('apiKeyEnvVar') && (
-        <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck size={12} className="text-emerald-700" />
-            <SectionHeading color="text-emerald-700">Credentials</SectionHeading>
-          </div>
+        <section className="space-y-2 rounded-2xl border border-dashed border-emerald-200 bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/40 p-3">
+          <header className="flex items-center gap-1.5">
+            <ShieldCheck size={12} className="text-emerald-600" />
+            <h4 className="text-[11px] font-extrabold uppercase tracking-wide text-emerald-700">
+              Credentials
+            </h4>
+          </header>
+          <p className="text-[10px] leading-snug text-slate-600">
+            The actual secret stays on the backend — we only record the env-var
+            name here. Add the value to{' '}
+            <span className="font-mono font-semibold text-slate-700">backend/.env</span>.
+          </p>
           <div>
             <FieldLabel
               title="API key env-var name"
-              help="The actual secret stays on the backend. We only store the env-var name here."
+              help="The actual secret stays on the backend; we store only the name."
             />
             <input
               type="text"
@@ -541,17 +761,43 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
               spellCheck={false}
             />
           </div>
-          <p className="text-[10px] leading-relaxed text-emerald-900/80">
-            Add the secret to <span className="font-mono font-bold">backend/.env</span> —
-            the browser will never see it.
-          </p>
+        </section>
+      )}
+
+      {/* ── Validation strip ────────────────────────────────────────────── */}
+      {warnings.length > 0 ? (
+        <ul className="space-y-1">
+          {warnings.map((warning) => (
+            <li
+              key={warning}
+              className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800"
+            >
+              <AlertTriangle size={11} className="mt-0.5 shrink-0" />
+              <span>{warning}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
+          <CheckCircle2 size={11} />
+          Configuration valid — ready to upsert.
         </div>
       )}
 
-      {/* ── Footer hint ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-amber-500" />
-        Allowed input: <span className="font-mono">embedded_chunks</span>
+      {/* ── Output payload preview ──────────────────────────────────────── */}
+      <details className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
+        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          Output payload (read-only)
+        </summary>
+        <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-emerald-200">
+{JSON.stringify(payload, null, 2)}
+        </pre>
+      </details>
+
+      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        <Zap size={11} className="text-emerald-400" />
+        Allowed input: <span className="font-mono text-emerald-700">embedded_chunks</span>
       </div>
     </div>
   );
