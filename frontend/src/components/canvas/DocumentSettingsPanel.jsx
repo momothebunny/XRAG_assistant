@@ -16,7 +16,7 @@ const Toggle = ({ value, onChange, label, help }) => {
         role="switch"
         aria-checked={value}
         onClick={() => onChange(!value)}
-        className={`relative h-6 w-11 rounded-full transition-colors ${value ? 'bg-indigo-600' : 'bg-slate-300'}`}
+        className={`relative h-6 w-11 rounded-full transition-colors ${value ? 'bg-violet-600' : 'bg-slate-300'}`}
       >
         <span
           className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? 'translate-x-5' : 'translate-x-0.5'}`}
@@ -45,7 +45,7 @@ const DocumentSettingsPanel = ({ value, onChange }) => {
   return (
     <div className="space-y-4 rounded-2xl border border-slate-200 p-3 bg-slate-50/70">
       <section className="space-y-2">
-        <h4 className="text-[11px] font-black uppercase tracking-wider text-sky-700">Pre-processing</h4>
+        <h4 className="text-[11px] font-black uppercase tracking-wider text-violet-700">Pre-processing</h4>
         <Toggle
           value={Boolean(value.remove_headers_footers)}
           onChange={(next) => update('remove_headers_footers', next)}
@@ -77,13 +77,13 @@ const DocumentSettingsPanel = ({ value, onChange }) => {
             step={50}
             value={Number(value.ocr_dpi || 300)}
             onChange={(event) => update('ocr_dpi', Number(event.target.value || 300))}
-            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400"
           />
         </div>
       </section>
 
       <section className="space-y-2">
-        <h4 className="text-[11px] font-black uppercase tracking-wider text-amber-700">Extraction Strategy</h4>
+        <h4 className="text-[11px] font-black uppercase tracking-wider text-violet-700">Extraction Strategy</h4>
 
         <div>
           <FieldLabel
@@ -95,7 +95,7 @@ const DocumentSettingsPanel = ({ value, onChange }) => {
             placeholder="1-10, 15"
             value={value.page_range || ''}
             onChange={(event) => update('page_range', event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400"
           />
         </div>
 
@@ -107,7 +107,7 @@ const DocumentSettingsPanel = ({ value, onChange }) => {
           <select
             value={(value.image_handling || 'ignore').toLowerCase()}
             onChange={(event) => update('image_handling', event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400"
           >
             <option value="ignore">Ignore</option>
             <option value="extract">Extract</option>
@@ -133,7 +133,7 @@ const DocumentSettingsPanel = ({ value, onChange }) => {
             type="text"
             value={value.source_label || ''}
             onChange={(event) => update('source_label', event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400"
           />
         </div>
       </section>

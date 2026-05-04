@@ -19,7 +19,7 @@ const Toggle = ({ value, onChange, label, help }) => (
       aria-checked={value}
       onClick={() => onChange(!value)}
       className={`relative inline-block h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors ${
-        value ? 'bg-indigo-600' : 'bg-slate-300'
+        value ? 'bg-sky-600' : 'bg-slate-300'
       }`}
     >
       <span
@@ -44,7 +44,7 @@ const SectionHeading = ({ children, color }) => (
 );
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-sky-400';
 
 const STRATEGY_OPTIONS = [
   {
@@ -266,13 +266,13 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <div className="space-y-3 rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50/80 via-white to-white p-2.5 shadow-[0_0_0_1px_rgba(251,191,36,0.25)]">
-      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/80 p-2">
-        <div className="mt-0.5 rounded-lg border border-amber-300 bg-white p-1.5 text-amber-600">
+    <div className="space-y-3 rounded-2xl border border-sky-300 bg-gradient-to-br from-sky-50/80 via-white to-white p-2.5 shadow-[0_0_0_1px_rgba(56,189,248,0.25)]">
+      <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50/80 p-2">
+        <div className="mt-0.5 rounded-lg border border-sky-300 bg-white p-1.5 text-sky-600">
           <Sparkles size={14} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">
+          <p className="text-[10px] font-black uppercase tracking-wider text-sky-700">
             Awake · {embeddingProfile.badge}
           </p>
           <p className="text-[11px] font-bold text-slate-700 truncate">{embeddingProfile.label}</p>
@@ -283,7 +283,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
       </div>
 
       <section className="space-y-3">
-        <SectionHeading color="text-amber-700">Splitter</SectionHeading>
+        <SectionHeading color="text-sky-700">Splitter</SectionHeading>
 
         <div>
           <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
@@ -301,7 +301,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
             ))}
           </select>
           {strategyOption && (
-            <p className="mt-1.5 rounded-lg border border-amber-100 bg-amber-50/70 px-2 py-1.5 text-[11px] leading-snug text-amber-800">
+            <p className="mt-1.5 rounded-lg border border-sky-100 bg-sky-50/70 px-2 py-1.5 text-[11px] leading-snug text-sky-800">
               {strategyOption.description}
             </p>
           )}
@@ -386,7 +386,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
         )}
 
         {strategy === 'semantic' && (
-          <div className="space-y-2 rounded-lg border border-amber-100 bg-amber-50/40 p-2">
+          <div className="space-y-2 rounded-lg border border-sky-100 bg-sky-50/40 p-2">
             <div>
               <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
                 breakpoint_type
@@ -425,7 +425,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
       </section>
 
       <section className="space-y-2">
-        <SectionHeading color="text-indigo-700">Window ({embeddingProfile.unitLabel})</SectionHeading>
+        <SectionHeading color="text-sky-700">Window ({embeddingProfile.unitLabel})</SectionHeading>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <FieldLabel
@@ -474,7 +474,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
       <button
         type="button"
         onClick={() => setShowAdvanced((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:border-sky-300 hover:text-sky-700"
       >
         <span className="flex items-center gap-1.5">
           <Settings2 size={13} />
@@ -489,7 +489,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
       {showAdvanced && (
         <div className="space-y-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-2.5">
           <section className="space-y-2">
-            <SectionHeading color="text-amber-700">Length function</SectionHeading>
+            <SectionHeading color="text-sky-700">Length function</SectionHeading>
             <div>
               <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
                 length_function
@@ -506,7 +506,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                 ))}
               </select>
               {lengthOption && (
-                <p className="mt-1.5 rounded-lg border border-amber-100 bg-amber-50/70 px-2 py-1.5 text-[11px] leading-snug text-amber-800">
+                <p className="mt-1.5 rounded-lg border border-sky-100 bg-sky-50/70 px-2 py-1.5 text-[11px] leading-snug text-sky-800">
                   {lengthOption.description}
                 </p>
               )}
