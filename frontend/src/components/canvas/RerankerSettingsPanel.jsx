@@ -86,7 +86,7 @@ export function buildRerankerPayload(config = {}) {
 // UI primitives
 // ─────────────────────────────────────────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-cyan-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
@@ -226,20 +226,20 @@ export default function RerankerSettingsPanel({
   return (
     <div className="space-y-3">
       {/* ── Context-aware banner ────────────────────────────────────────── */}
-      <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-3">
+      <div className="rounded-xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={14} className="text-amber-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-amber-800">
+          <ShieldCheck size={14} className="text-cyan-700" />
+          <p className="text-[11px] font-black uppercase tracking-wider text-cyan-800">
             Context-aware
           </p>
         </div>
         <p className="mt-1.5 text-[11px] leading-relaxed text-slate-700">
           Bemenet:{' '}
-          <span className="font-mono font-bold text-amber-700">
+          <span className="font-mono font-bold text-cyan-700">
             {upstreamChunkCount ?? '?'} chunk
           </span>{' '}
           ➔ Output:{' '}
-          <span className="font-mono font-bold text-amber-700">{topN} most relevant chunks</span>
+          <span className="font-mono font-bold text-cyan-700">{topN} most relevant chunks</span>
         </p>
       </div>
 
@@ -253,7 +253,7 @@ export default function RerankerSettingsPanel({
       {/* ── Model picker ────────────────────────────────────────────────── */}
       <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
         <div className="flex items-center justify-between">
-          <SectionHeading color="text-amber-700">Reranker model</SectionHeading>
+          <SectionHeading color="text-cyan-700">Reranker model</SectionHeading>
           <button
             type="button"
             onClick={() => refreshModels(true)}
@@ -266,7 +266,7 @@ export default function RerankerSettingsPanel({
         </div>
 
         {loadError && (
-          <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] text-amber-800">
+          <p className="rounded border border-cyan-200 bg-cyan-50 px-2 py-1 text-[10px] text-cyan-800">
             {loadError}
           </p>
         )}
@@ -320,7 +320,7 @@ export default function RerankerSettingsPanel({
               step={1}
               value={topN}
               onChange={(event) => setMeta('top_n', Number(event.target.value))}
-              className="flex-1 accent-amber-600"
+              className="flex-1 accent-cyan-600"
             />
             <input
               type="number"
@@ -349,7 +349,7 @@ export default function RerankerSettingsPanel({
               step={0.01}
               value={scoreThreshold}
               onChange={(event) => setMeta('score_threshold', Number(event.target.value))}
-              className="flex-1 accent-amber-600"
+              className="flex-1 accent-cyan-600"
             />
             <input
               type="number"
@@ -378,7 +378,7 @@ export default function RerankerSettingsPanel({
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-amber-500" />
+        <Zap size={11} className="text-cyan-500" />
         Allowed inputs: <span className="font-mono">chunks</span> + <span className="font-mono">text</span>
       </div>
     </div>

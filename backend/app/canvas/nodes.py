@@ -1239,25 +1239,85 @@ def _safe_json_loads(text: str) -> dict[str, Any]:
 def _exec_hybrid_merge(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
     bm25_w = float(node.config.get("bm25Weight", 0.4))
     vector_w = float(node.config.get("vectorWeight", 0.6))
+    fusion = str(node.config.get("fusionStrategy", "rrf")).lower()
+    rrf_k = max(1, int(node.config.get("rrfK", 60)))
+    top_k = max(1, int(node.config.get("topK", 10)))
+    dedup = bool(node.config.get("deduplicateByDocId", True))
+
     chunks = _collect_chunks(inputs)
-    for chunk in chunks:
-        chunk["score"] = chunk.get("score", 0.0) * vector_w + bm25_w * 0.5
+
+    if fusion == "rrf":
+        # Reciprocal Rank Fusion across the incoming order — assumes upstream
+        # already sorted each stream by relevance.
+        for rank, chunk in enumerate(chunks):
+            chunk["score"] = chunk.get("score", 0.0) + 1.0 / (rrf_k + rank + 1)
+    elif fusion == "linear":
+        for chunk in chunks:
+            chunk["score"] = chunk.get("score", 0.0) * vector_w + bm25_w * 0.5
+    elif fusion == "max":
+        for chunk in chunks:
+            chunk["score"] = max(chunk.get("score", 0.0), chunk.get("bm25_score", 0.0))
+    elif fusion == "mean":
+        for chunk in chunks:
+            scores = [chunk.get("score", 0.0), chunk.get("bm25_score", 0.0)]
+            chunk["score"] = sum(scores) / len(scores)
+
+    if dedup:
+        seen: dict[str, dict[str, Any]] = {}
+        for chunk in chunks:
+            doc_id = str(chunk.get("doc_id") or chunk.get("id") or id(chunk))
+            if doc_id not in seen or chunk.get("score", 0.0) > seen[doc_id].get("score", 0.0):
+                seen[doc_id] = chunk
+        chunks = list(seen.values())
+
     chunks.sort(key=lambda c: c.get("score", 0.0), reverse=True)
-    return {"chunks": chunks, "weights": {"bm25": bm25_w, "vector": vector_w}}
+    chunks = chunks[:top_k]
+    return {
+        "chunks": chunks,
+        "weights": {"bm25": bm25_w, "vector": vector_w},
+        "fusion": fusion,
+        "top_k": top_k,
+        "deduplicated": dedup,
+    }
 
 
 def _exec_compression(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
+    strategy = str(node.config.get("strategy", "token-budget")).lower()
     max_tokens = int(node.config.get("maxTokens", 2200))
+    top_k = int(node.config.get("topK", 5))
+    max_chars = int(node.config.get("maxCharsPerChunk", 1000))
+    keep_citations = bool(node.config.get("keepCitations", True))
+    keep_scores = bool(node.config.get("keepScores", True))
+
     chunks = _collect_chunks(inputs)
-    budget = max_tokens
+
+    if strategy == "top-k":
+        chunks = sorted(chunks, key=lambda c: c.get("score", 0.0), reverse=True)[:top_k]
+
     compact: list[dict[str, Any]] = []
+    budget = max_tokens
     for chunk in chunks:
-        cost = chunk.get("tokens", max(1, len(chunk.get("text", "")) // 4))
+        text = chunk.get("text", "") or ""
+        if max_chars and len(text) > max_chars:
+            text = text[:max_chars] + "\u2026"
+        cost = chunk.get("tokens", max(1, len(text) // 4))
         if cost > budget:
             break
-        compact.append(chunk)
+        projected = {**chunk, "text": text}
+        if not keep_scores:
+            projected.pop("score", None)
+            projected.pop("rerank_score", None)
+        if not keep_citations:
+            # Strip simple inline markers like [1] or [doc-1].
+            projected["text"] = re.sub(r"\[(?:\d+|doc-[\w-]+)\]", "", projected["text"])
+        compact.append(projected)
         budget -= cost
-    return {"chunks": compact, "compressed": True, "budget_remaining": budget}
+    return {
+        "chunks": compact,
+        "compressed": True,
+        "strategy": strategy,
+        "budget_remaining": budget,
+    }
 
 
 def _exec_pii(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
@@ -2274,7 +2334,7 @@ _REGISTRATIONS: list[NodeSpec] = [
         {"model": "text-embedding-3-large"},
         _exec_embedding,
     ),
-    NodeSpec("process-query-rewriter", "Process", "Query Rewriter", "Expand query", ["text"], ["text", "query"], {"strategy": "intent-aware", "expansionTerms": 3}, _exec_query_rewriter),
+    NodeSpec("process-query-rewriter", "Process", "Query Rewriter", "Expand query", ["text"], ["text", "query"], {"strategy": "intent-aware", "expansionTerms": 3, "variants": 3, "model": "openai/gpt-4o-mini", "temperature": 0.3, "preserveOriginal": True}, _exec_query_rewriter),
     NodeSpec(
         "process-retriever",
         "Process",
@@ -2321,8 +2381,8 @@ _REGISTRATIONS: list[NodeSpec] = [
         },
         _exec_reranker,
     ),
-    NodeSpec("process-hybrid-merge", "Process", "Hybrid Merge", "BM25 + vector blend", ["chunks"], ["chunks"], {"bm25Weight": 0.4, "vectorWeight": 0.6}, _exec_hybrid_merge),
-    NodeSpec("process-context-compression", "Process", "Context Compression", "Compact context", ["chunks"], ["chunks"], {"maxTokens": 2200, "keepCitations": True}, _exec_compression),
+    NodeSpec("process-hybrid-merge", "Process", "Hybrid Merge", "BM25 + vector blend", ["chunks"], ["chunks"], {"bm25Weight": 0.4, "vectorWeight": 0.6, "fusionStrategy": "rrf", "rrfK": 60, "topK": 10, "deduplicateByDocId": True}, _exec_hybrid_merge),
+    NodeSpec("process-context-compression", "Process", "Context Compression", "Compact context", ["chunks"], ["chunks"], {"strategy": "token-budget", "maxTokens": 2200, "topK": 5, "maxCharsPerChunk": 1000, "keepCitations": True, "keepScores": True}, _exec_compression),
     NodeSpec("process-pii-redaction", "Process", "PII Redaction", "Mask sensitive fields", ["chunks"], ["chunks"], {"redactEmails": True, "redactPhones": True, "redactIds": True, "redactNames": False, "redactAddresses": False, "redactCreditCards": True, "redactIbans": True, "mask": "[REDACTED]", "whitelistPattern": ""}, _exec_pii),
     NodeSpec(
         "process-hallucination-guard",

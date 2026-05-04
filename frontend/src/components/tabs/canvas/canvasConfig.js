@@ -187,7 +187,14 @@ export const NODE_LIBRARY = [
     description: 'Rewrite user query for retrieval',
     icon: Search,
     colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
-    config: { strategy: 'intent-aware', expansionTerms: 3 },
+    config: {
+      strategy: 'intent-aware',
+      expansionTerms: 3,
+      variants: 3,
+      model: 'openai/gpt-4o-mini',
+      temperature: 0.3,
+      preserveOriginal: true,
+    },
   },
   {
     key: 'process-retriever',
@@ -219,7 +226,14 @@ export const NODE_LIBRARY = [
     description: 'Blend BM25 and vector results',
     icon: GitBranch,
     colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
-    config: { bm25Weight: 0.4, vectorWeight: 0.6 },
+    config: {
+      bm25Weight: 0.4,
+      vectorWeight: 0.6,
+      fusionStrategy: 'rrf',
+      rrfK: 60,
+      topK: 10,
+      deduplicateByDocId: true,
+    },
   },
   {
     key: 'process-context-compression',
@@ -228,7 +242,14 @@ export const NODE_LIBRARY = [
     description: 'Compact long context before LLM',
     icon: ScissorsLineDashed,
     colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
-    config: { maxTokens: 2200, keepCitations: true },
+    config: {
+      strategy: 'token-budget',
+      maxTokens: 2200,
+      topK: 5,
+      maxCharsPerChunk: 1000,
+      keepCitations: true,
+      keepScores: true,
+    },
   },
   {
     key: 'process-pii-redaction',
