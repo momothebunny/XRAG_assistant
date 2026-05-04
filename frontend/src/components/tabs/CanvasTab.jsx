@@ -66,6 +66,7 @@ import STTSettingsPanel from '../canvas/STTSettingsPanel';
 import TTSSettingsPanel from '../canvas/TTSSettingsPanel';
 import ModelRouterSettingsPanel from '../canvas/ModelRouterSettingsPanel';
 import GuardrailsSettingsPanel from '../canvas/GuardrailsSettingsPanel';
+import PiiRedactionSettingsPanel from '../canvas/PiiRedactionSettingsPanel';
 import ChatTesterSettingsPanel from '../canvas/ChatTesterSettingsPanel';
 import ImageUploadSettingsPanel from '../canvas/ImageUploadSettingsPanel';
 import VisionLLMSettingsPanel from '../canvas/VisionLLMSettingsPanel';
@@ -3624,6 +3625,7 @@ const CanvasBoard = () => {
   const isTTSNode = selectedNode?.data?.templateKey === 'brain-tts';
   const isModelRouterNode = selectedNode?.data?.templateKey === 'brain-router';
   const isGuardrailsNode = selectedNode?.data?.templateKey === 'brain-guardrails';
+  const isPiiRedactionNode = selectedNode?.data?.templateKey === 'process-pii-redaction';
   const isChatTesterNode = selectedNode?.data?.templateKey === 'output-chat';
   const isImageUploadNode = selectedNode?.data?.templateKey === 'input-image';
   const isVisionLLMNode = selectedNode?.data?.templateKey === 'brain-vision';
@@ -5471,6 +5473,8 @@ const CanvasBoard = () => {
                 <ModelRouterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
               ) : isGuardrailsNode ? (
                 <GuardrailsSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+              ) : isPiiRedactionNode ? (
+                <PiiRedactionSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
               ) : isChatTesterNode ? (
                 <ChatTesterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
               ) : isImageUploadNode ? (

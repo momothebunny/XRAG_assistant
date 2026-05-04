@@ -237,7 +237,17 @@ export const NODE_LIBRARY = [
     description: 'Mask personal/sensitive fields',
     icon: Shield,
     colorClass: 'bg-rose-50 border-rose-200 text-rose-700',
-    config: { redactEmails: true, redactPhones: true, redactIds: true },
+    config: {
+      redactEmails: true,
+      redactPhones: true,
+      redactIds: true,
+      redactNames: false,
+      redactAddresses: false,
+      redactCreditCards: true,
+      redactIbans: true,
+      mask: '[REDACTED]',
+      whitelistPattern: '',
+    },
   },
   {
     key: 'process-hallucination-guard',

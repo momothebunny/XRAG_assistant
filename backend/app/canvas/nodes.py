@@ -1262,13 +1262,49 @@ def _exec_compression(node: CanvasNode, context: RunContext, inputs: dict[str, A
 
 def _exec_pii(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
     chunks = _collect_chunks(inputs)
-    redacted = []
+
+    # Mirror of the JS `PATTERNS` dict in `frontend/.../PiiRedactionSettingsPanel.jsx`.
+    # Keep these in sync — the inspector preview re-runs the same regex set in
+    # the browser so the user sees what the backend will produce.
+    pii_patterns: list[tuple[str, str]] = [
+        ("redactEmails",      r"[\w.+-]+@[\w-]+\.[\w.-]+"),
+        ("redactPhones",      r"\+?\d[\d\s\-()]{6,}\d"),
+        ("redactIds",         r"\b\d{8,12}\b"),
+        ("redactNames",       r"\b[A-Z\xc1\xc9\xcd\xd3\xd6\u0150\xda\xdc\u0170][a-z\xe1\xe9\xed\xf3\xf6\u0151\xfa\xfc\u0171]{1,}\s+[A-Z\xc1\xc9\xcd\xd3\xd6\u0150\xda\xdc\u0170][a-z\xe1\xe9\xed\xf3\xf6\u0151\xfa\xfc\u0171]{1,}\b"),
+        ("redactAddresses",   r"\b\d{1,4}\s?[A-Za-z\xc1\xc9\xcd\xd3\xd6\u0150\xda\xdc\u0170\xe1\xe9\xed\xf3\xf6\u0151\xfa\xfc\u0171.\- ]{3,}\b(?:\s+\d{4,5})?"),
+        ("redactCreditCards", r"\b(?:\d[ -]*?){13,19}\b"),
+        ("redactIbans",       r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){4,7}\b"),
+    ]
+    mask = str(node.config.get("mask") or "[REDACTED]")
+    whitelist_raw = node.config.get("whitelistPattern") or ""
+    try:
+        whitelist_re = re.compile(whitelist_raw) if whitelist_raw else None
+    except re.error:
+        whitelist_re = None
+
+    sentinel_open, sentinel_close = "\x00WL", "\x00"
+
+    redacted: list[dict[str, Any]] = []
     for chunk in chunks:
-        text = chunk.get("text", "")
-        if node.config.get("redactEmails", True):
-            text = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "[EMAIL]", text)
-        if node.config.get("redactPhones", True):
-            text = re.sub(r"\+?\d[\d\s\-()]{6,}\d", "[PHONE]", text)
+        text = chunk.get("text", "") or ""
+        sentinels: list[str] = []
+        if whitelist_re is not None:
+            def _stash(match: re.Match) -> str:
+                sentinels.append(match.group(0))
+                return f"{sentinel_open}{len(sentinels) - 1}{sentinel_close}"
+            text = whitelist_re.sub(_stash, text)
+        for key, pattern in pii_patterns:
+            # Defaults match the frontend: emails/phones/ids/cards/ibans on,
+            # names/addresses off (both have higher false-positive rates).
+            default_on = key not in {"redactNames", "redactAddresses"}
+            if node.config.get(key, default_on):
+                text = re.sub(pattern, mask, text)
+        if sentinels:
+            text = re.sub(
+                rf"{re.escape(sentinel_open)}(\d+){re.escape(sentinel_close)}",
+                lambda m: sentinels[int(m.group(1))],
+                text,
+            )
         redacted.append({**chunk, "text": text})
     return {"chunks": redacted, "pii_redacted": True}
 
@@ -2287,7 +2323,7 @@ _REGISTRATIONS: list[NodeSpec] = [
     ),
     NodeSpec("process-hybrid-merge", "Process", "Hybrid Merge", "BM25 + vector blend", ["chunks"], ["chunks"], {"bm25Weight": 0.4, "vectorWeight": 0.6}, _exec_hybrid_merge),
     NodeSpec("process-context-compression", "Process", "Context Compression", "Compact context", ["chunks"], ["chunks"], {"maxTokens": 2200, "keepCitations": True}, _exec_compression),
-    NodeSpec("process-pii-redaction", "Process", "PII Redaction", "Mask sensitive fields", ["chunks"], ["chunks"], {"redactEmails": True, "redactPhones": True, "redactIds": True}, _exec_pii),
+    NodeSpec("process-pii-redaction", "Process", "PII Redaction", "Mask sensitive fields", ["chunks"], ["chunks"], {"redactEmails": True, "redactPhones": True, "redactIds": True, "redactNames": False, "redactAddresses": False, "redactCreditCards": True, "redactIbans": True, "mask": "[REDACTED]", "whitelistPattern": ""}, _exec_pii),
     NodeSpec(
         "process-hallucination-guard",
         "Process",
