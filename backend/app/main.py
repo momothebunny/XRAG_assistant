@@ -40,8 +40,18 @@ from .knowledge import (
 )
 from .knowledge import pinecone_index
 from .models import AssistantSettings, ChatRequest, ChatResponse, CompareDocumentsRequest, CompareDocumentsSummaryResult, FactCheckResult, FactCheckIssue, SaveAnswerRequest, SaveAnswerResponse, SourceSnippet
+from .api_keys import (
+    ApiKeyImportReport,
+    ApiKeyImportRequest,
+    ApiKeyPublic,
+    ApiKeyStore,
+    ApiKeyUpsertRequest,
+    PROVIDER_CATALOG,
+)
 from .openrouter_proxy import router as openrouter_router
 from .health import router as health_router
+from .custom_nodes import router as custom_nodes_router, configure as configure_custom_nodes
+from .auth import router as auth_router, configure as configure_auth
 from .rag_engine import LangChainRAGEngine
 from .store import JsonStore
 
@@ -85,15 +95,39 @@ app.add_middleware(
 app.include_router(openrouter_router)
 app.include_router(health_router)
 app.include_router(audit_router)
+app.include_router(custom_nodes_router)
+app.include_router(auth_router)
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 store = JsonStore(DATA_DIR)
+api_key_store = ApiKeyStore(DATA_DIR)
+# Push any persisted, active keys into os.environ so every downstream reader
+# (rag_engine, openrouter_proxy, classifier, pinecone, audit, canvas, ...)
+# sees them on the very first request.
+api_key_store.sync_to_env()
+# Expose the store via the module-level singleton so deeper modules
+# (canvas/nodes._call_openrouter_chat, audit/validation, ...) can reach it
+# without a FastAPI dependency.
+from .api_keys import register_store as _register_api_key_store
+_register_api_key_store(api_key_store)
 rag_engine = LangChainRAGEngine(DATA_DIR)
 canvas_store = CanvasFlowStore(DATA_DIR)
 knowledge_store = KnowledgeStore(DATA_DIR)
 knowledge_processor = KnowledgeProcessor()
 audit_store = AuditStore(DATA_DIR)
 benchmark_store = BenchmarkStore(DATA_DIR)
+
+# Custom node store + AI assistant — needs to see the API key store so the
+# OpenRouter call inside `ai/generate` can promote/rotate keys, and the
+# built-in node descriptors so similarity can compare against them.
+configure_custom_nodes(
+    data_dir=DATA_DIR,
+    api_store_getter=lambda: api_key_store,
+    builtin_descriptors_getter=list_node_descriptors,
+)
+
+# User authentication — JSON-backed store with PBKDF2 password hashing.
+configure_auth(DATA_DIR)
 
 # Inject shared state so audit router can access stores + runner
 app.state.canvas_store = canvas_store
@@ -119,6 +153,48 @@ def get_settings() -> AssistantSettings:
 def put_settings(payload: AssistantSettings) -> AssistantSettings:
     settings = store.get_settings().model_copy(update=payload.model_dump())
     return store.save_settings(settings)
+
+
+# ---------------------------------------------------------------------------
+# API key management — multiple keys per provider, active key mirrored to env
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/settings/api-keys/providers")
+def list_api_key_providers() -> list[dict]:
+    """Catalogue of supported providers + canonical env-var names."""
+    return PROVIDER_CATALOG
+
+
+@app.get("/api/settings/api-keys", response_model=list[ApiKeyPublic])
+def list_api_keys() -> list[ApiKeyPublic]:
+    return api_key_store.list_public()
+
+
+@app.post("/api/settings/api-keys", response_model=ApiKeyPublic)
+def upsert_api_key(payload: ApiKeyUpsertRequest) -> ApiKeyPublic:
+    return api_key_store.upsert(payload)
+
+
+@app.delete("/api/settings/api-keys/{key_id}")
+def delete_api_key(key_id: str) -> dict[str, bool]:
+    deleted = api_key_store.delete(key_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"API key '{key_id}' not found")
+    return {"deleted": True}
+
+
+@app.post("/api/settings/api-keys/{key_id}/activate", response_model=ApiKeyPublic)
+def activate_api_key(key_id: str) -> ApiKeyPublic:
+    activated = api_key_store.activate(key_id)
+    if activated is None:
+        raise HTTPException(status_code=404, detail=f"API key '{key_id}' not found")
+    return activated
+
+
+@app.post("/api/settings/api-keys/import", response_model=ApiKeyImportReport)
+def import_api_keys(payload: ApiKeyImportRequest) -> ApiKeyImportReport:
+    return api_key_store.import_env_text(payload)
 
 
 @app.get("/api/answers")
