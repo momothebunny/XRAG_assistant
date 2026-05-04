@@ -18,6 +18,8 @@ primary_region = 'ams'
 
 [env]
   BACKEND_URL = 'http://aurelia-backend.internal:8001'
+  # Fly.io's internal DNS server (resolves *.internal hostnames over IPv6 ULA).
+  DNS_RESOLVER = '[fdaa::3]'
 
 [http_service]
   internal_port = 80

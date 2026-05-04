@@ -40,12 +40,23 @@ RUN npx --no-install vite build
 FROM nginx:1.27-alpine AS runtime
 
 ENV BACKEND_URL=http://backend:8001
+# DNS resolver used by nginx for runtime upstream lookups. Defaults to
+# Docker's embedded DNS; Fly.io machines override this to `[fdaa::3]`
+# in fly.frontend.toml so `*.internal` names resolve correctly.
+ENV DNS_RESOLVER=127.0.0.11
 
 # Remove stock site, install ours as a template so nginx:alpine's
 # entrypoint runs envsubst on it at startup (replacing $BACKEND_URL).
 RUN rm /etc/nginx/conf.d/default.conf
 
 COPY <<'NGINX' /etc/nginx/templates/aurelia.conf.template
+# Use Fly's internal resolver (or Docker's embedded DNS) so the upstream
+# hostname is looked up at request time, not at config-load time.
+# Without this, nginx refuses to start if `aurelia-backend.internal`
+# isn't currently resolvable (e.g. when Fly auto-stopped the backend),
+# and the frontend container goes into a crash loop.
+resolver ${DNS_RESOLVER} valid=10s ipv6=on;
+
 server {
     listen 80;
     server_name _;
@@ -59,7 +70,11 @@ server {
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
 
     location /api/ {
-        proxy_pass         ${BACKEND_URL}/api/;
+        # Variable form forces nginx to use the resolver above and defer
+        # the DNS lookup. Fly will wake a stopped backend machine on the
+        # first connection attempt.
+        set $backend_upstream ${BACKEND_URL};
+        proxy_pass         $backend_upstream;
         proxy_http_version 1.1;
         proxy_set_header   Host              $host;
         proxy_set_header   X-Real-IP         $remote_addr;
@@ -67,6 +82,7 @@ server {
         proxy_set_header   X-Forwarded-Proto $scheme;
         proxy_read_timeout 300s;
         proxy_send_timeout 300s;
+        proxy_connect_timeout 30s;
     }
 
     location /assets/ {
