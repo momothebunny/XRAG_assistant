@@ -85,14 +85,14 @@ const HF_MODEL_LIMIT = 1000;
 // icon + label + accent palette so the dropdown can render brand-matching
 // chips and the selected-row check.
 const SORT_OPTIONS = [
-  { key: 'downloads', label: 'Letöltések', short: 'Letöltések', Icon: Download, accent: 'violet' },
-  { key: 'likes',     label: 'Kedvelések', short: 'Kedvelések', Icon: Heart,    accent: 'rose'   },
-  { key: 'recent',    label: 'Legújabb',   short: 'Legújabb',   Icon: RefreshCw, accent: 'sky'   },
-  { key: 'name',      label: 'Név (A–Z)',  short: 'A–Z',        Icon: ScrollText, accent: 'slate' },
+  { key: 'downloads', label: 'Downloads', short: 'Downloads', Icon: Download, accent: 'amber' },
+  { key: 'likes',     label: 'Likes',     short: 'Likes',     Icon: Heart,    accent: 'rose'   },
+  { key: 'recent',    label: 'Newest',    short: 'Newest',    Icon: RefreshCw, accent: 'sky'   },
+  { key: 'name',      label: 'Name (A–Z)', short: 'A–Z',      Icon: ScrollText, accent: 'slate' },
 ];
 
 const SORT_ACCENTS = {
-  violet: { ring: 'border-violet-300 bg-violet-50 text-violet-800', dot: 'bg-violet-500',  soft: 'text-violet-600' },
+  violet: { ring: 'border-amber-300 bg-amber-50 text-amber-800', dot: 'bg-amber-500',  soft: 'text-amber-600' },
   rose:   { ring: 'border-rose-300 bg-rose-50 text-rose-800',       dot: 'bg-rose-500',    soft: 'text-rose-600'   },
   sky:    { ring: 'border-sky-300 bg-sky-50 text-sky-800',          dot: 'bg-sky-500',     soft: 'text-sky-600'    },
   slate:  { ring: 'border-slate-300 bg-slate-100 text-slate-800',   dot: 'bg-slate-500',   soft: 'text-slate-600'  },
@@ -205,8 +205,8 @@ const PROVIDER_STYLE = {
   mistralai:     { label: 'Mistral',    dot: 'bg-rose-500',    chip: 'bg-rose-50 text-rose-700 border-rose-200',           solid: 'bg-rose-500 border-rose-600 text-white',       ring: 'ring-rose-300' },
   deepseek:      { label: 'DeepSeek',   dot: 'bg-indigo-500',  chip: 'bg-indigo-50 text-indigo-700 border-indigo-200',     solid: 'bg-indigo-500 border-indigo-600 text-white',   ring: 'ring-indigo-300' },
   'deepseek-ai': { label: 'DeepSeek',   dot: 'bg-indigo-500',  chip: 'bg-indigo-50 text-indigo-700 border-indigo-200',     solid: 'bg-indigo-500 border-indigo-600 text-white',   ring: 'ring-indigo-300' },
-  Qwen:          { label: 'Qwen',       dot: 'bg-purple-500',  chip: 'bg-purple-50 text-purple-700 border-purple-200',     solid: 'bg-purple-500 border-purple-600 text-white',   ring: 'ring-purple-300' },
-  qwen:          { label: 'Qwen',       dot: 'bg-purple-500',  chip: 'bg-purple-50 text-purple-700 border-purple-200',     solid: 'bg-purple-500 border-purple-600 text-white',   ring: 'ring-purple-300' },
+  Qwen:          { label: 'Qwen',       dot: 'bg-yellow-500',  chip: 'bg-yellow-50 text-yellow-700 border-yellow-200',     solid: 'bg-yellow-500 border-yellow-600 text-white',   ring: 'ring-yellow-300' },
+  qwen:          { label: 'Qwen',       dot: 'bg-yellow-500',  chip: 'bg-yellow-50 text-yellow-700 border-yellow-200',     solid: 'bg-yellow-500 border-yellow-600 text-white',   ring: 'ring-yellow-300' },
   cohere:        { label: 'Cohere',     dot: 'bg-pink-500',    chip: 'bg-pink-50 text-pink-700 border-pink-200',           solid: 'bg-pink-500 border-pink-600 text-white',       ring: 'ring-pink-300' },
   CohereForAI:   { label: 'Cohere',     dot: 'bg-pink-500',    chip: 'bg-pink-50 text-pink-700 border-pink-200',           solid: 'bg-pink-500 border-pink-600 text-white',       ring: 'ring-pink-300' },
   ai21:          { label: 'AI21',       dot: 'bg-yellow-500',  chip: 'bg-yellow-50 text-yellow-800 border-yellow-200',     solid: 'bg-yellow-500 border-yellow-600 text-white',   ring: 'ring-yellow-300' },
@@ -217,12 +217,12 @@ const PROVIDER_STYLE = {
   // Common HF orgs
   HuggingFaceH4: { label: 'HF H4',      dot: 'bg-yellow-500',  chip: 'bg-yellow-50 text-yellow-800 border-yellow-200',     solid: 'bg-yellow-500 border-yellow-600 text-white',   ring: 'ring-yellow-300' },
   TIGER_Lab:     { label: 'TIGER Lab',  dot: 'bg-amber-500',   chip: 'bg-amber-50 text-amber-700 border-amber-200',        solid: 'bg-amber-500 border-amber-600 text-white',     ring: 'ring-amber-300' },
-  NousResearch:  { label: 'Nous',       dot: 'bg-fuchsia-500', chip: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',  solid: 'bg-fuchsia-500 border-fuchsia-600 text-white', ring: 'ring-fuchsia-300' },
+  NousResearch:  { label: 'Nous',       dot: 'bg-amber-500', chip: 'bg-amber-50 text-amber-700 border-amber-200',  solid: 'bg-amber-500 border-amber-600 text-white', ring: 'ring-amber-300' },
   THUDM:         { label: 'THUDM',      dot: 'bg-red-500',     chip: 'bg-red-50 text-red-700 border-red-200',              solid: 'bg-red-500 border-red-600 text-white',         ring: 'ring-red-300' },
   bigcode:       { label: 'BigCode',    dot: 'bg-teal-500',    chip: 'bg-teal-50 text-teal-700 border-teal-200',           solid: 'bg-teal-500 border-teal-600 text-white',       ring: 'ring-teal-300' },
   tiiuae:        { label: 'TII',        dot: 'bg-emerald-600', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200',  solid: 'bg-emerald-600 border-emerald-700 text-white', ring: 'ring-emerald-300' },
   databricks:    { label: 'Databricks', dot: 'bg-red-600',     chip: 'bg-red-50 text-red-700 border-red-200',              solid: 'bg-red-600 border-red-700 text-white',         ring: 'ring-red-300' },
-  stabilityai:   { label: 'Stability',  dot: 'bg-violet-500',  chip: 'bg-violet-50 text-violet-700 border-violet-200',     solid: 'bg-violet-500 border-violet-600 text-white',   ring: 'ring-violet-300' },
+  stabilityai:   { label: 'Stability',  dot: 'bg-amber-500',  chip: 'bg-amber-50 text-amber-700 border-amber-200',     solid: 'bg-amber-500 border-amber-600 text-white',   ring: 'ring-amber-300' },
 };
 const DEFAULT_PROVIDER_STYLE = {
   label: null, dot: 'bg-slate-400',
@@ -255,7 +255,7 @@ const stripProvider = (id) => String(id || '').split('/').slice(1).join('/') || 
 // UI primitives
 // ─────────────────────────────────────────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
@@ -287,7 +287,7 @@ const SliderRow = ({ value, onChange, min, max, step, label, help }) => (
       step={step}
       value={value}
       onChange={(event) => onChange(Number(event.target.value))}
-      className="w-full accent-violet-600"
+      className="w-full accent-amber-600"
     />
   </div>
 );
@@ -420,7 +420,7 @@ export default function LLMSettingsPanel({
       .then((list) => {
         setModels(list);
         if (list === FALLBACK_MODELS) {
-          setLoadError('Backend nem elérhető — beépített lista használatban.');
+          setLoadError('Backend unavailable — using built-in list.');
         }
       })
       .finally(() => setRefreshing(false));
@@ -607,10 +607,10 @@ export default function LLMSettingsPanel({
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-              LLM · alvó állapot
+              LLM · idle
             </p>
             <p className="text-xs font-semibold text-slate-700">
-              Csatlakoztass query forrást (Question / Query Rewriter / Reranker).
+              Connect a query source (Question / Query Rewriter / Reranker).
             </p>
           </div>
         </div>
@@ -619,13 +619,13 @@ export default function LLMSettingsPanel({
           <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-500">
             <Search size={12} />
             <span className="font-bold">Query (text)</span>
-            <span className="ml-auto font-mono text-[10px]">— hiányzik</span>
+            <span className="ml-auto font-mono text-[10px]">— missing</span>
           </div>
         </div>
 
         <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
-          A generáció query nélkül értelmetlen. Ajánlott pipeline:
-          Reranker → LLM, opcionális System Prompt csatolva.
+          Generation without a query is meaningless. Recommended pipeline:
+          Reranker → LLM, optional System Prompt attached.
         </p>
       </div>
     );
@@ -635,11 +635,11 @@ export default function LLMSettingsPanel({
   return (
     <div className="space-y-3">
       {/* ── Context-aware banner ────────────────────────────────────────── */}
-      <div className="rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-3">
+      <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={14} className="text-violet-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-violet-800">
-            Bemenet áttekintés
+          <ShieldCheck size={14} className="text-amber-700" />
+          <p className="text-[11px] font-black uppercase tracking-wider text-amber-800">
+            Input overview
           </p>
         </div>
         <div className="mt-2 grid grid-cols-3 gap-1.5 text-[10px]">
@@ -652,7 +652,7 @@ export default function LLMSettingsPanel({
             <Database size={11} />
             <p className="mt-0.5 font-bold">Chunks</p>
             <p className="font-mono text-[9px]">
-              {hasChunksUpstream ? `${upstreamChunkCount ?? '?'} db` : 'nincs (ungrounded!)'}
+              {hasChunksUpstream ? `${upstreamChunkCount ?? '?'} items` : 'none (ungrounded!)'}
             </p>
           </div>
           <div className={`rounded-lg border px-2 py-1.5 ${hasSystemPromptUpstream ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-500'}`}>
@@ -668,7 +668,7 @@ export default function LLMSettingsPanel({
         {/* Hero banner: announces the curated HF top-1000 catalogue. The
             flame icon hints at "trending" / "hot" — amber→rose gradient ties
             into the Hugging Face brand palette without aping their logo. */}
-        <div className="relative overflow-hidden rounded-lg border border-amber-200/70 bg-gradient-to-r from-amber-50 via-rose-50 to-fuchsia-50 px-3 py-2 shadow-inner">
+        <div className="relative overflow-hidden rounded-lg border border-amber-200/70 bg-gradient-to-r from-amber-50 via-rose-50 to-amber-50 px-3 py-2 shadow-inner">
           <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br from-amber-300/40 to-rose-300/30 blur-xl" />
           <div className="relative flex items-center gap-2.5">
             <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-md ring-1 ring-amber-300/60">
@@ -695,11 +695,11 @@ export default function LLMSettingsPanel({
         </div>
 
         <div className="flex items-center justify-between">
-          <SectionHeading color="text-violet-700">
+          <SectionHeading color="text-amber-700">
             <span className="inline-flex items-center gap-1.5">
               <Brain size={12} />
               <span>Model</span>
-              <span className="rounded-full bg-violet-100 px-1.5 py-px text-[9px] font-bold text-violet-700">
+              <span className="rounded-full bg-amber-100 px-1.5 py-px text-[9px] font-bold text-amber-700">
                 {filteredList.length}/{list.length}
               </span>
             </span>
@@ -708,10 +708,10 @@ export default function LLMSettingsPanel({
             type="button"
             onClick={() => refresh(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50"
           >
             <RefreshCw size={10} className={refreshing ? 'animate-spin' : ''} />
-            Frissít
+            Refresh
           </button>
         </div>
 
@@ -733,15 +733,15 @@ export default function LLMSettingsPanel({
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Keresés név vagy id alapján…"
-              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-7 pr-7 text-xs text-slate-700 outline-none transition focus:border-violet-300 focus:ring-2 focus:ring-violet-200"
+              placeholder="Search by name or id…"
+              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-7 pr-7 text-xs text-slate-700 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-200"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                aria-label="Keresés törlése"
+                aria-label="Clear search"
               >
                 <X size={12} />
               </button>
@@ -758,7 +758,7 @@ export default function LLMSettingsPanel({
                   <button
                     type="button"
                     onClick={() => setSortOpen((open) => !open)}
-                    title={`Rendezés: ${active.label}`}
+                    title={`Sort: ${active.label}`}
                     aria-haspopup="listbox"
                     aria-expanded={sortOpen}
                     className={`group inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold shadow-sm transition ${accent.ring} hover:shadow`}
@@ -780,7 +780,7 @@ export default function LLMSettingsPanel({
                       className="absolute right-0 z-30 mt-1.5 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur"
                     >
                       <div className="border-b border-slate-100 bg-slate-50/80 px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                        Rendezés
+                        Sort
                       </div>
                       <ul className="py-1">
                         {SORT_OPTIONS.map((opt) => {
@@ -863,13 +863,13 @@ export default function LLMSettingsPanel({
                 aria-expanded={providerOpen}
                 className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs font-bold shadow-sm transition ${
                   isAll
-                    ? 'border-slate-200 bg-white text-slate-700 hover:border-violet-300'
+                    ? 'border-slate-200 bg-white text-slate-700 hover:border-amber-300'
                     : `${activeStyle.solid} hover:brightness-110`
                 }`}
               >
                 <span
                   className={`grid h-5 w-5 shrink-0 place-items-center rounded-full ${
-                    isAll ? 'bg-violet-100 text-violet-700' : 'bg-white/25 text-white'
+                    isAll ? 'bg-amber-100 text-amber-700' : 'bg-white/25 text-white'
                   }`}
                 >
                   {isAll ? (
@@ -879,7 +879,7 @@ export default function LLMSettingsPanel({
                   )}
                 </span>
                 <span className="flex-1 truncate">
-                  {isAll ? 'Minden provider' : providerLabel(providerFilter)}
+                  {isAll ? 'All providers' : providerLabel(providerFilter)}
                 </span>
                 <span
                   className={`rounded-md px-1.5 py-0.5 font-mono text-[9px] ${
@@ -912,8 +912,8 @@ export default function LLMSettingsPanel({
                       value={providerSearch}
                       onChange={(event) => setProviderSearch(event.target.value)}
                       autoFocus
-                      placeholder={`Provider keresése (${providers.length})…`}
-                      className="w-full rounded-md border border-slate-200 bg-white py-1 pl-6 pr-2 text-[11px] outline-none focus:border-violet-300 focus:ring-1 focus:ring-violet-200"
+                      placeholder={`Search providers (${providers.length})…`}
+                      className="w-full rounded-md border border-slate-200 bg-white py-1 pl-6 pr-2 text-[11px] outline-none focus:border-amber-300 focus:ring-1 focus:ring-amber-200"
                     />
                   </div>
 
@@ -929,22 +929,22 @@ export default function LLMSettingsPanel({
                         setProviderSearch('');
                       }}
                       className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition ${
-                        isAll ? 'bg-violet-50 text-violet-900' : 'text-slate-700 hover:bg-slate-50'
+                        isAll ? 'bg-amber-50 text-amber-900' : 'text-slate-700 hover:bg-slate-50'
                       }`}
                     >
-                      <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-violet-100 text-[9px] font-black text-violet-700">
+                      <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-amber-100 text-[9px] font-black text-amber-700">
                         ∀
                       </span>
-                      <span className="flex-1 font-bold">Minden provider</span>
+                      <span className="flex-1 font-bold">All providers</span>
                       <span className="font-mono text-[9px] text-slate-500">{list.length}</span>
-                      {isAll && <Check size={12} className="text-violet-600" />}
+                      {isAll && <Check size={12} className="text-amber-600" />}
                     </button>
 
                     <div className="my-1 h-px bg-slate-100" />
 
                     {visibleProviders.length === 0 && (
                       <p className="px-3 py-3 text-center text-[11px] text-slate-400">
-                        Nincs ilyen provider.
+                        No such provider.
                       </p>
                     )}
 
@@ -964,7 +964,7 @@ export default function LLMSettingsPanel({
                           }}
                           className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition ${
                             active
-                              ? 'bg-violet-50 text-violet-900'
+                              ? 'bg-amber-50 text-amber-900'
                               : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
@@ -983,7 +983,7 @@ export default function LLMSettingsPanel({
                           <span className="font-mono text-[9px] text-slate-500">
                             {provider.count}
                           </span>
-                          {active && <Check size={12} className="text-violet-600" />}
+                          {active && <Check size={12} className="text-amber-600" />}
                         </button>
                       );
                     })}
@@ -1001,13 +1001,13 @@ export default function LLMSettingsPanel({
             positions visible rows with translateY. */}
         {filteredList.length === 0 ? (
           <div className="rounded-lg border border-slate-200 bg-white px-3 py-8 text-center text-[11px] text-slate-400">
-            Nincs találat — szűkítsd a keresést vagy válassz másik providert.
+            No results — narrow your search or pick another provider.
           </div>
         ) : (
           <div
             ref={listRef}
             role="listbox"
-            aria-label="Elérhető modellek"
+            aria-label="Available models"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
             className="relative overflow-y-auto rounded-lg border border-slate-200 bg-white"
             style={{ height: VIEWPORT_HEIGHT }}
@@ -1037,7 +1037,7 @@ export default function LLMSettingsPanel({
                       style={{ height: ROW_HEIGHT }}
                       className={`group flex w-full items-center gap-2 border-b border-slate-100 px-2 text-left transition ${
                         isActive
-                          ? 'bg-violet-50 ring-1 ring-inset ring-violet-300'
+                          ? 'bg-amber-50 ring-1 ring-inset ring-amber-300'
                           : 'bg-white hover:bg-slate-50'
                       }`}
                     >
@@ -1055,17 +1055,17 @@ export default function LLMSettingsPanel({
                           </span>
                         )}
                         {isActive && (
-                          <span className="absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-violet-600 text-white ring-2 ring-white">
+                          <span className="absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-amber-600 text-white ring-2 ring-white">
                             <Check size={8} strokeWidth={3} />
                           </span>
                         )}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className={`truncate text-xs font-bold ${isActive ? 'text-violet-900' : 'text-slate-800'}`}>
+                        <p className={`truncate text-xs font-bold ${isActive ? 'text-amber-900' : 'text-slate-800'}`}>
                           {model.__custom && (
                             <Sparkles
                               size={10}
-                              className="mr-1 inline-block -translate-y-px text-fuchsia-500"
+                              className="mr-1 inline-block -translate-y-px text-amber-500"
                             />
                           )}
                           {model.name || stripProvider(model.id)}
@@ -1096,12 +1096,12 @@ export default function LLMSettingsPanel({
 
         {/* Active selection (shown only when filtered out) */}
         {selectedModel && !filteredList.find((m) => m.id === modelId) && (
-          <div className="flex items-center gap-2 rounded-md border border-violet-200 bg-violet-50 px-2 py-1.5 text-[10px] text-violet-800">
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] text-amber-800">
             <Check size={11} />
             <span>
-              Aktív: <span className="font-mono font-bold">{modelId}</span>
+              Active: <span className="font-mono font-bold">{modelId}</span>
             </span>
-            <span className="ml-auto text-[9px] opacity-70">(szűrőn kívül)</span>
+            <span className="ml-auto text-[9px] opacity-70">(filtered out)</span>
           </div>
         )}
 
@@ -1109,10 +1109,10 @@ export default function LLMSettingsPanel({
             push the model list down. Accepts any `org/model-name` id and
             validates server-side. Imported models persist in localStorage
             and jump to the top of the picker with a Sparkles badge. */}
-        <div className="space-y-2 rounded-lg border border-dashed border-fuchsia-200 bg-gradient-to-br from-fuchsia-50/60 via-white to-violet-50/60 p-2.5">
+        <div className="space-y-2 rounded-lg border border-dashed border-amber-200 bg-gradient-to-br from-amber-50/60 via-white to-amber-50/60 p-2.5">
           <div className="flex items-center gap-1.5">
-            <Sparkles size={12} className="text-fuchsia-600" />
-            <span className="text-[11px] font-extrabold uppercase tracking-wide text-fuchsia-700">
+            <Sparkles size={12} className="text-amber-600" />
+            <span className="text-[11px] font-extrabold uppercase tracking-wide text-amber-700">
               Import custom HF model
             </span>
           </div>
@@ -1122,7 +1122,7 @@ export default function LLMSettingsPanel({
               href="https://huggingface.co/models?pipeline_tag=text-generation&sort=trending"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-0.5 font-semibold text-fuchsia-700 underline decoration-fuchsia-300 underline-offset-2 transition hover:text-fuchsia-900 hover:decoration-fuchsia-600"
+              className="inline-flex items-center gap-0.5 font-semibold text-amber-700 underline decoration-amber-300 underline-offset-2 transition hover:text-amber-900 hover:decoration-amber-600"
             >
               Browse on Hugging Face
               <ExternalLink size={9} />
@@ -1145,13 +1145,13 @@ export default function LLMSettingsPanel({
                 }
               }}
               placeholder="org/model-name (e.g. meta-llama/Llama-3.1-8B-Instruct)"
-              className="flex-1 min-w-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-mono text-slate-700 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200"
+              className="flex-1 min-w-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-mono text-slate-700 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-200"
             />
             <button
               type="button"
               onClick={addCustomModel}
               disabled={customLoading || !customId.trim()}
-              className="inline-flex shrink-0 items-center gap-1 rounded-md bg-gradient-to-br from-fuchsia-500 to-violet-600 px-2.5 text-[11px] font-bold text-white shadow-sm transition hover:from-fuchsia-600 hover:to-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex shrink-0 items-center gap-1 rounded-md bg-gradient-to-br from-amber-500 to-amber-600 px-2.5 text-[11px] font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {customLoading ? (
                 <RefreshCw size={11} className="animate-spin" />
@@ -1171,15 +1171,15 @@ export default function LLMSettingsPanel({
               {customModels.map((m) => (
                 <span
                   key={m.id}
-                  className="inline-flex items-center gap-1 rounded-full border border-fuchsia-200 bg-white/80 py-0.5 pl-1.5 pr-1 text-[10px] font-medium text-fuchsia-800"
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-white/80 py-0.5 pl-1.5 pr-1 text-[10px] font-medium text-amber-800"
                   title={m.id}
                 >
-                  <Sparkles size={9} className="text-fuchsia-500" />
+                  <Sparkles size={9} className="text-amber-500" />
                   <span className="max-w-[140px] truncate">{m.name || m.id}</span>
                   <button
                     type="button"
                     onClick={() => removeCustomModel(m.id)}
-                    className="ml-0.5 rounded-full p-0.5 text-fuchsia-400 hover:bg-fuchsia-100 hover:text-fuchsia-700"
+                    className="ml-0.5 rounded-full p-0.5 text-amber-400 hover:bg-amber-100 hover:text-amber-700"
                     aria-label={`Remove ${m.id}`}
                   >
                     <X size={9} />
@@ -1216,8 +1216,8 @@ export default function LLMSettingsPanel({
                 </span>
               </div>
               <p className="text-[10px] leading-snug text-slate-600">
-                Ha az elsődleges modell hálózati hibát vagy rate-limit választ ad,
-                a gateway csendben újrapróbálja a promptot ezen a tartalék modellen.
+                If the primary model returns a network error or rate-limit response,
+                the gateway silently retries the prompt against this fallback model.
               </p>
               <select
                 value={fallbackId}
@@ -1250,11 +1250,11 @@ export default function LLMSettingsPanel({
               {fallbackId ? (
                 <p className="flex items-center gap-1 text-[10px] font-medium text-amber-800">
                   <ShieldCheck size={10} className="text-amber-600" />
-                  Aktív tartalék: <span className="font-mono font-bold">{fallbackId}</span>
+                  Active fallback: <span className="font-mono font-bold">{fallbackId}</span>
                 </p>
               ) : (
                 <p className="text-[10px] text-slate-500">
-                  Nincs tartalék — primary modell hibája esetén a futás megszakad.
+                  No fallback — execution halts if the primary model fails.
                 </p>
               )}
             </div>
@@ -1268,7 +1268,7 @@ export default function LLMSettingsPanel({
 
         <SliderRow
           label="Temperature"
-          help="Magasabb = kreatívabb / random; alacsonyabb = determinisztikus, RAG-ra ajánlott 0.0–0.3."
+          help="Higher = more creative / random; lower = deterministic, recommended 0.0–0.3 for RAG."
           value={metadata.temperature ?? 0.2}
           onChange={(next) => setMeta('temperature', next)}
           min={0}
@@ -1278,7 +1278,7 @@ export default function LLMSettingsPanel({
 
         <SliderRow
           label="Top P"
-          help="Nucleus sampling. 1.0 = kikapcsolva, alacsonyabb = csak a top valószínűségű tokenek."
+          help="Nucleus sampling. 1.0 = disabled, lower = only top-probability tokens."
           value={metadata.top_p ?? 1.0}
           onChange={(next) => setMeta('top_p', next)}
           min={0}
@@ -1287,7 +1287,7 @@ export default function LLMSettingsPanel({
         />
 
         <div>
-          <FieldLabel title="Max tokens (output)" help="Maximális válasz hossz tokenben." />
+          <FieldLabel title="Max tokens (output)" help="Maximum response length in tokens." />
           <input
             type="number"
             min={1}
@@ -1301,18 +1301,18 @@ export default function LLMSettingsPanel({
         <div>
           <FieldLabel
             title="Response format"
-            help="`text` = sima válasz; strukturált opciók formálják a kimenetet (séma / sablon)."
+            help="`text` = plain response; structured options shape the output (schema / template)."
           />
           <select
             value={metadata.response_format || 'text'}
             onChange={(event) => setMeta('response_format', event.target.value)}
             className={inputClass}
           >
-            <option value="text">text — Sima szöveg</option>
-            <option value="json_object">json_object — Általános JSON</option>
-            <option value="json_schema">json_schema — Szigorú JSON séma</option>
-            <option value="markdown">markdown — Strukturált Markdown</option>
-            <option value="latex">latex — Tudományos LaTeX</option>
+            <option value="text">text — Plain text</option>
+            <option value="json_object">json_object — Generic JSON</option>
+            <option value="json_schema">json_schema — Strict JSON schema</option>
+            <option value="markdown">markdown — Structured Markdown</option>
+            <option value="latex">latex — Scientific LaTeX</option>
           </select>
         </div>
 
@@ -1338,10 +1338,10 @@ export default function LLMSettingsPanel({
               }
             }
             return (
-              <div className="space-y-1.5 rounded-lg border border-violet-200 bg-violet-50/30 p-2">
+              <div className="space-y-1.5 rounded-lg border border-amber-200 bg-amber-50/30 p-2">
                 <FieldLabel
                   title="JSON Schema Definition"
-                  help="OpenAI-kompatibilis JSON Schema. A modell pontosan ehhez kötött kimenetet generál."
+                  help="OpenAI-compatible JSON Schema. The model generates output strictly bound to it."
                 />
                 <textarea
                   rows={8}
@@ -1349,7 +1349,7 @@ export default function LLMSettingsPanel({
                   onChange={(event) => setSc('schema_text', event.target.value)}
                   spellCheck={false}
                   placeholder={'{\n  "type": "object",\n  "properties": {\n    "result": { "type": "string" }\n  },\n  "required": ["result"]\n}'}
-                  className="w-full resize-y rounded-md border border-slate-700 bg-slate-900 px-2.5 py-2 font-mono text-[10px] leading-relaxed text-emerald-300 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-300/40 placeholder:text-slate-600"
+                  className="w-full resize-y rounded-md border border-slate-700 bg-slate-900 px-2.5 py-2 font-mono text-[10px] leading-relaxed text-emerald-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40 placeholder:text-slate-600"
                   style={{ minHeight: 120 }}
                 />
                 {parseError ? (
@@ -1359,7 +1359,7 @@ export default function LLMSettingsPanel({
                 ) : raw.trim() ? (
                   <p className="text-[10px] font-medium text-emerald-700">✓ Valid JSON</p>
                 ) : (
-                  <p className="text-[10px] text-slate-500">Üres séma — a modell szabadon válaszolhat.</p>
+                  <p className="text-[10px] text-slate-500">Empty schema — the model can answer freely.</p>
                 )}
               </div>
             );
@@ -1369,10 +1369,10 @@ export default function LLMSettingsPanel({
           const tpl = typeof sc.template_instructions === 'string' ? sc.template_instructions : '';
           const isLatex = fmt === 'latex';
           return (
-            <div className="space-y-1.5 rounded-lg border border-violet-200 bg-violet-50/30 p-2">
+            <div className="space-y-1.5 rounded-lg border border-amber-200 bg-amber-50/30 p-2">
               <FieldLabel
                 title="Output Template / Constraints"
-                help="A backend ezt a szöveget instrukcióként a prompt végéhez fűzi."
+                help="The backend appends this text as an instruction to the end of the prompt."
               />
               <textarea
                 rows={5}
@@ -1380,14 +1380,14 @@ export default function LLMSettingsPanel({
                 onChange={(event) => setSc('template_instructions', event.target.value)}
                 placeholder={
                   isLatex
-                    ? 'Pl. „Use specific LaTeX environment for all formulas (align*, equation). Cite sources with \\\\cite{}.”'
-                    : 'Pl. „A válasz egy 3 szekcióból álló Markdown legyen: Bevezetés, Analízis, Konklúzió table formátumban.”'
+                    ? 'e.g. „Use specific LaTeX environment for all formulas (align*, equation). Cite sources with \\\\cite{}.”'
+                    : 'e.g. „The answer should be a 3-section Markdown: Introduction, Analysis, Conclusion in table format.”'
                 }
-                className="w-full resize-y rounded-md border border-slate-700 bg-slate-900 px-2.5 py-2 font-mono text-[10.5px] leading-relaxed text-emerald-300 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-300/40 placeholder:text-slate-500"
+                className="w-full resize-y rounded-md border border-slate-700 bg-slate-900 px-2.5 py-2 font-mono text-[10.5px] leading-relaxed text-emerald-300 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40 placeholder:text-slate-500"
                 style={{ minHeight: 90 }}
               />
               <p className="text-[10px] text-slate-500">
-                {tpl.length} karakter · {isLatex ? 'LaTeX' : 'Markdown'} mód
+                {tpl.length} characters · {isLatex ? 'LaTeX' : 'Markdown'} mode
               </p>
             </div>
           );
@@ -1429,8 +1429,8 @@ export default function LLMSettingsPanel({
               className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition hover:bg-slate-50"
             >
               <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                <Sliders size={11} className="text-violet-500" />
-                Haladó beállítások
+                <Sliders size={11} className="text-amber-500" />
+                Advanced settings
               </span>
               <ChevronDown
                 size={14}
@@ -1445,7 +1445,7 @@ export default function LLMSettingsPanel({
                   <div className="min-w-0">
                     <p className="text-[11px] font-bold text-slate-700">Streaming</p>
                     <p className="text-[10px] leading-snug text-slate-500">
-                      Folyamatos token-szintű válaszadás (alacsonyabb perceived latency).
+                      Continuous token-level response (lower perceived latency).
                     </p>
                   </div>
                   <button
@@ -1454,7 +1454,7 @@ export default function LLMSettingsPanel({
                     aria-checked={streaming}
                     onClick={() => setMeta('streaming', !streaming)}
                     className={`relative mt-0.5 inline-block h-5 w-9 shrink-0 rounded-full transition-colors ${
-                      streaming ? 'bg-violet-600' : 'bg-slate-300'
+                      streaming ? 'bg-amber-600' : 'bg-slate-300'
                     }`}
                   >
                     <span
@@ -1468,17 +1468,17 @@ export default function LLMSettingsPanel({
                 <div>
                   <FieldLabel
                     title={`Stop Sequences (${stopSeqs.length}/4)`}
-                    help="Az LLM megáll, ha ezeket a karaktereket generálja. Enter = hozzáadás."
+                    help="The LLM stops if it generates these characters. Enter = add."
                   />
                   <div
-                    className={`flex flex-wrap items-center gap-1 rounded-lg border bg-white px-1.5 py-1 transition focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-200 ${
+                    className={`flex flex-wrap items-center gap-1 rounded-lg border bg-white px-1.5 py-1 transition focus-within:border-amber-300 focus-within:ring-2 focus-within:ring-amber-200 ${
                       stopSeqs.length >= 4 ? 'border-slate-200' : 'border-slate-200'
                     }`}
                   >
                     {stopSeqs.map((seq, idx) => (
                       <span
                         key={`${seq}-${idx}`}
-                        className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 py-0.5 pl-1.5 pr-1 text-[10px] font-mono text-violet-800"
+                        className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 py-0.5 pl-1.5 pr-1 text-[10px] font-mono text-amber-800"
                         title={seq}
                       >
                         <span className="max-w-[120px] truncate">
@@ -1487,8 +1487,8 @@ export default function LLMSettingsPanel({
                         <button
                           type="button"
                           onClick={() => removeStopSeq(idx)}
-                          className="rounded-full p-0.5 text-violet-400 hover:bg-violet-100 hover:text-violet-700"
-                          aria-label={`Eltávolítás: ${seq}`}
+                          className="rounded-full p-0.5 text-amber-400 hover:bg-amber-100 hover:text-amber-700"
+                          aria-label={`Remove: ${seq}`}
                         >
                           <X size={9} />
                         </button>
@@ -1510,10 +1510,10 @@ export default function LLMSettingsPanel({
                       disabled={stopSeqs.length >= 4}
                       placeholder={
                         stopSeqs.length >= 4
-                          ? 'Limit elérve (4)'
+                          ? 'Limit reached (4)'
                           : stopSeqs.length === 0
-                            ? 'pl. \\nUser:, VÉGE — Enter'
-                            : '+ új…'
+                            ? 'e.g. \\nUser:, END — Enter'
+                            : '+ new…'
                       }
                       className="flex-1 min-w-[80px] bg-transparent px-1 py-0.5 text-[11px] font-mono text-slate-700 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
                     />
@@ -1523,7 +1523,7 @@ export default function LLMSettingsPanel({
                 {/* Penalty sliders — reuse the existing SliderRow visual */}
                 <SliderRow
                   label="Frequency Penalty"
-                  help="Bünteti az ismétlődő tokeneket. Negatív = bátorítja az ismétlést."
+                  help="Penalizes repeating tokens. Negative = encourages repetition."
                   value={freqPenalty}
                   onChange={(next) => setMeta('frequency_penalty', next)}
                   min={-2}
@@ -1533,7 +1533,7 @@ export default function LLMSettingsPanel({
 
                 <SliderRow
                   label="Presence Penalty"
-                  help="Bünteti a már megjelent tokeneket — új témákra ösztönöz."
+                  help="Penalizes already-seen tokens — encourages new topics."
                   value={presPenalty}
                   onChange={(next) => setMeta('presence_penalty', next)}
                   min={-2}
@@ -1545,7 +1545,7 @@ export default function LLMSettingsPanel({
                 <div>
                   <FieldLabel
                     title="Seed"
-                    help="Fix érték a determinisztikus kimenethez. Üres = véletlenszerű."
+                    help="Fixed value for deterministic output. Empty = random."
                   />
                   <div className="flex items-stretch gap-1.5">
                     <input
@@ -1568,7 +1568,7 @@ export default function LLMSettingsPanel({
                       <button
                         type="button"
                         onClick={() => setMeta('seed', null)}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-500 transition hover:border-violet-300 hover:text-violet-700"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-500 transition hover:border-amber-300 hover:text-amber-700"
                         title="Random seed"
                       >
                         <X size={10} />
@@ -1584,16 +1584,16 @@ export default function LLMSettingsPanel({
                 <div>
                   <FieldLabel
                     title="Context Overflow Strategy"
-                    help="Mi történjen, ha a bejövő adatok (chunkok) meghaladják a modell kontextus limitjét?"
+                    help="What should happen if incoming data (chunks) exceeds the model context limit?"
                   />
                   <select
                     value={metadata.context_overflow_strategy || 'strict'}
                     onChange={(event) => setMeta('context_overflow_strategy', event.target.value)}
                     className={inputClass}
                   >
-                    <option value="strict">Strict (Pipeline leállítása hibával)</option>
-                    <option value="truncate_middle">Truncate Middle (Középső dokumentumok eldobása)</option>
-                    <option value="truncate_end">Truncate End (Legutolsó dokumentumok eldobása)</option>
+                    <option value="strict">Strict (Halt pipeline with error)</option>
+                    <option value="truncate_middle">Truncate Middle (Drop middle documents)</option>
+                    <option value="truncate_end">Truncate End (Drop last documents)</option>
                   </select>
                 </div>
               </div>
@@ -1611,8 +1611,8 @@ export default function LLMSettingsPanel({
             </span>
           </SectionHeading>
           <p className="text-[10px] leading-relaxed text-slate-500">
-            💡 Csatlakoztass egy <span className="font-mono">System Prompt</span> node-ot
-            az áttekinthetőségért — különben ez az inline szöveg lesz használva.
+            💡 Connect a <span className="font-mono">System Prompt</span> node
+            for clarity — otherwise this inline text will be used.
           </p>
           <textarea
             rows={4}
@@ -1633,7 +1633,7 @@ export default function LLMSettingsPanel({
           aria-checked={Boolean(value.citationMode ?? true)}
           onClick={() => onChange?.('citationMode', !(value.citationMode ?? true))}
           className={`relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors ${
-            (value.citationMode ?? true) ? 'bg-violet-600' : 'bg-slate-300'
+            (value.citationMode ?? true) ? 'bg-amber-600' : 'bg-slate-300'
           }`}
         >
           <span
@@ -1653,8 +1653,8 @@ export default function LLMSettingsPanel({
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-violet-500" />
-        Bemenetek: <span className="font-mono">text</span> +{' '}
+        <Zap size={11} className="text-amber-500" />
+        Inputs: <span className="font-mono">text</span> +{' '}
         <span className="font-mono">chunks</span> +{' '}
         <span className="font-mono">system_prompt</span>
       </div>

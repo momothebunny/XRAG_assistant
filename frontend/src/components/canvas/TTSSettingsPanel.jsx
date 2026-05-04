@@ -9,7 +9,7 @@
 import { Volume2, Mic, CircleHelp } from 'lucide-react';
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
@@ -25,7 +25,7 @@ const FieldLabel = ({ title, help }) => (
 const Section = ({ icon: Icon, title, children }) => (
   <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
     <div className="flex items-center gap-1.5">
-      <Icon size={13} className="text-violet-500 shrink-0" />
+      <Icon size={13} className="text-amber-500 shrink-0" />
       <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">{title}</span>
     </div>
     {children}
@@ -110,7 +110,7 @@ export default function TTSSettingsPanel({ value = {}, onChange }) {
             type="checkbox"
             checked={Boolean(value.streamOutput ?? false)}
             onChange={(e) => set('streamOutput', e.target.checked)}
-            className="h-3.5 w-3.5 accent-violet-500"
+            className="h-3.5 w-3.5 accent-amber-500"
           />
           <span className="text-[11px] font-bold text-slate-700">Stream audio output</span>
         </label>

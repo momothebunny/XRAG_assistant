@@ -193,12 +193,12 @@ export default function RetrieverSettingsPanel({
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-              Retriever · alvó állapot
+              Retriever · idle / sleeping
             </p>
             <p className="text-xs font-semibold text-slate-700">
               {missing.length === 2
-                ? 'Csatlakoztass query forrást ÉS vektor indexet.'
-                : `Hiányzik: ${missing[0]}.`}
+                ? 'Connect a query source AND a vector index.'
+                : `Missing: ${missing[0]}.`}
             </p>
           </div>
         </div>
@@ -210,9 +210,9 @@ export default function RetrieverSettingsPanel({
             }`}
           >
             <Search size={12} />
-            <span className="font-bold">Query forrás</span>
+            <span className="font-bold">Query source</span>
             <span className="ml-auto font-mono text-[10px]">
-              {hasQuerySource ? '✓ csatlakoztatva' : '— hiányzik'}
+              {hasQuerySource ? '✓ connected' : '— missing'}
             </span>
           </div>
           <div
@@ -221,17 +221,17 @@ export default function RetrieverSettingsPanel({
             }`}
           >
             <Database size={12} />
-            <span className="font-bold">Vektor index</span>
+            <span className="font-bold">Vector index</span>
             <span className="ml-auto font-mono text-[10px]">
-              {hasIndex ? '✓ csatlakoztatva' : '— hiányzik'}
+              {hasIndex ? '✓ connected' : '— missing'}
             </span>
           </div>
         </div>
 
         <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
-          A Retriever a vektor index dimenzióját és metrikáját az upstream
-          Vector DB-től örökli, a kérdést pedig a query forrásból veszi.
-          Mindkettő szükséges a futáshoz.
+          The Retriever inherits the vector index's dimension and metric from
+          the upstream Vector DB, and takes the question from the query source.
+          Both are required to run.
         </p>
       </div>
     );
@@ -245,7 +245,7 @@ export default function RetrieverSettingsPanel({
         <div className="flex items-center gap-2">
           <ShieldCheck size={14} className="text-amber-700" />
           <p className="text-[11px] font-black uppercase tracking-wider text-amber-800">
-            Upstream · automatikusan szinkronizálva
+            Upstream · auto-synced
           </p>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
@@ -380,9 +380,9 @@ export default function RetrieverSettingsPanel({
 
         {strategy.id === 'hybrid' && vectorStore && !vectorStore.hybridSearch && (
           <div className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[10px] leading-relaxed text-rose-800">
-            ⚠️ Az upstream Vector DB-n nincs bekapcsolva a hibrid kereshetőség.
-            Engedélyezd a Vector DB panelen, különben futáskor visszaesik
-            sűrű-only módba.
+            ⚠️ Hybrid search is not enabled on the upstream Vector DB.
+            Enable it in the Vector DB panel, otherwise it will fall back
+            to dense-only mode at runtime.
           </div>
         )}
       </div>
@@ -428,7 +428,7 @@ export default function RetrieverSettingsPanel({
       {/* ── Footer hint ─────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         <Zap size={11} className="text-amber-500" />
-        Engedélyezett bemenetek: <span className="font-mono">chunks</span> + <span className="font-mono">text</span>
+        Allowed inputs: <span className="font-mono">chunks</span> + <span className="font-mono">text</span>
       </div>
     </div>
   );

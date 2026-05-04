@@ -1,7 +1,7 @@
 import { BaseEdge, getSmoothStepPath } from '@xyflow/react';
 import { useId } from 'react';
 
-const FALLBACK = '#7c3aed';
+const FALLBACK = '#d97706';
 
 const STATUS_COLOR = {
   ok: '#10b981',

@@ -1,23 +1,22 @@
 /**
- * QuestionSettingsPanel — defines how user-facing queries enter the pipeline.
+ * QuestionSettingsPanel — defines the *query-input contract* of the canvas.
  *
- * The Question node is the primary *query source* of the canvas. It owns
- * the contract of what a "user query" looks like before any retrieval,
- * routing, or generation happens:
- *   1. Input shape & validation (length, language, allowed chars).
- *   2. Pre-processing (trim, normalize, strip emoji, casefold, …).
- *   3. Sample / placeholder text used by the playground.
- *   4. Multi-turn handling — should previous turns be appended?
+ * What belongs here, and ONLY here:
+ *   1. Input shape — mode (free text / multiple choice), language, placeholder, sample.
+ *   2. Validation  — min / max length, required, blocklist regex.
+ *   3. Pre-processing — trim, collapse whitespace, NFC, strip emoji, casefold, spell-check.
+ *   4. Multi-turn   — append history + window size.
+ *   5. Modality     — voice input / STT fallback (how the query *enters*).
+ *
+ * What does NOT belong here (delegated to sibling nodes):
+ *   • answerStyle           → Response / System Prompt node (it shapes the OUTPUT)
+ *   • tokenBudget           → LLM node (it's a generation cap, not an input field)
+ *   • suggestedFollowups    → Response / Chat node (post-answer UX)
+ *   • Identity / RBAC / quotas → User node
  *
  * CONNECTION CONTRACT (CANONICAL_PIPELINE_RANK = 2)
- *   • Inputs: optional `user_context` from `user-actor` (for locale defaults).
- *   • Outputs: typed `query` payload consumed by Retriever / Router / LLM.
- *
- * Why a dedicated panel? The legacy generic form only exposed `language`
- * and `maxLength` as raw text fields. Real RAG pipelines need validation
- * rules (min length, allowed unicode ranges, blocklist), pre-processing
- * (trim, case, emoji strip), and a way to seed the playground with a
- * representative sample.
+ *   • Inputs:  optional `user_context` from `user-actor` (for locale defaults).
+ *   • Outputs: typed `query_input` payload consumed by Retriever / Router / LLM.
  */
 
 import { useMemo } from 'react';
@@ -27,57 +26,64 @@ import {
   CircleHelp,
   Globe,
   Hash,
+  History,
   ListChecks,
   MessageSquare,
+  Mic,
   Ruler,
   Sparkles,
   Wand2,
   Zap,
 } from 'lucide-react';
 
+// ─── Shared atoms (modern, soft fuchsia — mirrors UserSettingsPanel) ─────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-cyan-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
       {title}
     </label>
     {help && (
-      <button
-        type="button"
-        title={help}
-        className="shrink-0 text-slate-400 hover:text-slate-700"
-      >
+      <span title={help} className="cursor-help text-slate-300 hover:text-fuchsia-500">
         <CircleHelp size={11} />
-      </button>
+      </span>
     )}
   </div>
 );
 
-const ToggleRow = ({ checked, onChange, title, help }) => (
-  <label
-    className={`flex items-start gap-2 rounded-lg border px-2.5 py-2 transition cursor-pointer ${
+/**
+ * ToggleChip — pill button with aria-pressed state.
+ *
+ * Implemented as a real <button>, NOT a <label> wrapping a hidden <input>.
+ * Hidden checkboxes inside <label> can cause the browser to scroll the page
+ * when focus moves into a clipped (sr-only) element — visible to the user
+ * as the inspector "jumping" or a popup-like reflow.
+ */
+const ToggleChip = ({ checked, onChange, label, help }) => (
+  <button
+    type="button"
+    title={help}
+    aria-pressed={Boolean(checked)}
+    onClick={() => onChange?.(!checked)}
+    className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
       checked
-        ? 'border-cyan-300 bg-cyan-50/60'
-        : 'border-slate-200 bg-white hover:border-slate-300'
+        ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800 shadow-sm shadow-fuchsia-200/30'
+        : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
     }`}
   >
-    <input
-      type="checkbox"
-      checked={Boolean(checked)}
-      onChange={(event) => onChange?.(event.target.checked)}
-      className="mt-0.5 h-3.5 w-3.5 accent-cyan-500"
+    <span
+      aria-hidden
+      className={`inline-block h-2 w-2 rounded-full transition ${
+        checked ? 'bg-fuchsia-500' : 'bg-slate-300 group-hover:bg-fuchsia-300'
+      }`}
     />
-    <span className="min-w-0">
-      <span className="block text-[11.5px] font-bold text-slate-700">{title}</span>
-      {help && (
-        <span className="mt-0.5 block text-[10.5px] leading-snug text-slate-500">{help}</span>
-      )}
-    </span>
-  </label>
+    {label}
+  </button>
 );
 
+// ─── Domain options ──────────────────────────────────────────────────────
 const LANGUAGE_OPTIONS = [
   { value: 'auto', label: 'Auto-detect (langid)' },
   { value: 'en', label: 'English' },
@@ -89,28 +95,43 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const INPUT_MODES = [
-  { value: 'free_text', label: 'Free text — bármi gépelhető', icon: MessageSquare },
-  { value: 'multiple_choice', label: 'Multiple choice — előre megadott opciók', icon: ListChecks },
+  {
+    value: 'free_text',
+    label: 'Free text',
+    description: 'Anything can be typed.',
+    icon: MessageSquare,
+  },
+  {
+    value: 'multiple_choice',
+    label: 'Multiple choice',
+    description: 'Predefined option list.',
+    icon: ListChecks,
+  },
 ];
 
-// Sample queries the playground can pre-fill with one click.
 const SAMPLE_QUERIES = [
-  'Mit takar a vector store cosine similarity beállítása?',
-  'Foglald össze a 2025 Q4 sales jelentést egy bekezdésben.',
-  'Mi a különbség a HyDE és a query rewriting között?',
-  'Adj 3 példát a hibrid keresés (BM25 + dense) előnyeire.',
-  'Hogyan működik a reranking egy RAG pipeline-ban?',
+  'What does the cosine similarity setting on a vector store mean?',
+  'Summarize the 2025 Q4 sales report in one paragraph.',
+  'What is the difference between HyDE and query rewriting?',
+  'Give 3 examples of the benefits of hybrid search (BM25 + dense).',
+  'How does reranking work in a RAG pipeline?',
 ];
 
-/**
- * Default config — used by canvasConfig + as the merge base when older
- * payloads are loaded that don't carry the new keys.
- */
+const PREPROCESSING_TOGGLES = [
+  { key: 'trimWhitespace',     label: 'Trim',           help: 'Trim leading / trailing spaces.' },
+  { key: 'collapseWhitespace', label: 'Collapse spaces', help: 'Multiple spaces → one. Normalize line breaks.' },
+  { key: 'normalizeUnicode',   label: 'NFC',            help: 'Unicode NFC normalization — unify composite characters.' },
+  { key: 'stripEmoji',         label: 'Strip emoji',    help: 'Remove Unicode emoji.' },
+  { key: 'caseFold',           label: 'Lowercase',      help: 'Better embedding recall, but loses proper-noun sensitivity.' },
+  { key: 'spellCheck',         label: 'Spell-check',    help: 'Auto-correct simple typos before submission.' },
+];
+
+// ─── Schema ──────────────────────────────────────────────────────────────
 export const DEFAULT_QUESTION_CONFIG = {
   // Input shape
   mode: 'free_text',
   language: 'auto',
-  placeholder: 'Tedd fel a kérdésed…',
+  placeholder: 'Ask your question…',
   sampleQuery: '',
   multipleChoiceOptions: '', // newline-separated
   // Validation
@@ -124,15 +145,18 @@ export const DEFAULT_QUESTION_CONFIG = {
   normalizeUnicode: true,
   stripEmoji: false,
   caseFold: false,
+  spellCheck: false,
   // Multi-turn
   appendHistory: true,
   historyTurns: 4,
+  // Input modality
+  voiceInput: false,
+  enableSttFallback: false,
 };
 
 /**
  * Compose the typed `query_input` payload that downstream nodes consume.
- * Mirrors the buildXxxPayload helpers from sibling panels so the read-only
- * preview block has something concrete to display.
+ * Note: NO `style` block — answer styling lives in Response / SystemPrompt nodes.
  */
 export function buildQuestionPayload(config = {}) {
   const c = { ...DEFAULT_QUESTION_CONFIG, ...config };
@@ -162,10 +186,15 @@ export function buildQuestionPayload(config = {}) {
         normalize_unicode: Boolean(c.normalizeUnicode),
         strip_emoji: Boolean(c.stripEmoji),
         case_fold: Boolean(c.caseFold),
+        spell_check: Boolean(c.spellCheck),
       },
       history: {
         append: Boolean(c.appendHistory),
         turns: Math.max(0, Number(c.historyTurns) || 0),
+      },
+      modality: {
+        voice_input: Boolean(c.voiceInput),
+        stt_fallback: Boolean(c.enableSttFallback),
       },
     },
   };
@@ -183,6 +212,7 @@ function validateRegex(pattern) {
   }
 }
 
+// ─── Component ───────────────────────────────────────────────────────────
 export default function QuestionSettingsPanel({
   value = {},
   onChange,
@@ -204,93 +234,142 @@ export default function QuestionSettingsPanel({
 
   const warnings = [];
   if (config.minLength > config.maxLength) {
-    warnings.push('A min length nagyobb mint a max length — egy kérdés sem fogja átengedni.');
+    warnings.push('Min length is greater than max length — no question will pass through.');
   }
   if (config.mode === 'multiple_choice' && choiceCount < 2) {
-    warnings.push('Multiple choice módnál legalább 2 opció kell.');
+    warnings.push('Multiple choice mode requires at least 2 options.');
   }
   if (!regexValidation.ok) {
-    warnings.push(`Érvénytelen blocklist regex: ${regexValidation.message}`);
+    warnings.push(`Invalid blocklist regex: ${regexValidation.message}`);
   }
   if (config.appendHistory && config.historyTurns === 0) {
-    warnings.push('Conversation history bekapcsolva, de a turn count 0 — nincs hatása.');
+    warnings.push('Conversation history enabled, but turn count is 0 — has no effect.');
   }
+
+  const enabledPrep = PREPROCESSING_TOGGLES.filter((p) => config[p.key]).length;
+  const langLabel =
+    LANGUAGE_OPTIONS.find((l) => l.value === config.language)?.label || config.language;
 
   return (
     <div className="space-y-3">
-      {/* ── Upstream contract banner ───────────────────────────────────── */}
-      <div
-        className={`rounded-xl border p-3 ${
-          hasUserContextUpstream
-            ? 'border-cyan-200 bg-cyan-50/60'
-            : 'border-slate-200 bg-slate-50/60'
-        }`}
-      >
-        <div className="flex items-start gap-2">
-          <MessageSquare
-            size={14}
-            className={hasUserContextUpstream ? 'text-cyan-700' : 'text-slate-500'}
-          />
+      {/* ── Hero card ───────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fuchsia-300 via-fuchsia-400 to-pink-300"
+        />
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-50 to-pink-50 text-fuchsia-600 ring-1 ring-fuchsia-200/60">
+            <MessageSquare size={20} strokeWidth={2.2} />
+          </div>
           <div className="min-w-0 flex-1">
-            <p
-              className={`text-[11px] font-black uppercase tracking-wider ${
-                hasUserContextUpstream ? 'text-cyan-800' : 'text-slate-700'
-              }`}
-            >
-              Upstream contract
+            <p className="truncate text-[13px] font-bold text-slate-800">
+              {config.mode === 'multiple_choice' ? 'Multiple choice' : 'Free-text query'}
             </p>
-            <p
-              className={`mt-0.5 text-[11px] ${
-                hasUserContextUpstream ? 'text-cyan-900' : 'text-slate-600'
-              }`}
-            >
-              {hasUserContextUpstream
-                ? 'User node bekötve — locale és tone örökölhető tőle.'
-                : 'Nincs user-actor upstream. A node önállóan is működik, de nem fogad locale defaultokat.'}
+            <p className="truncate font-mono text-[10.5px] text-slate-500">
+              {langLabel} · {config.minLength}–{config.maxLength} chars
             </p>
           </div>
+          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+            <span className="text-[10.5px] font-bold text-fuchsia-700">
+              {enabledPrep} {enabledPrep === 1 ? 'rule' : 'rules'}
+            </span>
+            <span className="font-mono text-[10px] text-slate-500">
+              {config.appendHistory ? `+${config.historyTurns} turns` : 'no history'}
+            </span>
+          </div>
         </div>
+        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-500">
+          Defines the <span className="font-semibold text-slate-700">input contract</span> of the
+          pipeline — shape, validation, normalization. Output styling, follow-ups, and token
+          budgets live in the Response / LLM nodes.
+        </p>
+      </div>
+
+      {/* ── Upstream contract banner ───────────────────────────────────── */}
+      <div
+        className={`flex items-start gap-2 rounded-xl border px-3 py-2 ${
+          hasUserContextUpstream
+            ? 'border-fuchsia-200 bg-fuchsia-50/50'
+            : 'border-slate-200 bg-slate-50/50'
+        }`}
+      >
+        <Sparkles
+          size={12}
+          className={`mt-0.5 shrink-0 ${
+            hasUserContextUpstream ? 'text-fuchsia-500' : 'text-slate-400'
+          }`}
+        />
+        <p className="text-[10.5px] leading-snug text-slate-600">
+          {hasUserContextUpstream ? (
+            <>
+              <span className="font-semibold text-fuchsia-700">User node connected.</span>{' '}
+              Locale defaults can be inherited from upstream identity.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-slate-700">No user-actor upstream.</span>{' '}
+              Works standalone, but won&rsquo;t receive locale defaults.
+            </>
+          )}
+        </p>
       </div>
 
       {/* ── Input shape ─────────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <MessageSquare size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center gap-2">
+          <MessageSquare size={12} className="text-fuchsia-500" />
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
             Input shape
-          </p>
-        </div>
+          </h4>
+        </header>
 
-        <div>
-          <FieldLabel title="Input mode" />
-          <div className="grid grid-cols-2 gap-1.5">
-            {INPUT_MODES.map((mode) => {
-              const Icon = mode.icon;
-              const active = config.mode === mode.value;
-              return (
-                <button
-                  key={mode.value}
-                  type="button"
-                  onClick={() => setField('mode', mode.value)}
-                  className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10.5px] font-bold transition ${
-                    active
-                      ? 'border-cyan-500 bg-cyan-50 text-cyan-800 shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-300 hover:text-cyan-700'
-                  }`}
-                >
-                  <Icon size={12} className={active ? 'text-cyan-600' : 'text-slate-400'} />
-                  <span className="truncate">{mode.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {INPUT_MODES.map((mode) => {
+            const Icon = mode.icon;
+            const active = config.mode === mode.value;
+            return (
+              <button
+                key={mode.value}
+                type="button"
+                onClick={() => setField('mode', mode.value)}
+                className={`group flex flex-col gap-1 rounded-xl border bg-white p-2 text-left transition ${
+                  active
+                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-200/50'
+                    : 'border-slate-200 hover:border-fuchsia-200'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-md transition ${
+                      active
+                        ? 'bg-fuchsia-100 text-fuchsia-600'
+                        : 'bg-slate-100 text-slate-500 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
+                    }`}
+                  >
+                    <Icon size={11} />
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold ${
+                      active ? 'text-fuchsia-800' : 'text-slate-700'
+                    }`}
+                  >
+                    {mode.label}
+                  </span>
+                </div>
+                <span className="text-[9.5px] leading-snug text-slate-500">
+                  {mode.description}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div>
             <FieldLabel
               title="Language"
-              help="Auto = langid auto-detection. Egyébként hard-codeolja a query nyelvét."
+              help="Auto = langid auto-detection. Otherwise hard-codes the query language."
             />
             <div className="relative">
               <Globe
@@ -311,7 +390,7 @@ export default function QuestionSettingsPanel({
             </div>
           </div>
           <div>
-            <FieldLabel title="Placeholder" help="A textarea üres állapotában látszik." />
+            <FieldLabel title="Placeholder" help="Shown when the textarea is empty." />
             <input
               type="text"
               value={config.placeholder}
@@ -325,25 +404,25 @@ export default function QuestionSettingsPanel({
           <div>
             <FieldLabel
               title="Sample query"
-              help="A playground előtölti vele. Üresen hagyva csak a placeholder látszik."
+              help="The playground pre-fills it. Leave empty to show only the placeholder."
             />
             <textarea
               rows={2}
               value={config.sampleQuery}
               onChange={(event) => setField('sampleQuery', event.target.value)}
               className={inputClass}
-              placeholder="Pl. Mit jelent a HyDE retrieval?"
+              placeholder="e.g. What does HyDE retrieval mean?"
             />
-            <div className="mt-1 flex flex-wrap gap-1">
+            <div className="mt-1.5 flex flex-wrap gap-1">
               {SAMPLE_QUERIES.map((sample) => (
                 <button
                   key={sample}
                   type="button"
                   onClick={() => setField('sampleQuery', sample)}
-                  className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:border-cyan-300 hover:text-cyan-700"
+                  className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 transition hover:border-fuchsia-200 hover:text-fuchsia-700"
                   title={sample}
                 >
-                  <Sparkles size={9} className="mr-0.5 inline-block text-amber-400" />
+                  <Sparkles size={9} className="mr-0.5 inline-block text-fuchsia-400" />
                   {sample.length > 32 ? `${sample.slice(0, 32)}…` : sample}
                 </button>
               ))}
@@ -354,31 +433,31 @@ export default function QuestionSettingsPanel({
         {config.mode === 'multiple_choice' && (
           <div>
             <FieldLabel
-              title="Choices (egy sor = egy opció)"
-              help="Minden új sor egy választható válasz lesz."
+              title="Choices (one line = one option)"
+              help="Each new line will be a selectable answer."
             />
             <textarea
               rows={5}
               value={config.multipleChoiceOptions}
               onChange={(event) => setField('multipleChoiceOptions', event.target.value)}
               className={`${inputClass} font-mono`}
-              placeholder={'Igen\nNem\nNem tudom'}
+              placeholder={'Yes\nNo\nI don\u2019t know'}
             />
             <p className="mt-1 text-[10px] text-slate-500">
-              {choiceCount} opció felismerve.
+              {choiceCount} {choiceCount === 1 ? 'option' : 'options'} recognized.
             </p>
           </div>
         )}
-      </div>
+      </section>
 
       {/* ── Validation ──────────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <Ruler size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center gap-2">
+          <Ruler size={12} className="text-fuchsia-500" />
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
             Validation
-          </p>
-        </div>
+          </h4>
+        </header>
 
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -409,17 +488,27 @@ export default function QuestionSettingsPanel({
           </div>
         </div>
 
-        <ToggleRow
-          checked={config.required}
-          onChange={(v) => setField('required', v)}
-          title="Required"
-          help="Ha be van kapcsolva, üres kérdés submit-je hibát dob a Guardrails előtt."
-        />
+        <button
+          type="button"
+          aria-pressed={Boolean(config.required)}
+          onClick={() => setField('required', !config.required)}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
+            config.required
+              ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800'
+              : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+          }`}
+        >
+          <CheckCircle2
+            size={12}
+            className={config.required ? 'text-fuchsia-500' : 'text-slate-400'}
+          />
+          Required (reject empty submissions)
+        </button>
 
         <div>
           <FieldLabel
             title="Blocklist regex"
-            help="A regex-et találó query-ket a Guardrails azonnal elutasítja."
+            help="Queries matching the regex are immediately rejected by Guardrails."
           />
           <div className="relative">
             <Hash
@@ -432,95 +521,121 @@ export default function QuestionSettingsPanel({
               onChange={(event) => setField('blocklistRegex', event.target.value)}
               placeholder="(?i)\\b(jailbreak|ignore previous)\\b"
               className={`${inputClass} pl-7 font-mono ${
-                regexValidation.ok ? '' : 'border-rose-300 focus:ring-rose-400'
+                regexValidation.ok ? '' : 'border-rose-300 focus:border-rose-300 focus:ring-rose-200/40'
               }`}
             />
           </div>
           {!regexValidation.ok && (
             <p className="mt-1 text-[10px] font-semibold text-rose-600">
-              Hibás regex: {regexValidation.message}
+              Invalid regex: {regexValidation.message}
             </p>
           )}
         </div>
-      </div>
+      </section>
 
       {/* ── Pre-processing ──────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <Wand2 size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-            Pre-processing
-          </p>
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Wand2 size={12} className="text-fuchsia-500" />
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+              Pre-processing
+            </h4>
+          </div>
+          <span className="font-mono text-[10px] text-slate-500">
+            {enabledPrep} / {PREPROCESSING_TOGGLES.length}
+          </span>
+        </header>
+        <p className="text-[10px] leading-snug text-slate-500">
+          Applied in order before the query is handed off to the Retriever.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {PREPROCESSING_TOGGLES.map((toggle) => (
+            <ToggleChip
+              key={toggle.key}
+              checked={config[toggle.key]}
+              onChange={(v) => setField(toggle.key, v)}
+              label={toggle.label}
+              help={toggle.help}
+            />
+          ))}
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <ToggleRow
-            checked={config.trimWhitespace}
-            onChange={(v) => setField('trimWhitespace', v)}
-            title="Trim whitespace"
-            help="Levágja a vezető / záró space-eket."
-          />
-          <ToggleRow
-            checked={config.collapseWhitespace}
-            onChange={(v) => setField('collapseWhitespace', v)}
-            title="Collapse whitespace"
-            help="Több space → egy. Sortörést is normalizál."
-          />
-          <ToggleRow
-            checked={config.normalizeUnicode}
-            onChange={(v) => setField('normalizeUnicode', v)}
-            title="Normalize unicode (NFC)"
-            help="Egységesíti a kompozit karaktereket."
-          />
-          <ToggleRow
-            checked={config.stripEmoji}
-            onChange={(v) => setField('stripEmoji', v)}
-            title="Strip emoji"
-            help="Eltávolítja a Unicode emoji karaktereket."
-          />
-          <ToggleRow
-            checked={config.caseFold}
-            onChange={(v) => setField('caseFold', v)}
-            title="Case-fold (lowercase)"
-            help="Embedding modellnél jobb relevancia, de elveszik a tulajdonnév-érzékenység."
-          />
-        </div>
-      </div>
+      </section>
 
       {/* ── Multi-turn ──────────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <ListChecks size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-            Multi-turn
-          </p>
-        </div>
-        <ToggleRow
-          checked={config.appendHistory}
-          onChange={(v) => setField('appendHistory', v)}
-          title="Append conversation history"
-          help="Az előző N turn-t hozzácsatolja a query-hez (User node rememberHistory-jának kell engednie)."
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History size={12} className="text-fuchsia-500" />
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+              Multi-turn
+            </h4>
+          </div>
+          <span className="font-mono text-[11px] font-bold text-fuchsia-700">
+            {config.appendHistory ? `${config.historyTurns} turns` : 'off'}
+          </span>
+        </header>
+        <button
+          type="button"
+          aria-pressed={Boolean(config.appendHistory)}
+          onClick={() => setField('appendHistory', !config.appendHistory)}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
+            config.appendHistory
+              ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800'
+              : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+          }`}
+        >
+          <History
+            size={12}
+            className={config.appendHistory ? 'text-fuchsia-500' : 'text-slate-400'}
+          />
+          Append conversation history
+        </button>
+        <input
+          type="range"
+          min={0}
+          max={16}
+          step={1}
+          value={config.historyTurns}
+          disabled={!config.appendHistory}
+          onChange={(event) =>
+            setField('historyTurns', Math.max(0, Math.min(16, Number(event.target.value) || 0)))
+          }
+          className="w-full accent-fuchsia-400 disabled:opacity-40"
         />
-        <div>
-          <FieldLabel title="History turns (N)" help="Hány korábbi user/assistant turn kerüljön be." />
-          <input
-            type="number"
-            min={0}
-            max={32}
-            step={1}
-            value={config.historyTurns}
-            onChange={(event) =>
-              setField(
-                'historyTurns',
-                Math.min(32, Math.max(0, Number(event.target.value) || 0)),
-              )
-            }
-            className={inputClass}
-            disabled={!config.appendHistory}
+        <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+          <span>0</span>
+          <span>4</span>
+          <span>8</span>
+          <span>16</span>
+        </div>
+      </section>
+
+      {/* ── Modality ────────────────────────────────────────────────────── */}
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center gap-2">
+          <Mic size={12} className="text-fuchsia-500" />
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            Input modality
+          </h4>
+        </header>
+        <div className="flex flex-wrap gap-1.5">
+          <ToggleChip
+            checked={config.voiceInput}
+            onChange={(v) => setField('voiceInput', v)}
+            label="Voice input"
+            help="Microphone button in the chat UI, using the Web Speech API."
+          />
+          <ToggleChip
+            checked={config.enableSttFallback}
+            onChange={(v) => setField('enableSttFallback', v)}
+            label="STT fallback (Whisper)"
+            help="If browser STT is unavailable, transcribe with server-side Whisper."
           />
         </div>
-      </div>
+      </section>
 
-      {/* ── Warnings / OK ───────────────────────────────────────────────── */}
+      {/* ── Validation warnings / OK ────────────────────────────────────── */}
       {warnings.length > 0 ? (
         <ul className="space-y-1">
           {warnings.map((warning) => (
@@ -536,24 +651,24 @@ export default function QuestionSettingsPanel({
       ) : (
         <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
           <CheckCircle2 size={11} />
-          Konfiguráció rendben — minden ellenőrzés zöld.
+          Configuration valid — all checks passed.
         </div>
       )}
 
-      {/* ── Read-only payload ───────────────────────────────────────────── */}
-      <div>
-        <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+      {/* ── Output payload preview ──────────────────────────────────────── */}
+      <details className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
+        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-600">
           Output payload (read-only)
-        </p>
-        <pre className="max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-cyan-300">
+        </summary>
+        <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-fuchsia-200">
 {JSON.stringify(payload, null, 2)}
         </pre>
-      </div>
+      </details>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-cyan-500" />
-        Kimenet: <span className="font-mono">query_input</span> → Retriever, Router, LLM
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        <Zap size={11} className="text-fuchsia-400" />
+        Output: <span className="font-mono text-fuchsia-700">query_input</span> → Retriever, Router, LLM
       </div>
     </div>
   );

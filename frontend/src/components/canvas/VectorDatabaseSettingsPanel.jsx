@@ -227,22 +227,21 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-              Vector DB · alvó állapot
+              Vector DB · idle / sleeping
             </p>
             <p className="text-xs font-semibold text-slate-700">
-              Csatlakoztass egy Embedding modellt a folytatáshoz.
+              Connect an Embedding model to continue.
             </p>
           </div>
         </div>
         <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
-          A vektoradatbázis dimenziója és metrikája az upstream embedding
-          modelltől függ. Húzz be egy <span className="font-bold text-amber-700">Embedding</span>
-          {' '}node-ot, kösd hozzá ehhez a tárolóhoz, és a panel automatikusan
-          felébred.
+          The vector database's dimension and metric depend on the upstream
+          embedding model. Drop in an <span className="font-bold text-amber-700">Embedding</span>
+          {' '}node, wire it to this store, and the panel will auto-wake.
         </p>
         <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-white/70 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
           <Sparkles size={11} />
-          Csak <span className="font-mono">embedded_chunks</span> bemenet engedélyezett
+          Only <span className="font-mono">embedded_chunks</span> input is allowed
         </div>
       </div>
     );
@@ -256,7 +255,7 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
         <div className="flex items-center gap-2">
           <ShieldCheck size={14} className="text-emerald-700" />
           <p className="text-[11px] font-black uppercase tracking-wider text-emerald-800">
-            Vector space · automatikusan szinkronizálva
+            Vector space · auto-synced
           </p>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
@@ -274,8 +273,8 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
           </div>
         </div>
         <p className="mt-2 text-[10px] leading-relaxed text-emerald-900/80">
-          A dimenzió és a javasolt metrika az upstream modellből származik —
-          nem szerkeszthető, hogy ne keletkezzen inkompatibilis index.
+          The dimension and suggested metric come from the upstream model —
+          not editable, to prevent an incompatible index.
         </p>
       </div>
 
@@ -543,8 +542,8 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
             />
           </div>
           <p className="text-[10px] leading-relaxed text-emerald-900/80">
-            Add a titkos kulcsot a <span className="font-mono font-bold">backend/.env</span> fájlhoz —
-            a böngésző soha nem fogja látni.
+            Add the secret to <span className="font-mono font-bold">backend/.env</span> —
+            the browser will never see it.
           </p>
         </div>
       )}
@@ -552,7 +551,7 @@ export default function VectorDatabaseSettingsPanel({ value = {}, onChange, embe
       {/* ── Footer hint ─────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         <Zap size={11} className="text-amber-500" />
-        Engedélyezett bemenet: <span className="font-mono">embedded_chunks</span>
+        Allowed input: <span className="font-mono">embedded_chunks</span>
       </div>
     </div>
   );

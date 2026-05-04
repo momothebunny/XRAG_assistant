@@ -86,7 +86,7 @@ export function buildRerankerPayload(config = {}) {
 // UI primitives
 // ─────────────────────────────────────────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-fuchsia-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
@@ -124,7 +124,7 @@ export default function RerankerSettingsPanel({
       .then((list) => {
         setModels(list);
         if (list === FALLBACK_MODELS) {
-          setLoadError('Backend nem elérhető — beépített lista használatban.');
+          setLoadError('Backend unavailable — using built-in list.');
         }
       })
       .finally(() => setRefreshing(false));
@@ -178,10 +178,10 @@ export default function RerankerSettingsPanel({
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-              Reranker · alvó állapot
+              Reranker · idle / sleeping
             </p>
             <p className="text-xs font-semibold text-slate-700">
-              Csatlakoztass <span className="font-mono">chunks</span> ÉS query forrást.
+              Connect a <span className="font-mono">chunks</span> AND query source.
             </p>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function RerankerSettingsPanel({
             <Filter size={12} />
             <span className="font-bold">Chunks (Retriever / Hybrid Merge / Vector DB)</span>
             <span className="ml-auto font-mono text-[10px]">
-              {hasChunksUpstream ? '✓' : '— hiányzik'}
+              {hasChunksUpstream ? '✓' : '— missing'}
             </span>
           </div>
           <div
@@ -210,13 +210,13 @@ export default function RerankerSettingsPanel({
             <Search size={12} />
             <span className="font-bold">Query (Question / Query Rewriter / HyDE)</span>
             <span className="ml-auto font-mono text-[10px]">
-              {hasQuerySource ? '✓' : '— hiányzik'}
+              {hasQuerySource ? '✓' : '— missing'}
             </span>
           </div>
         </div>
 
         <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
-          A reranker pairwise pontoz <strong>(query, chunk)</strong> párokat. Mindkét bemenet kötelező.
+          The reranker pairwise-scores <strong>(query, chunk)</strong> pairs. Both inputs are required.
         </p>
       </div>
     );
@@ -226,20 +226,20 @@ export default function RerankerSettingsPanel({
   return (
     <div className="space-y-3">
       {/* ── Context-aware banner ────────────────────────────────────────── */}
-      <div className="rounded-xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 to-white p-3">
+      <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={14} className="text-fuchsia-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-fuchsia-800">
+          <ShieldCheck size={14} className="text-amber-700" />
+          <p className="text-[11px] font-black uppercase tracking-wider text-amber-800">
             Context-aware
           </p>
         </div>
         <p className="mt-1.5 text-[11px] leading-relaxed text-slate-700">
           Bemenet:{' '}
-          <span className="font-mono font-bold text-fuchsia-700">
+          <span className="font-mono font-bold text-amber-700">
             {upstreamChunkCount ?? '?'} chunk
           </span>{' '}
-          ➔ Kimenet:{' '}
-          <span className="font-mono font-bold text-fuchsia-700">{topN} legrelevánsabb chunk</span>
+          ➔ Output:{' '}
+          <span className="font-mono font-bold text-amber-700">{topN} most relevant chunks</span>
         </p>
       </div>
 
@@ -253,7 +253,7 @@ export default function RerankerSettingsPanel({
       {/* ── Model picker ────────────────────────────────────────────────── */}
       <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
         <div className="flex items-center justify-between">
-          <SectionHeading color="text-fuchsia-700">Reranker model</SectionHeading>
+          <SectionHeading color="text-amber-700">Reranker model</SectionHeading>
           <button
             type="button"
             onClick={() => refreshModels(true)}
@@ -271,7 +271,7 @@ export default function RerankerSettingsPanel({
           </p>
         )}
 
-        <FieldLabel title="Modell választó" help="OpenRouter rerank modellek (id ⊃ 'rerank')." />
+        <FieldLabel title="Model picker" help="OpenRouter rerank models (id ⊃ 'rerank')." />
         <select
           value={modelId}
           onChange={(event) => setMeta('model_id', event.target.value)}
@@ -303,14 +303,14 @@ export default function RerankerSettingsPanel({
       <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-3">
         <SectionHeading>
           <span className="inline-flex items-center gap-1">
-            <Award size={11} /> Haladó beállítások
+            <Award size={11} /> Advanced settings
           </span>
         </SectionHeading>
 
         <div>
           <FieldLabel
-            title="Top N (kimeneti chunks)"
-            help="Ennyi dokumentumot küldünk tovább az LLM-nek."
+            title="Top N (output chunks)"
+            help="This many documents are forwarded to the LLM."
           />
           <div className="flex items-center gap-2">
             <input
@@ -320,7 +320,7 @@ export default function RerankerSettingsPanel({
               step={1}
               value={topN}
               onChange={(event) => setMeta('top_n', Number(event.target.value))}
-              className="flex-1 accent-fuchsia-600"
+              className="flex-1 accent-amber-600"
             />
             <input
               type="number"
@@ -332,14 +332,14 @@ export default function RerankerSettingsPanel({
             />
           </div>
           <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
-            Ennyi dokumentumot küldünk tovább az LLM-nek.
+            This many documents are forwarded to the LLM.
           </p>
         </div>
 
         <div>
           <FieldLabel
-            title="Relevancia küszöb (Score Threshold)"
-            help="Ezen pontszám alatti találatokat a rendszer eldobja a hallucinációk elkerülése végett."
+            title="Relevance threshold (Score Threshold)"
+            help="Hits below this score are dropped to avoid hallucinations."
           />
           <div className="flex items-center gap-2">
             <input
@@ -349,7 +349,7 @@ export default function RerankerSettingsPanel({
               step={0.01}
               value={scoreThreshold}
               onChange={(event) => setMeta('score_threshold', Number(event.target.value))}
-              className="flex-1 accent-fuchsia-600"
+              className="flex-1 accent-amber-600"
             />
             <input
               type="number"
@@ -362,8 +362,8 @@ export default function RerankerSettingsPanel({
             />
           </div>
           <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
-            Ezen pontszám alatti találatokat a rendszer eldobja a hallucinációk
-            elkerülése végett. {scoreThreshold === 0 && '(0 = kikapcsolva)'}
+            Hits below this score are dropped to avoid
+            hallucinations. {scoreThreshold === 0 && '(0 = disabled)'}
           </p>
         </div>
       </div>
@@ -378,8 +378,8 @@ export default function RerankerSettingsPanel({
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-fuchsia-500" />
-        Engedélyezett bemenetek: <span className="font-mono">chunks</span> + <span className="font-mono">text</span>
+        <Zap size={11} className="text-amber-500" />
+        Allowed inputs: <span className="font-mono">chunks</span> + <span className="font-mono">text</span>
       </div>
     </div>
   );

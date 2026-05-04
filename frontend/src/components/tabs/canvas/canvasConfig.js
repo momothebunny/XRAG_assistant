@@ -29,7 +29,7 @@ export const NODE_LIBRARY = [
     label: 'User',
     description: 'End-user actor in conversation flow',
     icon: User,
-    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+    colorClass: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
     config: {
       preset: 'enterprise-user',
       // Identity & RBAC
@@ -59,13 +59,13 @@ export const NODE_LIBRARY = [
     label: 'Question',
     description: 'User query input channel',
     icon: MessageSquare,
-    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+    colorClass: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
     hiddenInPalette: true,
     config: {
       // Input shape
       mode: 'free_text',
       language: 'auto',
-      placeholder: 'Tedd fel a kérdésed…',
+      placeholder: 'Ask your question…',
       sampleQuery: '',
       multipleChoiceOptions: '',
       // Validation
@@ -86,29 +86,29 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'input-upload',
-    category: 'Input',
+    category: 'Sources',
     label: 'Uploaded Documents',
     description: 'Pick already-ingested documents or whole folders from the Knowledge Base',
     icon: FileInput,
-    colorClass: 'bg-sky-50 border-sky-200 text-sky-700',
+    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
     config: { ...DEFAULT_UPLOADED_DOCUMENTS_CONFIG },
   },
   {
     key: 'input-url',
-    category: 'Input',
+    category: 'Sources',
     label: 'URL Scraper',
     description: 'Web crawler ingestion',
     icon: Globe,
-    colorClass: 'bg-sky-50 border-sky-200 text-sky-700',
+    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
     config: { depth: 2 },
   },
   {
     key: 'process-chunking',
-    category: 'Process',
+    category: 'Ingestion',
     label: 'Chunking',
     description: 'Recursive text split',
     icon: ScissorsLineDashed,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-sky-50 border-sky-200 text-sky-700',
     config: {
       strategy: 'recursive',
       chunkSize: 750,
@@ -134,11 +134,11 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'process-embedding',
-    category: 'Process',
+    category: 'Ingestion',
     label: 'Embedding Model',
     description: 'OpenRouter via secure backend proxy',
     icon: Sparkles,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-sky-50 border-sky-200 text-sky-700',
     config: {
       gateway: 'backend_proxy',
       // The API key lives on the backend (.env: OPENROUTER_API_KEY) — never here.
@@ -153,11 +153,11 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'process-reranker',
-    category: 'Process',
+    category: 'Retrieval',
     label: 'Reranker',
     description: 'Query-aware OpenRouter reranker (Cohere / Voyage / Jina)',
     icon: Filter,
-    colorClass: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
+    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
     config: {
       gateway: 'backend_proxy',
       metadata: {
@@ -173,29 +173,29 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'process-cleaning',
-    category: 'Process',
+    category: 'Ingestion',
     label: 'Document Cleaning',
     description: 'Normalize text and remove noise',
     icon: Sparkles,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-sky-50 border-sky-200 text-sky-700',
     config: { removeHeaders: true, normalizeWhitespace: true, fixEncoding: true },
   },
   {
     key: 'process-query-rewriter',
-    category: 'Process',
+    category: 'Retrieval',
     label: 'Query Rewriter',
     description: 'Rewrite user query for retrieval',
     icon: Search,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
     config: { strategy: 'intent-aware', expansionTerms: 3 },
   },
   {
     key: 'process-retriever',
-    category: 'Process',
+    category: 'Retrieval',
     label: 'Retriever',
     description: 'Top-k vector search (similarity / MMR / hybrid)',
     icon: Search,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
     config: {
       strategy: 'similarity',
       topK: 8,
@@ -214,47 +214,47 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'process-hybrid-merge',
-    category: 'Process',
+    category: 'Retrieval',
     label: 'Hybrid Merge',
     description: 'Blend BM25 and vector results',
     icon: GitBranch,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
     config: { bm25Weight: 0.4, vectorWeight: 0.6 },
   },
   {
     key: 'process-context-compression',
-    category: 'Process',
+    category: 'Retrieval',
     label: 'Context Compression',
     description: 'Compact long context before LLM',
     icon: ScissorsLineDashed,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
     config: { maxTokens: 2200, keepCitations: true },
   },
   {
     key: 'process-pii-redaction',
-    category: 'Process',
+    category: 'Safety',
     label: 'PII Redaction',
     description: 'Mask personal/sensitive fields',
     icon: Shield,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-rose-50 border-rose-200 text-rose-700',
     config: { redactEmails: true, redactPhones: true, redactIds: true },
   },
   {
     key: 'process-hallucination-guard',
-    category: 'Process',
+    category: 'Safety',
     label: 'Hallucination Guard',
     description: 'Validate answer against evidence',
     icon: Brain,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-rose-50 border-rose-200 text-rose-700',
     config: { minGroundingScore: 0.75, fallbackToCitationMode: true },
   },
   {
     key: 'process-reflection-loop',
-    category: 'Process',
+    category: 'Safety',
     label: 'Reflection Loop',
     description: 'Generate -> critique -> revise cycle',
     icon: Repeat,
-    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
+    colorClass: 'bg-rose-50 border-rose-200 text-rose-700',
     config: { maxReflections: 2, critiquePrompt: 'Check factual grounding and missing evidence.' },
   },
   {
@@ -327,11 +327,11 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'input-system-prompt',
-    category: 'Interaction',
+    category: 'Brain',
     label: 'System Prompt',
     description: 'Persona / style / constraints for the LLM',
     icon: ScrollText,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
     config: {
       preset: 'rag-grounded',
       persona: 'You are a grounded enterprise RAG assistant.',
@@ -346,7 +346,7 @@ export const NODE_LIBRARY = [
     label: 'LLM (Generation)',
     description: 'OpenRouter chat completion grounded on retrieved chunks',
     icon: Brain,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
     config: {
       gateway: 'backend_proxy',
       metadata: {
@@ -366,7 +366,7 @@ export const NODE_LIBRARY = [
     label: 'LLM: HyDE Gen',
     description: 'Hypothetical Document Embedding generator',
     icon: Sparkles,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
     config: {
       model: 'gpt-4o-mini',
       hypothesesPerQuery: 3,
@@ -381,7 +381,7 @@ export const NODE_LIBRARY = [
     label: 'Speech-to-Text (STT)',
     description: 'Whisper / realtime transcript',
     icon: Mic,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
     config: { model: 'whisper-large-v3', language: 'auto' },
   },
   {
@@ -390,7 +390,7 @@ export const NODE_LIBRARY = [
     label: 'Text-to-Speech (TTS)',
     description: 'Natural voice output',
     icon: Volume2,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
     config: { provider: 'openai-tts', voice: 'alloy' },
   },
   {
@@ -399,16 +399,16 @@ export const NODE_LIBRARY = [
     label: 'Model Router',
     description: 'Route by intent/cost/latency',
     icon: GitBranch,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
     config: { strategy: 'intent-first', fallbackModel: 'gpt-4o-mini' },
   },
   {
     key: 'brain-guardrails',
-    category: 'Brain',
+    category: 'Safety',
     label: 'Guardrails',
     description: 'Safety and policy checks',
     icon: Shield,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-rose-50 border-rose-200 text-rose-700',
     config: { piiRedaction: true, jailbreakCheck: true },
   },
   {
@@ -417,7 +417,7 @@ export const NODE_LIBRARY = [
     label: 'Response',
     description: 'Final grounded answer to user',
     icon: Bot,
-    colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+    colorClass: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
     config: {
       // Presentation
       format: 'inherit',
@@ -444,20 +444,20 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'output-chat',
-    category: 'Output',
+    category: 'Interaction',
     label: 'Chat Tester',
     description: 'Interactive output preview',
     icon: MessageSquare,
-    colorClass: 'bg-rose-50 border-rose-200 text-rose-700',
+    colorClass: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
     config: { mode: 'preview' },
   },
   {
     key: 'input-image',
-    category: 'Input',
+    category: 'Sources',
     label: 'Image Upload',
     description: 'Upload images for multimodal RAG — ingestion library or visual query',
     icon: ImageIcon,
-    colorClass: 'bg-sky-50 border-sky-200 text-sky-700',
+    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
     config: {
       mode: 'upload',           // 'upload' | 'url' | 'screenshot'
       role: 'library',          // 'library' (ingestion) | 'query' (query-time visual input)
@@ -475,7 +475,7 @@ export const NODE_LIBRARY = [
     label: 'Vision LLM',
     description: 'Multimodal vision model — image captioning, analysis, and visual question answering',
     icon: Eye,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-amber-50 border-amber-200 text-amber-700',
     config: {
       gateway: 'backend_proxy',
       metadata: {
@@ -493,11 +493,11 @@ export const NODE_LIBRARY = [
   },
   {
     key: 'sub-graph',
-    category: 'Process',
+    category: 'Ingestion',
     label: 'Sub-graph',
     description: 'Collapsed node cluster for cleaner canvas view',
     icon: Network,
-    colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
+    colorClass: 'bg-sky-50 border-sky-200 text-sky-700',
     hiddenInPalette: true,
     config: { nodeCount: 0, members: [], collapsedNodes: [], collapsedEdges: [] },
   },
@@ -672,7 +672,7 @@ export const templateByKey = NODE_LIBRARY.reduce((accumulator, item) => {
 
 export const visibleNodeLibrary = NODE_LIBRARY.filter((item) => !item.hiddenInPalette);
 
-const CATEGORY_ORDER = ['Interaction', 'Input', 'Process', 'Storage', 'Brain', 'Output'];
+const CATEGORY_ORDER = ['Interaction', 'Sources', 'Ingestion', 'Retrieval', 'Storage', 'Brain', 'Safety'];
 
 export const groupedNodeLibrary = CATEGORY_ORDER.map((category) => ({
   category,
@@ -689,6 +689,57 @@ export const buildNodeData = (templateKey) => {
     colorClass: template.colorClass,
     config: { ...template.config },
   };
+};
+
+// ─── Custom user-defined nodes ────────────────────────────────────────────
+// Curated map of icon-name strings → lucide components. The backend stores
+// just the icon name (whitelisted) and the frontend resolves it here so the
+// JSON payload stays serializable.
+import {
+  Wand2, Code2, Zap, Layers,
+} from 'lucide-react';
+
+export const CUSTOM_NODE_ICON_MAP = {
+  Wand2, Sparkles, Bot, Brain, Code2, Zap, Layers,
+  GitBranch, Filter, Search, Database, Network, Globe,
+  Shield, Repeat, ScissorsLineDashed, ScrollText, FileInput,
+  FileUp: FileInput, MessageSquare, Mic, Volume2, Eye, User,
+  Image: ImageIcon,
+};
+
+export const COLOR_TO_CLASS = (color) => {
+  const safe = ['amber', 'sky', 'cyan', 'emerald', 'violet', 'fuchsia', 'rose', 'indigo', 'slate'].includes(color) ? color : 'indigo';
+  return `bg-${safe}-50 border-${safe}-200 text-${safe}-700`;
+};
+
+/**
+ * Register a custom node so the canvas runtime (drop handler, ragNode
+ * renderer, etc.) sees it the same way as a built-in template. Mutates
+ * `templateByKey` in place — safe to call multiple times (idempotent).
+ */
+export const registerCustomTemplate = (customNode) => {
+  if (!customNode || !customNode.id) return null;
+  const Icon = CUSTOM_NODE_ICON_MAP[customNode.icon] || Wand2;
+  const colorClass = COLOR_TO_CLASS(customNode.color);
+  const template = {
+    key: customNode.id,
+    category: customNode.category || 'Custom',
+    label: customNode.name || 'Custom Node',
+    description: customNode.description || '',
+    icon: Icon,
+    colorClass,
+    isCustom: true,
+    customNode,
+    config: { ...(customNode.default_config || {}) },
+  };
+  templateByKey[customNode.id] = template;
+  return template;
+};
+
+export const unregisterCustomTemplate = (customNodeId) => {
+  if (customNodeId && templateByKey[customNodeId]) {
+    delete templateByKey[customNodeId];
+  }
 };
 
 const PREVIEW_BACKDROP_THEME_SCALE = [

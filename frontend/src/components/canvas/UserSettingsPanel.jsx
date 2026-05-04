@@ -1,241 +1,156 @@
 /**
- * UserSettingsPanel — defines the *acting persona* at the entry point of
- * the canvas pipeline. The User node represents the human (or system) that
- * sends queries; its config feeds:
- *   1. authorisation / RBAC scope (role, tenant, allowed tools)
- *   2. personalisation (locale, expertise, tone preference)
- *   3. session bookkeeping (id, channel, rate limit budget)
+ * UserSettingsPanel — the *actor* at the entry of every RAG pipeline.
  *
- * CONNECTION CONTRACT (CANONICAL_PIPELINE_RANK = 1)
- *   • Inputs: none — this is the *source* node of the conversation.
- *   • Outputs: typed `user_context` payload that downstream nodes
- *     (Question, Guardrails, Router, LLM) can read for personalisation
- *     and policy decisions.
+ * What belongs here, and ONLY here:
+ *   1. Identity — display name, role, tenant, user id (RBAC / multi-tenant key)
+ *   2. Access  — which tools the runtime is allowed to call for this user
+ *   3. Quotas  — per-user rate limit
  *
- * Why a dedicated panel? Without proper user context the pipeline cannot
- * differentiate an anonymous trial user from a paid enterprise admin —
- * which has both safety (PII handling) and quality (response tone)
- * implications. A single "persona" string is not enough.
+ * What does NOT belong here (delegated to sibling nodes):
+ *   • Output language       → Response node
+ *   • Tone / expertise      → System Prompt node
+ *   • Look & feel / avatar  → cosmetic, not a pipeline concern
+ *   • Telemetry / consent   → org-level setting, not per-flow
+ *
+ * Output: typed `user_context` payload consumed by Guardrails, Router and LLM.
  */
 
 import { useMemo } from 'react';
 import {
   AlertTriangle,
-  Building2,
   CheckCircle2,
   CircleHelp,
   Crown,
   Gauge,
-  Globe,
-  Headset,
   KeyRound,
-  Smartphone,
+  ShieldCheck,
   User,
   UserCog,
+  Wrench,
   Zap,
 } from 'lucide-react';
 
+// ─── Shared atoms (modern, soft fuchsia) ──────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-cyan-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
       {title}
     </label>
     {help && (
-      <button
-        type="button"
-        title={help}
-        className="shrink-0 text-slate-400 hover:text-slate-700"
-      >
+      <span title={help} className="cursor-help text-slate-300 hover:text-fuchsia-500">
         <CircleHelp size={11} />
-      </button>
+      </span>
     )}
   </div>
 );
 
-const ToggleRow = ({ checked, onChange, title, help }) => (
-  <label
-    className={`flex items-start gap-2 rounded-lg border px-2.5 py-2 transition cursor-pointer ${
+/**
+ * ToggleChip — pill button with aria-pressed state.
+ *
+ * IMPORTANT: implemented as a real <button>, NOT a <label> wrapping a hidden
+ * <input>. Hidden checkboxes inside <label> can cause the browser to scroll
+ * the page when focus moves into a clipped (`sr-only`) element — visible to
+ * the user as the panel "jumping" or a popup-like reflow.
+ */
+const ToggleChip = ({ checked, onChange, label, help }) => (
+  <button
+    type="button"
+    title={help}
+    aria-pressed={Boolean(checked)}
+    onClick={() => onChange?.(!checked)}
+    className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
       checked
-        ? 'border-cyan-300 bg-cyan-50/60'
-        : 'border-slate-200 bg-white hover:border-slate-300'
+        ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800 shadow-sm shadow-fuchsia-200/30'
+        : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
     }`}
   >
-    <input
-      type="checkbox"
-      checked={Boolean(checked)}
-      onChange={(event) => onChange?.(event.target.checked)}
-      className="mt-0.5 h-3.5 w-3.5 accent-cyan-500"
+    <span
+      aria-hidden
+      className={`inline-block h-2 w-2 rounded-full transition ${
+        checked ? 'bg-fuchsia-500' : 'bg-slate-300 group-hover:bg-fuchsia-300'
+      }`}
     />
-    <span className="min-w-0">
-      <span className="block text-[11.5px] font-bold text-slate-700">{title}</span>
-      {help && <span className="mt-0.5 block text-[10.5px] leading-snug text-slate-500">{help}</span>}
-    </span>
-  </label>
+    {label}
+  </button>
 );
 
-// Persona presets seed the form so the user can iterate rather than start
-// from scratch. Each preset tunes RBAC + personalisation in one click.
+// ─── Domain options ──────────────────────────────────────────────────────
 const PERSONA_PRESETS = [
   {
-    id: 'anonymous-trial',
-    label: 'Anonymous Trial',
+    id: 'anonymous',
+    label: 'Anonymous',
+    description: 'Public visitor, read-only, low rate limit.',
     icon: User,
     role: 'guest',
-    tenantId: 'public',
-    locale: 'en',
-    expertise: 'beginner',
-    tone: 'friendly',
     allowedTools: ['retrieve'],
     rateLimitRpm: 5,
     requireAuth: false,
   },
   {
-    id: 'enterprise-user',
-    label: 'Enterprise User',
-    icon: Building2,
+    id: 'standard',
+    label: 'Standard',
+    description: 'Authenticated user with retrieval + citations.',
+    icon: UserCog,
     role: 'user',
-    tenantId: 'acme-corp',
-    locale: 'en',
-    expertise: 'intermediate',
-    tone: 'professional',
     allowedTools: ['retrieve', 'rerank', 'cite'],
     rateLimitRpm: 60,
     requireAuth: true,
   },
   {
-    id: 'enterprise-admin',
-    label: 'Enterprise Admin',
-    icon: Crown,
-    role: 'admin',
-    tenantId: 'acme-corp',
-    locale: 'en',
-    expertise: 'expert',
-    tone: 'concise',
-    allowedTools: ['retrieve', 'rerank', 'cite', 'index_admin', 'tools_exec'],
+    id: 'power',
+    label: 'Power user',
+    description: 'Function calling and raw chunk inspection.',
+    icon: Wrench,
+    role: 'user',
+    allowedTools: ['retrieve', 'rerank', 'cite', 'tools_exec', 'raw_chunks'],
     rateLimitRpm: 240,
     requireAuth: true,
   },
   {
-    id: 'support-agent',
-    label: 'Support Agent',
-    icon: Headset,
-    role: 'agent',
-    tenantId: 'acme-corp',
-    locale: 'auto',
-    expertise: 'intermediate',
-    tone: 'empathetic',
-    allowedTools: ['retrieve', 'rerank', 'cite', 'ticket_lookup'],
-    rateLimitRpm: 120,
-    requireAuth: true,
-  },
-  {
-    id: 'developer-api',
-    label: 'Developer (API)',
-    icon: KeyRound,
-    role: 'service',
-    tenantId: 'acme-corp',
-    locale: 'en',
-    expertise: 'expert',
-    tone: 'technical',
-    allowedTools: ['retrieve', 'rerank', 'cite', 'tools_exec', 'raw_chunks'],
+    id: 'admin',
+    label: 'Admin',
+    description: 'Can mutate the index. High rate limit.',
+    icon: Crown,
+    role: 'admin',
+    allowedTools: ['retrieve', 'rerank', 'cite', 'tools_exec', 'raw_chunks', 'index_admin'],
     rateLimitRpm: 600,
     requireAuth: true,
-  },
-  {
-    id: 'custom',
-    label: 'Custom (manual)',
-    icon: UserCog,
   },
 ];
 
 const ROLE_OPTIONS = [
-  { value: 'guest', label: 'Guest (anonymous)' },
-  { value: 'user', label: 'User (authenticated)' },
-  { value: 'agent', label: 'Agent (support staff)' },
-  { value: 'admin', label: 'Admin (full access)' },
-  { value: 'service', label: 'Service (machine / API)' },
+  { value: 'guest', label: 'Guest — anonymous visitor' },
+  { value: 'user', label: 'User — authenticated' },
+  { value: 'admin', label: 'Admin — full access' },
+  { value: 'service', label: 'Service — machine / API' },
 ];
 
-const LOCALE_OPTIONS = [
-  { value: 'auto', label: 'Auto-detect' },
-  { value: 'en', label: 'English' },
-  { value: 'hu', label: 'Hungarian' },
-  { value: 'de', label: 'German' },
-  { value: 'fr', label: 'French' },
-  { value: 'es', label: 'Spanish' },
-];
-
-const EXPERTISE_OPTIONS = [
-  { value: 'beginner', label: 'Beginner — explain everything' },
-  { value: 'intermediate', label: 'Intermediate — assume basics' },
-  { value: 'expert', label: 'Expert — terse + technical' },
-];
-
-const TONE_OPTIONS = [
-  { value: 'friendly', label: 'Friendly' },
-  { value: 'professional', label: 'Professional' },
-  { value: 'empathetic', label: 'Empathetic' },
-  { value: 'concise', label: 'Concise' },
-  { value: 'technical', label: 'Technical' },
-];
-
-const CHANNEL_OPTIONS = [
-  { value: 'web_chat', label: 'Web chat' },
-  { value: 'mobile_app', label: 'Mobile app' },
-  { value: 'slack', label: 'Slack' },
-  { value: 'teams', label: 'MS Teams' },
-  { value: 'voice', label: 'Voice (phone)' },
-  { value: 'api', label: 'REST API' },
-];
-
-// Tool catalogue — these strings flow through to the Router / LLM as
-// `allowed_tools` and gate which downstream branches may execute.
 const ALL_TOOLS = [
-  { value: 'retrieve', label: 'Retrieve', help: 'Vector search a knowledge base.' },
+  { value: 'retrieve', label: 'Retrieve', help: 'Vector search the knowledge base.' },
   { value: 'rerank', label: 'Rerank', help: 'Cross-encoder reranking of chunks.' },
   { value: 'cite', label: 'Cite', help: 'Attach source citations to the answer.' },
-  { value: 'ticket_lookup', label: 'Ticket lookup', help: 'Query the helpdesk ticket store.' },
-  { value: 'tools_exec', label: 'Tools (function-calling)', help: 'Execute registered functions.' },
+  { value: 'tools_exec', label: 'Function calling', help: 'Run registered tool functions.' },
   { value: 'raw_chunks', label: 'Raw chunks', help: 'Return retrieved chunks verbatim (debug).' },
   { value: 'index_admin', label: 'Index admin', help: 'Mutate the vector index (upsert/delete).' },
 ];
 
-/**
- * Default config — used by canvasConfig + as the merge base when older
- * payloads are loaded that don't carry the new keys.
- */
+// ─── Schema ──────────────────────────────────────────────────────────────
 export const DEFAULT_USER_CONFIG = {
-  preset: 'enterprise-user',
-  // Identity & RBAC
+  preset: 'standard',
+  // Identity
+  displayName: '',
   role: 'user',
   tenantId: 'acme-corp',
   userId: '',
   requireAuth: true,
-  // Personalisation
-  locale: 'en',
-  expertise: 'intermediate',
-  tone: 'professional',
-  // Session
-  channel: 'web_chat',
-  sessionId: '',
-  rememberHistory: true,
-  // Capabilities & limits
+  // Access control
   allowedTools: ['retrieve', 'rerank', 'cite'],
   rateLimitRpm: 60,
-  // Privacy
-  consentDataCollection: true,
-  consentTraining: false,
 };
 
-/**
- * Compose the typed `user_context` payload that downstream nodes consume.
- * Mirrors the buildXxxPayload helpers from sibling panels so the read-only
- * preview block has something concrete to display and Guardrails / Router /
- * LLM nodes can rely on a stable schema.
- */
 export function buildUserContextPayload(config = {}) {
   const c = { ...DEFAULT_USER_CONFIG, ...config };
   return {
@@ -243,33 +158,21 @@ export function buildUserContextPayload(config = {}) {
     metadata: {
       preset: c.preset || 'custom',
       identity: {
+        display_name: c.displayName || null,
         role: c.role,
         tenant_id: c.tenantId || null,
         user_id: c.userId || null,
         require_auth: Boolean(c.requireAuth),
       },
-      personalisation: {
-        locale: c.locale,
-        expertise: c.expertise,
-        tone: c.tone,
-      },
-      session: {
-        channel: c.channel,
-        session_id: c.sessionId || null,
-        remember_history: Boolean(c.rememberHistory),
-      },
-      capabilities: {
+      access: {
         allowed_tools: Array.isArray(c.allowedTools) ? [...c.allowedTools] : [],
         rate_limit_rpm: Number(c.rateLimitRpm) || 0,
-      },
-      privacy: {
-        consent_data_collection: Boolean(c.consentDataCollection),
-        consent_training: Boolean(c.consentTraining),
       },
     },
   };
 }
 
+// ─── Component ───────────────────────────────────────────────────────────
 export default function UserSettingsPanel({ value = {}, onChange }) {
   const config = useMemo(() => ({ ...DEFAULT_USER_CONFIG, ...value }), [value]);
   const payload = useMemo(() => buildUserContextPayload(config), [config]);
@@ -279,12 +182,7 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
     const preset = PERSONA_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
     setField('preset', preset.id);
-    if (preset.id === 'custom') return;
     setField('role', preset.role);
-    setField('tenantId', preset.tenantId);
-    setField('locale', preset.locale);
-    setField('expertise', preset.expertise);
-    setField('tone', preset.tone);
     setField('allowedTools', preset.allowedTools);
     setField('rateLimitRpm', preset.rateLimitRpm);
     setField('requireAuth', preset.requireAuth);
@@ -295,71 +193,135 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
     if (enabled) current.add(toolValue);
     else current.delete(toolValue);
     setField('allowedTools', [...current]);
-    // Switch to custom preset whenever the tool set diverges from a preset.
     if (config.preset !== 'custom') setField('preset', 'custom');
   };
 
-  // Surface RBAC / consent inconsistencies so misconfigurations don't get
-  // silently shipped to the runner.
   const warnings = [];
   if (config.role === 'guest' && config.requireAuth) {
-    warnings.push('Guest role nem párosítható auth-kötelezővel — vegyél fel valódi role-t.');
+    warnings.push('Guest role with required auth — pick a real role or disable auth.');
   }
   if (config.allowedTools?.includes('index_admin') && config.role !== 'admin') {
-    warnings.push('Index admin tool csak admin role-nak adható ki biztonsággal.');
-  }
-  if (config.consentTraining && !config.consentDataCollection) {
-    warnings.push('Training consent feltételezi a data collection consent-et.');
+    warnings.push('Index admin tool should only be granted to the admin role.');
   }
   if (!config.allowedTools || config.allowedTools.length === 0) {
-    warnings.push('Egy tool sincs engedélyezve — a felhasználó csak passzív választ kap.');
+    warnings.push('No tools enabled — the user cannot retrieve anything.');
   }
+
+  const previewName = config.displayName?.trim() || 'Anonymous user';
+  const previewSub = [config.role, config.tenantId].filter(Boolean).join(' · ');
+  const toolCount = config.allowedTools?.length || 0;
 
   return (
     <div className="space-y-3">
-      {/* ── Preset picker ───────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
-        <div className="flex items-center gap-2">
-          <UserCog size={14} className="text-cyan-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-cyan-800">
-            Persona preset (gyors indítás)
-          </p>
+      {/* ── Hero card ───────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fuchsia-300 via-fuchsia-400 to-pink-300"
+        />
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-50 to-pink-50 text-fuchsia-600 ring-1 ring-fuchsia-200/60">
+            <User size={20} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-bold text-slate-800">{previewName}</p>
+            <p className="truncate font-mono text-[10.5px] text-slate-500">
+              {previewSub || 'no identity yet'}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+            <span className="text-[10.5px] font-bold text-fuchsia-700">
+              {toolCount} {toolCount === 1 ? 'tool' : 'tools'}
+            </span>
+            <span className="font-mono text-[10px] text-slate-500">
+              {config.rateLimitRpm === 0 ? '∞ rpm' : `${config.rateLimitRpm} rpm`}
+            </span>
+          </div>
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-500">
+          Tells downstream nodes <span className="font-semibold text-slate-700">who</span> is asking
+          and <span className="font-semibold text-slate-700">what they may do</span>. Output language
+          and tone live in the Response / System Prompt nodes.
+        </p>
+      </div>
+
+      {/* ── Quick presets ───────────────────────────────────────────────── */}
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
+        <header className="flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            Quick presets
+          </p>
+          {config.preset === 'custom' && (
+            <span className="rounded-full border border-fuchsia-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fuchsia-700">
+              custom
+            </span>
+          )}
+        </header>
+        <div className="grid grid-cols-2 gap-1.5">
           {PERSONA_PRESETS.map((preset) => {
-            const Icon = preset.icon || User;
+            const Icon = preset.icon;
             const active = config.preset === preset.id;
             return (
               <button
                 key={preset.id}
                 type="button"
                 onClick={() => applyPreset(preset.id)}
-                className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10.5px] font-bold transition ${
+                className={`group flex flex-col gap-1 rounded-xl border bg-white p-2 text-left transition ${
                   active
-                    ? 'border-cyan-500 bg-cyan-100 text-cyan-900 shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-300 hover:text-cyan-700'
+                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-200/50'
+                    : 'border-slate-200 hover:border-fuchsia-200'
                 }`}
               >
-                <Icon size={12} className={active ? 'text-cyan-600' : 'text-slate-400'} />
-                <span className="truncate">{preset.label}</span>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-md transition ${
+                      active
+                        ? 'bg-fuchsia-100 text-fuchsia-600'
+                        : 'bg-slate-100 text-slate-500 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
+                    }`}
+                  >
+                    <Icon size={11} />
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold ${
+                      active ? 'text-fuchsia-800' : 'text-slate-700'
+                    }`}
+                  >
+                    {preset.label}
+                  </span>
+                </div>
+                <span className="text-[9.5px] leading-snug text-slate-500">
+                  {preset.description}
+                </span>
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* ── Identity & RBAC ─────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <KeyRound size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-            Identity &amp; RBAC
-          </p>
+      {/* ── Identity ────────────────────────────────────────────────────── */}
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center gap-2">
+          <KeyRound size={12} className="text-fuchsia-500" />
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            Identity
+          </h4>
+        </header>
+
+        <div>
+          <FieldLabel title="Display name" help="Shown in the chat UI." />
+          <input
+            type="text"
+            value={config.displayName}
+            placeholder="e.g. Jane Doe"
+            onChange={(event) => setField('displayName', event.target.value)}
+            className={inputClass}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <FieldLabel title="Role" help="A downstream Guardrails / Router node ezt nézi." />
+            <FieldLabel title="Role" help="Drives RBAC in Guardrails / Router." />
             <select
               value={config.role}
               onChange={(event) => setField('role', event.target.value)}
@@ -373,217 +335,113 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
             </select>
           </div>
           <div>
-            <FieldLabel title="Tenant ID" help="Multi-tenant isolation kulcsa." />
-            <div className="relative">
-              <Building2
-                size={12}
-                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                type="text"
-                value={config.tenantId}
-                placeholder="acme-corp"
-                onChange={(event) => setField('tenantId', event.target.value)}
-                className={`${inputClass} pl-7 font-mono`}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel
-            title="User ID"
-            help="Opcionális — telemetria és per-user rate limit kulcsa."
-          />
-          <input
-            type="text"
-            value={config.userId}
-            placeholder="auth0|abc123 (üresen hagyva = anon)"
-            onChange={(event) => setField('userId', event.target.value)}
-            className={`${inputClass} font-mono`}
-          />
-        </div>
-
-        <ToggleRow
-          checked={config.requireAuth}
-          onChange={(v) => setField('requireAuth', v)}
-          title="Authentikáció kötelező"
-          help="Ha be van kapcsolva, az API ellenőrzi a JWT-t / API kulcsot a kérés előtt."
-        />
-      </div>
-
-      {/* ── Personalisation ─────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <Globe size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-            Personalisation
-          </p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <FieldLabel title="Locale" />
-            <select
-              value={config.locale}
-              onChange={(event) => setField('locale', event.target.value)}
-              className={inputClass}
-            >
-              {LOCALE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <FieldLabel title="Expertise" />
-            <select
-              value={config.expertise}
-              onChange={(event) => setField('expertise', event.target.value)}
-              className={inputClass}
-            >
-              {EXPERTISE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <FieldLabel title="Tone" />
-            <select
-              value={config.tone}
-              onChange={(event) => setField('tone', event.target.value)}
-              className={inputClass}
-            >
-              {TONE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Session ─────────────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <Smartphone size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-            Session
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <FieldLabel title="Channel" />
-            <select
-              value={config.channel}
-              onChange={(event) => setField('channel', event.target.value)}
-              className={inputClass}
-            >
-              {CHANNEL_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <FieldLabel
-              title="Session ID"
-              help="Ha üres, a runner generál egyet (uuid4)."
-            />
+            <FieldLabel title="Tenant ID" help="Multi-tenant isolation key." />
             <input
               type="text"
-              value={config.sessionId}
-              placeholder="auto"
-              onChange={(event) => setField('sessionId', event.target.value)}
+              value={config.tenantId}
+              placeholder="acme-corp"
+              onChange={(event) => setField('tenantId', event.target.value)}
               className={`${inputClass} font-mono`}
             />
           </div>
         </div>
 
-        <ToggleRow
-          checked={config.rememberHistory}
-          onChange={(v) => setField('rememberHistory', v)}
-          title="Conversation history megőrzése"
-          help="A korábbi turn-ök bekerülnek a contextbe — multi-turn beszélgetésekhez."
-        />
-      </div>
-
-      {/* ── Capabilities & rate limit ───────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <Gauge size={13} className="text-slate-500" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-            Capabilities &amp; limits
-          </p>
-        </div>
-
-        <div>
-          <FieldLabel
-            title="Allowed tools"
-            help="Az itt jelölt értékek mennek át a Router és LLM allowed_tools mezőjébe."
-          />
-          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {ALL_TOOLS.map((tool) => (
-              <ToggleRow
-                key={tool.value}
-                checked={config.allowedTools?.includes(tool.value)}
-                onChange={(v) => toggleTool(tool.value, v)}
-                title={tool.label}
-                help={tool.help}
-              />
-            ))}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <FieldLabel title="User ID" help="Optional — empty = anonymous." />
+            <input
+              type="text"
+              value={config.userId}
+              placeholder="auth0|abc123"
+              onChange={(event) => setField('userId', event.target.value)}
+              className={`${inputClass} font-mono`}
+            />
           </div>
+          <button
+            type="button"
+            aria-pressed={Boolean(config.requireAuth)}
+            onClick={() => setField('requireAuth', !config.requireAuth)}
+            className={`mt-[18px] inline-flex items-center justify-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
+              config.requireAuth
+                ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800'
+                : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+            }`}
+          >
+            <ShieldCheck
+              size={12}
+              className={config.requireAuth ? 'text-fuchsia-500' : 'text-slate-400'}
+            />
+            Require auth
+          </button>
         </div>
+      </section>
 
-        <div>
-          <FieldLabel
-            title="Rate limit (req/perc)"
-            help="Per-user sliding window. 0 = nincs korlát (csak admin/service esetén ajánlott)."
-          />
-          <input
-            type="number"
-            min={0}
-            step={5}
-            value={config.rateLimitRpm}
-            onChange={(event) =>
-              setField('rateLimitRpm', Math.max(0, Number(event.target.value) || 0))
-            }
-            className={inputClass}
-          />
+      {/* ── Allowed tools ───────────────────────────────────────────────── */}
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={12} className="text-fuchsia-500" />
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+              Allowed tools
+            </h4>
+          </div>
+          <span className="font-mono text-[10px] text-slate-500">
+            {toolCount} / {ALL_TOOLS.length}
+          </span>
+        </header>
+        <p className="text-[10px] leading-snug text-slate-500">
+          The Router and LLM nodes only call tools that are checked here.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {ALL_TOOLS.map((tool) => (
+            <ToggleChip
+              key={tool.value}
+              checked={config.allowedTools?.includes(tool.value)}
+              onChange={(v) => toggleTool(tool.value, v)}
+              label={tool.label}
+              help={tool.help}
+            />
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* ── Privacy & consent ───────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-violet-200 bg-violet-50/40 p-3">
-        <div className="flex items-center gap-2">
-          <User size={13} className="text-violet-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-violet-800">
-            Privacy &amp; consent
-          </p>
+      {/* ── Rate limit ──────────────────────────────────────────────────── */}
+      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Gauge size={12} className="text-fuchsia-500" />
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+              Rate limit
+            </h4>
+          </div>
+          <span className="font-mono text-[11px] font-bold text-fuchsia-700">
+            {config.rateLimitRpm === 0 ? '∞' : `${config.rateLimitRpm} rpm`}
+          </span>
+        </header>
+        <input
+          type="range"
+          min={0}
+          max={600}
+          step={5}
+          value={config.rateLimitRpm}
+          onChange={(event) =>
+            setField('rateLimitRpm', Math.max(0, Number(event.target.value) || 0))
+          }
+          className="w-full accent-fuchsia-400"
+        />
+        <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+          <span>off</span>
+          <span>60</span>
+          <span>240</span>
+          <span>600</span>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <ToggleRow
-            checked={config.consentDataCollection}
-            onChange={(v) => setField('consentDataCollection', v)}
-            title="Telemetria gyűjtése"
-            help="Latency, tokens, success rate logolása (anonim)."
-          />
-          <ToggleRow
-            checked={config.consentTraining}
-            onChange={(v) => setField('consentTraining', v)}
-            title="Training használatra is"
-            help="A beszélgetést jövőbeni model fine-tuninghoz fel lehet használni."
-          />
-        </div>
-      </div>
+        <p className="text-[10px] text-slate-500">
+          Per-user sliding window. <span className="font-mono">0</span> = unlimited
+          (recommended only for service / admin roles).
+        </p>
+      </section>
 
-      {/* ── Warnings / OK ───────────────────────────────────────────────── */}
+      {/* ── Validation ──────────────────────────────────────────────────── */}
       {warnings.length > 0 ? (
         <ul className="space-y-1">
           {warnings.map((warning) => (
@@ -599,24 +457,24 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
       ) : (
         <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
           <CheckCircle2 size={11} />
-          Konfiguráció rendben — minden ellenőrzés zöld.
+          Configuration valid — all checks passed.
         </div>
       )}
 
-      {/* ── Read-only payload ───────────────────────────────────────────── */}
-      <div>
-        <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+      {/* ── Output payload preview ──────────────────────────────────────── */}
+      <details className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
+        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-600">
           Output payload (read-only)
-        </p>
-        <pre className="max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-cyan-300">
+        </summary>
+        <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-fuchsia-200">
 {JSON.stringify(payload, null, 2)}
         </pre>
-      </div>
+      </details>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-cyan-500" />
-        Kimenet: <span className="font-mono">user_context</span> → Question, Guardrails, Router, LLM
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        <Zap size={11} className="text-fuchsia-400" />
+        Output: <span className="font-mono text-fuchsia-700">user_context</span> → Guardrails, Router, LLM
       </div>
     </div>
   );

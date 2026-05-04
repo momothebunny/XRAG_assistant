@@ -9,7 +9,7 @@
 import { Shield, AlertOctagon, CircleHelp } from 'lucide-react';
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
@@ -25,14 +25,14 @@ const FieldLabel = ({ title, help }) => (
 const ToggleRow = ({ checked, onChange, title, help }) => (
   <label
     className={`flex items-start gap-2 rounded-lg border px-2.5 py-2 cursor-pointer transition ${
-      checked ? 'border-violet-300 bg-violet-50/60' : 'border-slate-200 bg-white hover:border-slate-300'
+      checked ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200 bg-white hover:border-slate-300'
     }`}
   >
     <input
       type="checkbox"
       checked={Boolean(checked)}
       onChange={(e) => onChange?.(e.target.checked)}
-      className="mt-0.5 h-3.5 w-3.5 accent-violet-500"
+      className="mt-0.5 h-3.5 w-3.5 accent-amber-500"
     />
     <span className="min-w-0">
       <span className="block text-[11.5px] font-bold text-slate-700">{title}</span>
@@ -44,7 +44,7 @@ const ToggleRow = ({ checked, onChange, title, help }) => (
 const Section = ({ icon: Icon, title, children }) => (
   <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
     <div className="flex items-center gap-1.5">
-      <Icon size={13} className="text-violet-500 shrink-0" />
+      <Icon size={13} className="text-amber-500 shrink-0" />
       <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">{title}</span>
     </div>
     {children}

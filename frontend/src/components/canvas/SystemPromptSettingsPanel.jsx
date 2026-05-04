@@ -61,7 +61,7 @@ const PRESETS = [
 ];
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-violet-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-amber-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
@@ -112,11 +112,11 @@ export default function SystemPromptSettingsPanel({ value = {}, onChange }) {
   return (
     <div className="space-y-3">
       {/* ── Preset picker ───────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-violet-200 bg-violet-50 p-3">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
         <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-violet-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-violet-800">
-            Preset (gyors indítás)
+          <Sparkles size={14} className="text-amber-700" />
+          <p className="text-[11px] font-black uppercase tracking-wider text-amber-800">
+            Preset (quick start)
           </p>
         </div>
         <select
@@ -137,7 +137,7 @@ export default function SystemPromptSettingsPanel({ value = {}, onChange }) {
         <div>
           <FieldLabel
             title="Persona"
-            help="Ki/mi a modell? Pl. 'Senior elemző', 'Patient tutor'."
+            help="Who/what is the model? E.g. 'Senior analyst', 'Patient tutor'."
           />
           <textarea
             rows={2}
@@ -149,7 +149,7 @@ export default function SystemPromptSettingsPanel({ value = {}, onChange }) {
         </div>
 
         <div>
-          <FieldLabel title="Style" help="Hogyan válaszoljon? Hangnem, formátum, hossz." />
+          <FieldLabel title="Style" help="How should it respond? Tone, format, length." />
           <textarea
             rows={2}
             value={value.style || ''}
@@ -162,7 +162,7 @@ export default function SystemPromptSettingsPanel({ value = {}, onChange }) {
         <div>
           <FieldLabel
             title="Constraints"
-            help="Tiltások és kötelező szabályok. Itt erősítsd meg a hallucináció elleni védelmet."
+            help="Prohibitions and required rules. Reinforce hallucination defenses here."
           />
           <textarea
             rows={2}
@@ -176,7 +176,7 @@ export default function SystemPromptSettingsPanel({ value = {}, onChange }) {
         <div>
           <FieldLabel
             title="Custom template (raw)"
-            help="Tetszőleges kiegészítő prompt. A persona/style/constraints UTÁN kerül."
+            help="Arbitrary additional prompt. Placed AFTER persona/style/constraints."
           />
           <textarea
             rows={3}
@@ -191,13 +191,13 @@ export default function SystemPromptSettingsPanel({ value = {}, onChange }) {
       {/* ── Stats ───────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
-          <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">Hossz</p>
+          <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">Length</p>
           <p className="font-mono text-xs font-bold text-slate-800">
             {payload.metadata.length_chars} char
           </p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
-          <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">~ Tokenek</p>
+          <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">~ Tokens</p>
           <p className="font-mono text-xs font-bold text-slate-800">
             {payload.metadata.token_estimate}
           </p>
@@ -216,8 +216,8 @@ export default function SystemPromptSettingsPanel({ value = {}, onChange }) {
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-violet-500" />
-        Kimenet: <span className="font-mono">system_prompt</span> →{' '}
+        <Zap size={11} className="text-amber-500" />
+        Output: <span className="font-mono">system_prompt</span> →{' '}
         <span className="font-mono">brain-llm</span>
       </div>
     </div>

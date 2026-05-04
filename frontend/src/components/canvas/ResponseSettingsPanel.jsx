@@ -211,16 +211,16 @@ export default function ResponseSettingsPanel({
   // Detect impossible / risky combinations so we can surface a warning chip.
   const warnings = [];
   if (config.channels?.voice && config.format === 'html') {
-    warnings.push('TTS-hez nem szerencsés a HTML formátum — válts plain szövegre.');
+    warnings.push('HTML format is not ideal for TTS — switch to plain text.');
   }
   if (config.channels?.webhook && !config.webhookUrl?.trim()) {
-    warnings.push('A webhook be van kapcsolva, de nincs URL megadva.');
+    warnings.push('Webhook is enabled but no URL is provided.');
   }
   if (config.includeCitations && !upstreamHasCitations && hasUpstreamProducer) {
-    warnings.push('A citations be van kapcsolva, de az upstream LLM nem ad hivatkozásokat.');
+    warnings.push('Citations are enabled, but the upstream LLM does not produce citations.');
   }
   if (!Object.values(config.channels || {}).some(Boolean)) {
-    warnings.push('Egy delivery channel sincs bekapcsolva — a válasz sehová sem fog kimenni.');
+    warnings.push('No delivery channel is enabled — the response will not be sent anywhere.');
   }
 
   return (
@@ -245,19 +245,19 @@ export default function ResponseSettingsPanel({
             </p>
             {hasUpstreamProducer ? (
               <p className="mt-0.5 text-[11px] text-cyan-900">
-                Bemenet: <span className="font-mono">chat_completion</span>
+                Input: <span className="font-mono">chat_completion</span>
                 {upstreamFormat && (
                   <>
-                    {' '}· LLM formátum:{' '}
+                    {' '}· LLM format:{' '}
                     <span className="font-mono font-bold">{upstreamFormat}</span>
                   </>
                 )}
               </p>
             ) : (
               <p className="mt-0.5 text-[11px] text-amber-900">
-                Nincs felismert upstream válaszforrás. Köss be egy{' '}
-                <span className="font-mono font-bold">brain-llm</span> node-ot, hogy a Response
-                node valódi tartalmat fogadhasson.
+                No upstream response source detected. Connect a{' '}
+                <span className="font-mono font-bold">brain-llm</span> node so the Response
+                node can receive real content.
               </p>
             )}
           </div>
@@ -276,7 +276,7 @@ export default function ResponseSettingsPanel({
         <div>
           <FieldLabel
             title="Format"
-            help="Ha 'Inherit', a panel az LLM által megadott response_format-ot tiszteli."
+            help="If 'Inherit', the panel honours the response_format set by the LLM."
           />
           <select
             value={config.format}
@@ -294,8 +294,8 @@ export default function ResponseSettingsPanel({
         <ToggleRow
           checked={config.includeCitations}
           onChange={(v) => setField('includeCitations', v)}
-          title="Citations megjelenítése"
-          help="A retrieved chunks-okhoz tartozó forrásokat hozzáfűzi a válaszhoz."
+          title="Show citations"
+          help="Appends the sources tied to the retrieved chunks to the response."
         />
 
         {config.includeCitations && (
@@ -320,13 +320,13 @@ export default function ResponseSettingsPanel({
             checked={config.showReasoning}
             onChange={(v) => setField('showReasoning', v)}
             title="Reasoning trace"
-            help="Megjeleníti a köztes lépéseket a végfelhasználónak (debug / tutor mód)."
+            help="Shows intermediate steps to the end user (debug / tutor mode)."
           />
           <ToggleRow
             checked={config.streamTokens}
             onChange={(v) => setField('streamTokens', v)}
-            title="Stream tokenek"
-            help="Token-by-token kirajzolás SSE-vel a 'gondolkodó UI' érzéshez."
+            title="Stream tokens"
+            help="Token-by-token rendering via SSE for the 'thinking UI' feel."
           />
         </div>
       </div>
@@ -342,7 +342,7 @@ export default function ResponseSettingsPanel({
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <FieldLabel title="Max chars" help="A megjelenített válasz hosszának plafonja." />
+            <FieldLabel title="Max chars" help="Cap on the displayed response length." />
             <input
               type="number"
               min={100}
@@ -372,10 +372,10 @@ export default function ResponseSettingsPanel({
       </div>
 
       {/* ── Post-processing safety ─────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-violet-200 bg-violet-50/40 p-3">
+      <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/40 p-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={13} className="text-violet-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-violet-800">
+          <ShieldCheck size={13} className="text-amber-700" />
+          <p className="text-[11px] font-black uppercase tracking-wider text-amber-800">
             Post-processing
           </p>
         </div>
@@ -385,20 +385,20 @@ export default function ResponseSettingsPanel({
             checked={config.redactPii}
             onChange={(v) => setField('redactPii', v)}
             title="PII redaction"
-            help="Email, telefon, cím, kártyaszám maszkolása megjelenítés előtt."
+            help="Mask email, phone, address, card number before display."
           />
           <ToggleRow
             checked={config.profanityFilter}
             onChange={(v) => setField('profanityFilter', v)}
             title="Profanity filter"
-            help="Trágárság / sértő kifejezések kicsillagozása."
+            help="Star out profanity / offensive expressions."
           />
         </div>
 
         <div>
           <FieldLabel
             title="Enforce language"
-            help="Ha más nyelven jön, post-translate-eli a kiválasztott célnyelvre."
+            help="If it arrives in another language, post-translates to the selected target language."
           />
           <div className="relative">
             <Languages
@@ -434,25 +434,25 @@ export default function ResponseSettingsPanel({
             checked={config.channels?.chat}
             onChange={(v) => setChannel('chat', v)}
             title="Chat UI"
-            help="A klasszikus chat-felületen jelenik meg."
+            help="Displayed in the classic chat UI."
           />
           <ToggleRow
             checked={config.channels?.voice}
             onChange={(v) => setChannel('voice', v)}
             title="Voice (TTS)"
-            help="Felolvassa a választ a brain-tts node-on keresztül."
+            help="Reads the response aloud via the brain-tts node."
           />
           <ToggleRow
             checked={config.channels?.export}
             onChange={(v) => setChannel('export', v)}
             title="Export"
-            help="Letölthető fájlt készít a kiválasztott formátumban."
+            help="Produces a downloadable file in the selected format."
           />
           <ToggleRow
             checked={config.channels?.webhook}
             onChange={(v) => setChannel('webhook', v)}
             title="Webhook"
-            help="POST a megadott URL-re — automatizációhoz."
+            help="POST to the given URL — for automation."
           />
         </div>
 
@@ -475,7 +475,7 @@ export default function ResponseSettingsPanel({
 
         {config.channels?.webhook && (
           <div>
-            <FieldLabel title="Webhook URL" help="HTTPS-only. A payload JSON formátumban megy." />
+            <FieldLabel title="Webhook URL" help="HTTPS-only. The payload is sent as JSON." />
             <div className="relative">
               <Webhook
                 size={12}
@@ -537,7 +537,7 @@ export default function ResponseSettingsPanel({
       {warnings.length === 0 && (
         <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
           <CheckCircle2 size={11} />
-          Konfiguráció rendben — minden ellenőrzés zöld.
+          Configuration valid — all checks passed.
         </div>
       )}
 
@@ -554,7 +554,7 @@ export default function ResponseSettingsPanel({
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         <Zap size={11} className="text-cyan-500" />
-        Kimenet: <span className="font-mono">final_response</span> → chat transcript
+        Output: <span className="font-mono">final_response</span> → chat transcript
       </div>
     </div>
   );

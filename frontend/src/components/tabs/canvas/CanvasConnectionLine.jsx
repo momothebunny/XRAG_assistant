@@ -9,7 +9,7 @@ import { getSmoothStepPath } from '@xyflow/react';
  * recolour the in-flight wire to red so the incompatibility is obvious
  * before they release the mouse.
  */
-const VALID_STROKE = '#a78bfa';
+const VALID_STROKE = '#fbbf24';
 const INVALID_STROKE = '#ef4444';
 
 export default function CanvasConnectionLine({

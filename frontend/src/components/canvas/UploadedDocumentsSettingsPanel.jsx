@@ -227,7 +227,7 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
             type="button"
             onClick={() => toggleExpanded(node.path)}
             className="text-slate-400 hover:text-slate-700"
-            title={isOpen ? 'Bezárás' : 'Kibontás'}
+            title={isOpen ? 'Collapse' : 'Expand'}
           >
             {isOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
           </button>
@@ -239,7 +239,7 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
           checked={checked}
           onChange={() => toggleFolder(node.path)}
           className="h-3 w-3 accent-sky-500"
-          title="Mappa kijelölése (minden alámappával együtt)"
+          title="Select folder (including all subfolders)"
         />
         {checked || isOpen ? (
           <FolderOpen size={12} className="text-sky-500" />
@@ -406,16 +406,16 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
   // ── Validation warnings ────────────────────────────────────────────────
   const warnings = [];
   if (!loading && !loadError && documents.length === 0) {
-    warnings.push('A knowledge base üres — tölts fel dokumentumokat a Documents oldalon.');
+    warnings.push('The knowledge base is empty — upload documents on the Documents page.');
   }
   if (config.scope === 'folders' && (config.selectedFolders || []).length === 0) {
-    warnings.push('Folders mód kiválasztva, de nincs egyetlen mappa sem bejelölve.');
+    warnings.push('Folders mode is selected but no folder is checked.');
   }
   if (config.scope === 'documents' && (config.selectedDocumentIds || []).length === 0) {
-    warnings.push('Documents mód kiválasztva, de nincs egyetlen dokumentum sem bejelölve.');
+    warnings.push('Documents mode is selected but no document is checked.');
   }
   if (!loading && resolved.length === 0 && documents.length > 0) {
-    warnings.push('A jelenlegi szűrők nem találnak egy dokumentumot sem.');
+    warnings.push('The current filters do not match any document.');
   }
 
   return (
@@ -426,20 +426,20 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
           <Layers size={14} className="mt-0.5 text-sky-700" />
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-black uppercase tracking-wider text-sky-800">
-              Knowledge base · {documents.length} dokumentum
+              Knowledge base · {documents.length} documents
             </p>
             <p className="mt-0.5 text-[11px] text-sky-900">
-              Ez a node a <span className="font-bold">Documents</span> oldalon
-              feltöltött fájlokra hivatkozik. Itt csak kiválasztod, melyik
-              dokumentumok / mappák kerüljenek be a pipeline-ba — feltölteni
-              továbbra is a Documents oldalon kell.
+              This node references files uploaded on the{' '}
+              <span className="font-bold">Documents</span> page. Here you only
+              pick which documents / folders enter the pipeline — uploading
+              still happens on the Documents page.
             </p>
           </div>
           <button
             type="button"
             onClick={reload}
             className="shrink-0 rounded-lg border border-sky-300 bg-white p-1.5 text-sky-600 transition hover:bg-sky-100"
-            title="Lista frissítése"
+            title="Refresh list"
             disabled={loading}
           >
             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
@@ -449,34 +449,34 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
 
       {loadError && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-rose-700">
-          Hiba a betöltéskor: {loadError}
+          Load error: {loadError}
         </div>
       )}
 
       {/* ── Scope picker ───────────────────────────────────────────────── */}
       <div>
-        <FieldLabel title="Selection scope" help="Mit küldjön tovább a node a Chunking felé." />
+        <FieldLabel title="Selection scope" help="What the node forwards to Chunking." />
         <div className="grid grid-cols-3 gap-1.5">
           <ScopeChip
             active={config.scope === 'all'}
             onClick={() => setField('scope', 'all')}
             icon={Sparkles}
             label="All"
-            hint="Minden indexelt dokumentum."
+            hint="Every indexed document."
           />
           <ScopeChip
             active={config.scope === 'folders'}
             onClick={() => setField('scope', 'folders')}
             icon={Folder}
             label="Folders"
-            hint="Egy vagy több mappa (rekurzív)."
+            hint="One or more folders (recursive)."
           />
           <ScopeChip
             active={config.scope === 'documents'}
             onClick={() => setField('scope', 'documents')}
             icon={FileText}
             label="Documents"
-            hint="Konkrét fájlok kijelölése."
+            hint="Pick specific files."
           />
         </div>
       </div>
@@ -486,15 +486,15 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
         <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
           <div className="flex items-center justify-between gap-1">
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-              Mappa-fa
+              Folder tree
             </p>
             <span className="font-mono text-[9.5px] text-slate-400">
-              {(config.selectedFolders || []).length} kijelölve
+              {(config.selectedFolders || []).length} selected
             </span>
           </div>
           {documents.length === 0 ? (
             <p className="rounded bg-slate-50 px-2 py-3 text-center text-[10.5px] text-slate-400">
-              {loading ? 'Betöltés…' : 'Nincs feltöltött dokumentum.'}
+              {loading ? 'Loading…' : 'No uploaded documents.'}
             </p>
           ) : (
             <div className="max-h-64 overflow-auto rounded border border-slate-100 bg-slate-50/40 py-1">
@@ -516,7 +516,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                   type="button"
                   onClick={() => toggleFolder(path)}
                   className="flex items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-mono text-sky-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
-                  title="Eltávolítás"
+                  title="Remove"
                 >
                   <Folder size={9} />
                   {path === '' ? '/' : path}
@@ -540,13 +540,13 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Keresés név vagy útvonal alapján…"
+              placeholder="Search by name or path…"
               className={`${inputClass} pl-7`}
             />
           </div>
           {visibleDocuments.length === 0 ? (
             <p className="rounded bg-slate-50 px-2 py-3 text-center text-[10.5px] text-slate-400">
-              {loading ? 'Betöltés…' : 'Nincs találat.'}
+              {loading ? 'Loading…' : 'No results.'}
             </p>
           ) : (
             <div className="max-h-64 overflow-auto rounded border border-slate-100 bg-slate-50/40">
@@ -583,7 +583,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
           )}
           {(config.selectedDocumentIds || []).length > 0 && (
             <p className="text-[10px] font-bold text-sky-700">
-              {config.selectedDocumentIds.length} dokumentum kijelölve
+              {config.selectedDocumentIds.length} documents selected
             </p>
           )}
         </div>
@@ -605,10 +605,10 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
               onChange={(event) => setField('statusFilter', event.target.value)}
               className={inputClass}
             >
-              <option value="all">Bármely státusz</option>
-              <option value="indexed">Csak indexelt</option>
-              <option value="pending">Csak pending</option>
-              <option value="error">Csak hibás</option>
+              <option value="all">Any status</option>
+              <option value="indexed">Indexed only</option>
+              <option value="pending">Pending only</option>
+              <option value="error">Errored only</option>
             </select>
           </div>
           <div>
@@ -618,7 +618,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
               onChange={(event) => setField('contentTypeFilter', event.target.value)}
               className={inputClass}
             >
-              <option value="all">Bármely típus</option>
+              <option value="all">Any type</option>
               <option value="pdf">PDF</option>
               <option value="docx">DOCX</option>
               <option value="md">Markdown</option>
@@ -721,7 +721,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
             </div>
           </div>
           <div>
-            <FieldLabel title="Page range" help='Pl. "1-10, 15". Üres = minden oldal.' />
+            <FieldLabel title="Page range" help='e.g. "1-10, 15". Empty = all pages.' />
             <input
               type="text"
               value={config.page_range || ''}
@@ -731,7 +731,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
             />
           </div>
           <div>
-            <FieldLabel title="Source label" help="Provenance / audit cimke a downstream node-oknak." />
+            <FieldLabel title="Source label" help="Provenance / audit label for downstream nodes." />
             <input
               type="text"
               value={config.source_label || ''}
@@ -759,14 +759,14 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
       ) : (
         <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
           <CheckCircle2 size={11} />
-          {resolved.length} dokumentum kerül továbbításra a Chunking node-nak.
+          {resolved.length} documents will be forwarded to the Chunking node.
         </div>
       )}
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         <Zap size={11} className="text-sky-500" />
-        Kimenet: <span className="font-mono">documents</span> → Chunking, Cleaning, Graph DB
+        Output: <span className="font-mono">documents</span> → Chunking, Cleaning, Graph DB
       </div>
     </div>
   );

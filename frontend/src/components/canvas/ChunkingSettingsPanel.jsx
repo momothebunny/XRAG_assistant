@@ -317,21 +317,21 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                 <Lock size={13} className="mt-0.5 shrink-0 text-emerald-600" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-bold leading-tight text-emerald-800">
-                    Tokenizer: Automatikusan szinkronizálva
+                    Tokenizer: Auto-synced
                   </p>
                   <p className="mt-0.5 truncate font-mono text-[11px] text-emerald-900/80">
                     {embeddingProfile.modelId}
                   </p>
                   <p className="mt-1 text-[10px] leading-snug text-emerald-700/80">
-                    A backend a bekötött embedding modellhez illő tokenizert
-                    használja, így nincs token-limit ütközés.
+                    The backend uses a tokenizer matching the connected
+                    embedding model, so there are no token-limit collisions.
                   </p>
                 </div>
               </div>
             ) : (
               <div className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-100/70 px-2.5 py-2 text-[11px] text-slate-400">
                 <Lock size={13} className="shrink-0" />
-                <span className="italic">Várakozás az Embedding modellre…</span>
+                <span className="italic">Waiting for the Embedding model…</span>
               </div>
             )}
           </div>
