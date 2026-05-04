@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import hashlib
 import logging
+import os
 import re
 
 from dotenv import load_dotenv
@@ -98,7 +99,8 @@ app.include_router(audit_router)
 app.include_router(custom_nodes_router)
 app.include_router(auth_router)
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+DATA_DIR = Path(os.environ.get("XRAG_DATA_DIR") or (Path(__file__).resolve().parents[1] / "data"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 store = JsonStore(DATA_DIR)
 api_key_store = ApiKeyStore(DATA_DIR)
 # Push any persisted, active keys into os.environ so every downstream reader
