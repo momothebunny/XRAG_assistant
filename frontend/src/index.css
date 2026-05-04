@@ -20,6 +20,97 @@ body {
 }
 
 /* ---------------------------------------------------------------------- */
+/* Cross-browser range slider — uniform look on Chrome / Firefox / Safari */
+/* / Edge. The thumb tint follows the Tailwind `accent-*` utility via the */
+/* CSS `accent-color` cascade (which we read as `currentColor` fallback). */
+/* Without this every browser draws a different square / blue / dark blob */
+/* — see https://developer.mozilla.org/en-US/docs/Web/CSS/accent-color    */
+/* ---------------------------------------------------------------------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Track (Chrome / Edge / Safari) */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: #e2e8f0; /* slate-200 */
+}
+/* Track (Firefox) */
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+}
+
+/* Thumb — picks up the panel's `accent-color` so each panel keeps its    */
+/* palette (amber / fuchsia / sky / …).                                   */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--xrag-thumb, #f0abfc); /* fuchsia-300 default */
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  margin-top: -5px;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--xrag-thumb, #f0abfc);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+}
+input[type="range"]:hover::-moz-range-thumb {
+  transform: scale(1.12);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+}
+input[type="range"]:focus { outline: none; }
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.30); /* fuchsia-400/30 */
+}
+input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.30);
+}
+
+/* Per-palette thumb colors — set on the <input> via Tailwind's accent-*  */
+/* className. We override `--xrag-thumb` with attribute selectors so the  */
+/* same `accent-fuchsia-400` / `accent-amber-400` etc. classes already in */
+/* the JSX keep working without touching components.                      */
+input[type="range"].accent-fuchsia-400 { --xrag-thumb: #e879f9; }
+input[type="range"].accent-fuchsia-500 { --xrag-thumb: #d946ef; }
+input[type="range"].accent-fuchsia-600 { --xrag-thumb: #c026d3; }
+input[type="range"].accent-amber-400   { --xrag-thumb: #fbbf24; }
+input[type="range"].accent-amber-500   { --xrag-thumb: #f59e0b; }
+input[type="range"].accent-amber-600   { --xrag-thumb: #d97706; }
+input[type="range"].accent-rose-400    { --xrag-thumb: #fb7185; }
+input[type="range"].accent-rose-500    { --xrag-thumb: #f43f5e; }
+input[type="range"].accent-sky-400     { --xrag-thumb: #38bdf8; }
+input[type="range"].accent-sky-500     { --xrag-thumb: #0ea5e9; }
+input[type="range"].accent-emerald-400 { --xrag-thumb: #34d399; }
+input[type="range"].accent-emerald-500 { --xrag-thumb: #10b981; }
+input[type="range"].accent-violet-400  { --xrag-thumb: #a78bfa; }
+input[type="range"].accent-violet-500  { --xrag-thumb: #8b5cf6; }
+input[type="range"].accent-indigo-400  { --xrag-thumb: #818cf8; }
+input[type="range"].accent-indigo-500  { --xrag-thumb: #6366f1; }
+input[type="range"].accent-slate-400   { --xrag-thumb: #94a3b8; }
+input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
+
+/* ---------------------------------------------------------------------- */
 /* Canvas edge animations                                                 */
 /* ---------------------------------------------------------------------- */
 @keyframes xrag-edge-flow {
