@@ -73,7 +73,7 @@ export const DEFAULT_UPLOADED_DOCUMENTS_CONFIG = {
 // UI primitives
 // ─────────────────────────────────────────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-sky-400';
+  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-fuchsia-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
@@ -94,12 +94,12 @@ const ScopeChip = ({ active, onClick, icon: Icon, label, hint }) => (
     onClick={onClick}
     className={`flex flex-col items-start gap-0.5 rounded-lg border px-2 py-1.5 text-left transition ${
       active
-        ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-300'
-        : 'border-slate-200 bg-white hover:border-sky-300'
+        ? 'border-fuchsia-500 bg-fuchsia-50 ring-2 ring-fuchsia-300'
+        : 'border-slate-200 bg-white hover:border-fuchsia-300'
     }`}
   >
     <div className="flex w-full items-center gap-1">
-      <Icon size={12} className={active ? 'text-sky-600' : 'text-slate-400'} />
+      <Icon size={12} className={active ? 'text-fuchsia-600' : 'text-slate-400'} />
       <span className="text-[11px] font-bold text-slate-800">{label}</span>
     </div>
     <span className="text-[9.5px] leading-snug text-slate-500">{hint}</span>
@@ -217,8 +217,8 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
   return (
     <div>
       <div
-        className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-[11px] hover:bg-sky-50/60 ${
-          checked ? 'bg-sky-50/40' : ''
+        className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-[11px] hover:bg-fuchsia-50/60 ${
+          checked ? 'bg-fuchsia-50/40' : ''
         }`}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
       >
@@ -238,11 +238,11 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
           type="checkbox"
           checked={checked}
           onChange={() => toggleFolder(node.path)}
-          className="h-3 w-3 accent-sky-500"
+          className="h-3 w-3 accent-fuchsia-500"
           title="Select folder (including all subfolders)"
         />
         {checked || isOpen ? (
-          <FolderOpen size={12} className="text-sky-500" />
+          <FolderOpen size={12} className="text-fuchsia-500" />
         ) : (
           <Folder size={12} className="text-slate-400" />
         )}
@@ -421,14 +421,14 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
   return (
     <div className="space-y-3">
       {/* ── Knowledge base banner ──────────────────────────────────────── */}
-      <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+      <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50 p-3">
         <div className="flex items-start gap-2">
-          <Layers size={14} className="mt-0.5 text-sky-700" />
+          <Layers size={14} className="mt-0.5 text-fuchsia-700" />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-wider text-sky-800">
+            <p className="text-[11px] font-black uppercase tracking-wider text-fuchsia-800">
               Knowledge base · {documents.length} documents
             </p>
-            <p className="mt-0.5 text-[11px] text-sky-900">
+            <p className="mt-0.5 text-[11px] text-fuchsia-900">
               This node references files uploaded on the{' '}
               <span className="font-bold">Documents</span> page. Here you only
               pick which documents / folders enter the pipeline — uploading
@@ -438,7 +438,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
           <button
             type="button"
             onClick={reload}
-            className="shrink-0 rounded-lg border border-sky-300 bg-white p-1.5 text-sky-600 transition hover:bg-sky-100"
+            className="shrink-0 rounded-lg border border-fuchsia-300 bg-white p-1.5 text-fuchsia-600 transition hover:bg-fuchsia-100"
             title="Refresh list"
             disabled={loading}
           >
@@ -515,7 +515,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                   key={path}
                   type="button"
                   onClick={() => toggleFolder(path)}
-                  className="flex items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-mono text-sky-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+                  className="flex items-center gap-1 rounded-md border border-fuchsia-200 bg-fuchsia-50 px-1.5 py-0.5 text-[10px] font-mono text-fuchsia-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
                   title="Remove"
                 >
                   <Folder size={9} />
@@ -556,15 +556,15 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                 return (
                   <label
                     key={doc.id}
-                    className={`flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-[10.5px] hover:bg-sky-50/60 ${
-                      checked ? 'bg-sky-50/40' : ''
+                    className={`flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-[10.5px] hover:bg-fuchsia-50/60 ${
+                      checked ? 'bg-fuchsia-50/40' : ''
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleDocument(doc.id)}
-                      className="h-3 w-3 accent-sky-500"
+                      className="h-3 w-3 accent-fuchsia-500"
                     />
                     <FileText size={10} className="text-slate-400" />
                     <div className="min-w-0 flex-1">
@@ -582,7 +582,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
             </div>
           )}
           {(config.selectedDocumentIds || []).length > 0 && (
-            <p className="text-[10px] font-bold text-sky-700">
+            <p className="text-[10px] font-bold text-fuchsia-700">
               {config.selectedDocumentIds.length} documents selected
             </p>
           )}
@@ -662,7 +662,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                 type="checkbox"
                 checked={Boolean(config.remove_headers_footers)}
                 onChange={(event) => setField('remove_headers_footers', event.target.checked)}
-                className="h-3 w-3 accent-sky-500"
+                className="h-3 w-3 accent-fuchsia-500"
               />
               remove_headers_footers
             </label>
@@ -671,7 +671,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                 type="checkbox"
                 checked={Boolean(config.normalize_whitespace)}
                 onChange={(event) => setField('normalize_whitespace', event.target.checked)}
-                className="h-3 w-3 accent-sky-500"
+                className="h-3 w-3 accent-fuchsia-500"
               />
               normalize_whitespace
             </label>
@@ -680,7 +680,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                 type="checkbox"
                 checked={Boolean(config.ocr_enabled)}
                 onChange={(event) => setField('ocr_enabled', event.target.checked)}
-                className="h-3 w-3 accent-sky-500"
+                className="h-3 w-3 accent-fuchsia-500"
               />
               ocr_enabled
             </label>
@@ -689,7 +689,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                 type="checkbox"
                 checked={Boolean(config.auto_tagging)}
                 onChange={(event) => setField('auto_tagging', event.target.checked)}
-                className="h-3 w-3 accent-sky-500"
+                className="h-3 w-3 accent-fuchsia-500"
               />
               auto_tagging
             </label>
@@ -765,7 +765,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <Zap size={11} className="text-sky-500" />
+        <Zap size={11} className="text-fuchsia-500" />
         Output: <span className="font-mono">documents</span> → Chunking, Cleaning, Graph DB
       </div>
     </div>
