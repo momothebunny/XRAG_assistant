@@ -1,0 +1,43 @@
+# fly.toml — Aurelia FRONTEND (nginx serving Vite/React build)
+#
+# Deploy AFTER the backend (you need its public hostname):
+#   fly launch --config fly.frontend.toml --no-deploy --copy-config --name aurelia-frontend
+#   fly secrets set --app aurelia-frontend BACKEND_URL=https://aurelia-backend.fly.dev
+#   fly deploy --config fly.frontend.toml `
+#       --build-arg VITE_XRAG_API_BASE_URL=/api
+
+app = "aurelia-frontend"
+primary_region = "ams"
+
+[build]
+  dockerfile = "docker/frontend.Dockerfile"
+  [build.args]
+    VITE_XRAG_API_BASE_URL = "/api"
+
+[env]
+  # Overridden by `fly secrets set BACKEND_URL=...` after backend is up.
+  BACKEND_URL = "http://aurelia-backend.internal:8001"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 400
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "3s"
+  grace_period = "5s"
+  method = "GET"
+  path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
