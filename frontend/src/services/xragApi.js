@@ -1,23 +1,83 @@
 const API_BASE_URL = import.meta.env.VITE_XRAG_API_BASE_URL || 'http://localhost:8000';
 
+// Token storage — synced with the AuthScreen / App. Kept in module-scope so
+// every API call automatically attaches the bearer header without each
+// caller having to thread it through.
+const TOKEN_STORAGE_KEY = 'xrag-auth-token-v1';
+let _authToken = null;
+try {
+  _authToken = localStorage.getItem(TOKEN_STORAGE_KEY) || null;
+} catch {
+  _authToken = null;
+}
+
+export const setAuthToken = (token) => {
+  _authToken = token || null;
+  try {
+    if (_authToken) localStorage.setItem(TOKEN_STORAGE_KEY, _authToken);
+    else localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+};
+
+export const getAuthToken = () => _authToken;
+
 const requestJson = async (path, options = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+  if (_authToken && !headers.Authorization) {
+    headers.Authorization = `Bearer ${_authToken}`;
+  }
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || `Request failed: ${response.status}`);
+    // Try to surface FastAPI's structured `{detail: "..."}` error so the
+    // AuthScreen can show a friendly message instead of raw JSON.
+    let detail = errorText;
+    try {
+      const parsed = JSON.parse(errorText);
+      if (parsed?.detail) {
+        detail = typeof parsed.detail === 'string'
+          ? parsed.detail
+          : JSON.stringify(parsed.detail);
+      }
+    } catch { /* keep raw text */ }
+    const err = new Error(detail || `Request failed: ${response.status}`);
+    err.status = response.status;
+    throw err;
   }
 
-  return response.json();
+  // 204 No Content (and other empty bodies, e.g. DELETE endpoints) — there
+  // is nothing to parse, so don't try. Returning ``null`` keeps callers'
+  // ``await`` chains working without forcing them to special-case status.
+  if (response.status === 204) return null;
+  const text = await response.text();
+  if (!text) return null;
+  try { return JSON.parse(text); }
+  catch { return text; }
 };
 
 export const xragApi = {
+  // ---------------------------------------------------------------------
+  // Authentication
+  // ---------------------------------------------------------------------
+  authRegister: (payload) =>
+    requestJson('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
+  authVerify: (payload) =>
+    requestJson('/api/auth/verify', { method: 'POST', body: JSON.stringify(payload) }),
+  authResendCode: (email) =>
+    requestJson('/api/auth/resend-code', { method: 'POST', body: JSON.stringify({ email }) }),
+  authLogin: (payload) =>
+    requestJson('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
+  authMe: () => requestJson('/api/auth/me'),
+
   getSettings: () => requestJson('/api/settings'),
   saveSettings: (settings) =>
     requestJson('/api/settings', {
@@ -37,6 +97,30 @@ export const xragApi = {
     }),
   deleteAnswer: (answerId) =>
     requestJson(`/api/answers/${encodeURIComponent(answerId)}`, { method: 'DELETE' }),
+
+  // ---------------------------------------------------------------------
+  // API key management — multi-key store, active key auto-injected into env
+  // ---------------------------------------------------------------------
+  listApiKeyProviders: () => requestJson('/api/settings/api-keys/providers'),
+  listApiKeys: () => requestJson('/api/settings/api-keys'),
+  upsertApiKey: (payload) =>
+    requestJson('/api/settings/api-keys', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteApiKey: (keyId) =>
+    requestJson(`/api/settings/api-keys/${encodeURIComponent(keyId)}`, {
+      method: 'DELETE',
+    }),
+  activateApiKey: (keyId) =>
+    requestJson(`/api/settings/api-keys/${encodeURIComponent(keyId)}/activate`, {
+      method: 'POST',
+    }),
+  importApiKeys: (text, activate = true) =>
+    requestJson('/api/settings/api-keys/import', {
+      method: 'POST',
+      body: JSON.stringify({ text, activate }),
+    }),
 
   // ---------------------------------------------------------------------
   // Canvas (Langflow-style backend)
@@ -215,6 +299,11 @@ export const xragApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  generateBenchmarkTestset: (body) =>
+    requestJson('/api/audit/benchmarks/generate-testset', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   getBenchmarkDataset: (id) =>
     requestJson(`/api/audit/benchmarks/${encodeURIComponent(id)}`),
   deleteBenchmarkDataset: (id) =>
@@ -230,4 +319,36 @@ export const xragApi = {
     requestJson(`/api/audit/benchmark-runs/${encodeURIComponent(runId)}`),
   deleteBenchmarkRun: (runId) =>
     requestJson(`/api/audit/benchmark-runs/${encodeURIComponent(runId)}`, { method: 'DELETE' }),
+
+  // ── Custom canvas nodes ────────────────────────────────────────────────
+  listCustomNodes: () => requestJson('/api/custom-nodes'),
+  createCustomNode: (payload) =>
+    requestJson('/api/custom-nodes', { method: 'POST', body: JSON.stringify(payload) }),
+  updateCustomNode: (nodeId, payload) =>
+    requestJson(`/api/custom-nodes/${encodeURIComponent(nodeId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  deleteCustomNode: (nodeId) =>
+    requestJson(`/api/custom-nodes/${encodeURIComponent(nodeId)}`, { method: 'DELETE' }),
+  runCustomNode: (nodeId, payload) =>
+    requestJson(`/api/custom-nodes/${encodeURIComponent(nodeId)}/run`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  runCustomNodePreview: (payload) =>
+    requestJson('/api/custom-nodes/preview/run', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  aiGenerateCustomNode: (payload) =>
+    requestJson('/api/custom-nodes/ai/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  aiSimilarCustomNodes: (payload) =>
+    requestJson('/api/custom-nodes/ai/similar', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
