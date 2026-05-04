@@ -86,4 +86,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 # Single-process uvicorn. Scale horizontally via a process manager or
 # multiple containers behind a reverse proxy rather than --workers, since
 # the JSON file stores rely on per-process file locks.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Bind to "::" so the container is reachable on both IPv4 *and* IPv6
+# (Fly's internal app-to-app network is IPv6-only ULA, while the public
+# edge proxy / docker-compose bridge uses IPv4).
+CMD ["uvicorn", "app.main:app", "--host", "::", "--port", "8001"]

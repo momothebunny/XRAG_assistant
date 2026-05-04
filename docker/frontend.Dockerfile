@@ -30,7 +30,10 @@ ARG VITE_XRAG_API_BASE_URL="/api"
 ENV VITE_XRAG_API_BASE_URL=$VITE_XRAG_API_BASE_URL
 
 COPY frontend/ ./
-RUN npm run build
+# Skip the `tsc -b` step from the package.json "build" script — the project
+# is plain JavaScript (.jsx) so tsc finds no inputs and aborts with TS18003.
+# Vite alone produces a complete production bundle.
+RUN npx --no-install vite build
 
 
 # ── Stage 2: runtime (nginx) ────────────────────────────────────────────
