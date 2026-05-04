@@ -147,6 +147,7 @@ venv.bak/
 # Aurelia auth secrets (NEVER commit)
 backend/data/users.json
 backend/data/.auth_secret
+backend/data/api_keys.json
 
 # Spyder project settings
 .spyderproject
