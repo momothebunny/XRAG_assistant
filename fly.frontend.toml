@@ -1,43 +1,44 @@
-# fly.toml — Aurelia FRONTEND (nginx serving Vite/React build)
+# fly.toml app configuration file generated for aurelia-frontend on 2026-05-04T16:38:55+02:00
 #
-# Deploy AFTER the backend (you need its public hostname):
-#   fly launch --config fly.frontend.toml --no-deploy --copy-config --name aurelia-frontend
-#   fly secrets set --app aurelia-frontend BACKEND_URL=https://aurelia-backend.fly.dev
-#   fly deploy --config fly.frontend.toml `
-#       --build-arg VITE_XRAG_API_BASE_URL=/api
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "aurelia-frontend"
-primary_region = "ams"
+app = 'aurelia-frontend'
+primary_region = 'ams'
 
 [build]
-  dockerfile = "docker/frontend.Dockerfile"
+  dockerfile = 'docker/frontend.Dockerfile'
+
   [build.args]
-    VITE_XRAG_API_BASE_URL = "/api"
+    # Must be EMPTY: every endpoint in frontend/src/services/xragApi.js
+    # already includes the leading "/api/..." prefix, and nginx in the
+    # frontend container proxies /api/ -> $BACKEND_URL/api/. Setting this
+    # to "/api" causes the SPA to call /api/api/... and get 404s.
+    VITE_XRAG_API_BASE_URL = ''
 
 [env]
-  # Overridden by `fly secrets set BACKEND_URL=...` after backend is up.
-  BACKEND_URL = "http://aurelia-backend.internal:8001"
+  BACKEND_URL = 'http://aurelia-backend.internal:8001'
 
 [http_service]
   internal_port = 80
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
   [http_service.concurrency]
-    type = "requests"
-    soft_limit = 200
+    type = 'requests'
     hard_limit = 400
+    soft_limit = 200
 
-[[http_service.checks]]
-  interval = "30s"
-  timeout = "3s"
-  grace_period = "5s"
-  method = "GET"
-  path = "/healthz"
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '3s'
+    grace_period = '5s'
+    method = 'GET'
+    path = '/healthz'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'
