@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────────────────
+# Aurelia — local dev / self-host docker-compose
+#
+# Usage:
+#   cd docker
+#   docker compose up --build
+#
+# Then open http://localhost:8080 (frontend) — it forwards /api requests
+# to the backend container at http://backend:8001.
+#
+# Environment:
+#   • Set SMTP creds in ../backend/.env to enable real email delivery.
+#   • Persistent data is stored in the named volume "aurelia_data"
+#     (users.json, .auth_secret, knowledge/, etc.).
+# ─────────────────────────────────────────────────────────────────────────
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    image: aurelia-backend:latest
+    container_name: aurelia-backend
+    restart: unless-stopped
+    expose:
+      - "8001"
+    ports:
+      - "8001:8001"   # exposed for direct curl/debug; remove in prod
+    env_file:
+      - ../backend/.env  # optional; create from backend/.env.example
+    environment:
+      - PYTHONUNBUFFERED=1
+      - XRAG_DATA_DIR=/data
+    volumes:
+      - aurelia_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        # Inlined into the Vite bundle. With the proxy below, "/api" works
+        # because nginx forwards /api/* to the backend service.
+        VITE_XRAG_API_BASE_URL: "/api"
+    image: aurelia-frontend:latest
+    container_name: aurelia-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # nginx envsubst's this into the /api proxy_pass directive.
+      - BACKEND_URL=http://backend:8001
+    ports:
+      - "8080:80"
+
+volumes:
+  aurelia_data:
+    name: aurelia_data
