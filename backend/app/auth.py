@@ -500,9 +500,58 @@ _bearer = HTTPBearer(auto_error=False)
 _store: UserStore | None = None
 
 
+def _seed_default_user_if_empty(store: UserStore) -> None:
+    """Create a pre-verified demo account on first launch when no users exist.
+
+    Controlled by env vars (all optional):
+      XRAG_SEED_USER_EMAIL    — defaults to "demo@aurelia.app"
+      XRAG_SEED_USER_PASSWORD — defaults to "Demo12345"
+      XRAG_SEED_USER_NAME     — defaults to "Demo Reviewer"
+      XRAG_SEED_USER          — set to "0"/"false" to disable seeding entirely
+
+    Designed for ephemeral PaaS demos (Hugging Face Spaces without
+    persistent storage): each rebuild recreates the demo account so the
+    UI is always usable without going through the email-verification flow.
+    Once a real user registers (or persistent storage is enabled), the
+    "users list non-empty" check skips this branch — the demo account is
+    NOT re-injected on top of real data.
+    """
+    if os.getenv("XRAG_SEED_USER", "1").lower() in {"0", "false", "no", ""}:
+        return
+    with store._lock:
+        if store._users:
+            return  # already have users on disk → don't seed
+    email = os.getenv("XRAG_SEED_USER_EMAIL", "demo@aurelia.app").strip().lower()
+    password = os.getenv("XRAG_SEED_USER_PASSWORD", "Demo12345")
+    display_name = os.getenv("XRAG_SEED_USER_NAME", "Demo Reviewer").strip() or "Demo Reviewer"
+    if not _EMAIL_RE.match(email) or len(password) < 8:
+        logger.warning("Seed user skipped: invalid XRAG_SEED_USER_EMAIL or password too short.")
+        return
+    salt, digest = _hash_password(password)
+    user: dict[str, Any] = {
+        "id": secrets.token_hex(8),
+        "email": email,
+        "display_name": display_name,
+        "full_name": display_name,
+        "organization": None,
+        "role": "admin",
+        "verified": True,
+        "created_at": time.time(),
+        "last_login_at": None,
+        "password_salt": salt,
+        "password_hash": digest,
+        "verification": None,
+    }
+    with store._lock:
+        store._users[email] = user
+        store._save_locked()
+    logger.info("Seeded default user '%s' (role=admin, verified=True).", email)
+
+
 def configure(data_dir: Path) -> UserStore:
     global _store
     _store = UserStore(data_dir)
+    _seed_default_user_if_empty(_store)
     return _store
 
 
