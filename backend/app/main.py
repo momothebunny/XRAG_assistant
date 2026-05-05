@@ -1050,3 +1050,37 @@ def compare_documents_summary(payload: CompareDocumentsRequest) -> CompareDocume
         )
 
 
+
+
+# ---------------------------------------------------------------------------
+# Single-container SPA hosting (Hugging Face Spaces & similar PaaS)
+# ---------------------------------------------------------------------------
+# When XRAG_FRONTEND_DIST points at a built Vite `dist/` directory, mount the
+# SPA on `/` so a single port serves both the API (`/api/...`) and the UI.
+# Registered LAST so all explicit FastAPI routes take precedence.
+_FRONTEND_DIST = os.environ.get("XRAG_FRONTEND_DIST")
+if _FRONTEND_DIST:
+    _dist_path = Path(_FRONTEND_DIST)
+    _index_html = _dist_path / "index.html"
+    if _index_html.is_file():
+        from fastapi.responses import FileResponse
+
+        @app.get("/{spa_path:path}", include_in_schema=False)
+        async def _spa_fallback(spa_path: str):
+            # Real file in dist? Serve it. Otherwise hand back index.html so
+            # the React Router resolves the route client-side (deep links
+            # survive page reloads).
+            candidate = (_dist_path / spa_path) if spa_path else _index_html
+            try:
+                candidate_resolved = candidate.resolve()
+                dist_resolved = _dist_path.resolve()
+                # Defence in depth against path traversal (`../etc/passwd`).
+                if dist_resolved in candidate_resolved.parents or candidate_resolved == dist_resolved:
+                    if candidate_resolved.is_file():
+                        return FileResponse(candidate_resolved)
+            except (OSError, RuntimeError):
+                pass
+            return FileResponse(_index_html)
+    else:
+        logger.warning("XRAG_FRONTEND_DIST set to %s but index.html not found; SPA serving disabled.", _FRONTEND_DIST)
+
