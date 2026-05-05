@@ -1,3 +1,14 @@
+---
+title: Au;ReliA
+emoji: 🧠
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: Visual RAG architecture builder & evaluator
+---
+
 # Au;ReliA
 ### Systematic Examination and Evaluation of Retrieval-Augmented Generation Architectures
 
