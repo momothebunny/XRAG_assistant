@@ -85,6 +85,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH" \
     XRAG_DATA_DIR=/data \
+    XRAG_SEED_DATA_DIR=/app/seed_data \
     XRAG_FRONTEND_DIST=/app/frontend_dist \
     PORT=7860 \
     UVICORN_LOG_LEVEL=info
@@ -109,6 +110,7 @@ WORKDIR /app
 
 COPY --from=backend-builder /opt/venv /opt/venv
 COPY --chown=aurelia:aurelia backend/app                  ./app
+COPY --chown=aurelia:aurelia backend/data                 ./seed_data
 COPY --chown=aurelia:aurelia --from=frontend-builder /build/dist  ./frontend_dist
 
 RUN mkdir -p /data && chown aurelia:aurelia /data
