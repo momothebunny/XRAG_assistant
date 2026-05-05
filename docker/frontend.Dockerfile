@@ -82,7 +82,9 @@ server {
         proxy_set_header   X-Forwarded-Proto $scheme;
         proxy_read_timeout 300s;
         proxy_send_timeout 300s;
-        proxy_connect_timeout 30s;
+        # 75s covers the backend's observed cold/suspend resume time (~30-60s
+        # for a Python app with ML deps on a shared-cpu-1x machine).
+        proxy_connect_timeout 75s;
     }
 
     location /assets/ {

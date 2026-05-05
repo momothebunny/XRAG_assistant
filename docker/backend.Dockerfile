@@ -80,7 +80,7 @@ USER aurelia
 
 EXPOSE 8001
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl --fail --silent http://localhost:8001/health || exit 1
 
 # Single-process uvicorn launched through ``app/_serve.py`` so we can
