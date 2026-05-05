@@ -225,3 +225,14 @@ frontend/.vite/
 # Local debug payloads
 backend/.run_flow_*.json
 
+
+# Runtime knowledge base data (created by users at runtime)
+backend/data/knowledge/uploads/
+backend/data/knowledge/chunks/
+backend/data/audit_sessions.json
+backend/data/benchmark_runs.json
+backend/data/saved_answers.json
+backend/data/users.json
+backend/data/api_keys.json
+backend/data/.auth_secret
+
