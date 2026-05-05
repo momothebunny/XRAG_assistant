@@ -65,7 +65,7 @@ import STTSettingsPanel from '../canvas/STTSettingsPanel';
 import TTSSettingsPanel from '../canvas/TTSSettingsPanel';
 import ModelRouterSettingsPanel from '../canvas/ModelRouterSettingsPanel';
 import GuardrailsSettingsPanel from '../canvas/GuardrailsSettingsPanel';
-import PiiRedactionSettingsPanel from '../canvas/PiiRedactionSettingsPanel';
+import PiiRedactionSettingsPanel from '../canvas/PIIRedactionSettingsPanel';
 import ChatTesterSettingsPanel from '../canvas/ChatTesterSettingsPanel';
 import ImageUploadSettingsPanel from '../canvas/ImageUploadSettingsPanel';
 import VisionLLMSettingsPanel from '../canvas/VisionLLMSettingsPanel';
