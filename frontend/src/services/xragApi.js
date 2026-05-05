@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_XRAG_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_XRAG_API_BASE_URL ?? 'http://localhost:8000';
 
 // Token storage — synced with the AuthScreen / App. Kept in module-scope so
 // every API call automatically attaches the bearer header without each
