@@ -2700,13 +2700,13 @@ const AuditTab = () => {
             )}
 
             {!sessionsLoading && sessions.length === 0 && (
-              <div className="relative flex flex-col items-center py-20 text-center rounded-3xl border border-dashed border-slate-200 bg-gradient-to-b from-white to-slate-50/60 overflow-hidden">
-                <div className="pointer-events-none absolute inset-0 xrag-arena-grid-bg opacity-50" />
-                <div className="relative xrag-arena-ring text-indigo-300 w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-50 to-amber-50 border border-indigo-200 flex items-center justify-center text-indigo-500 mb-5 shadow-lg shadow-indigo-500/10">
+              <div className="relative flex flex-col items-center py-20 text-center rounded-3xl border border-slate-700 bg-slate-900 overflow-hidden">
+                <div className="pointer-events-none absolute inset-0 xrag-arena-grid-bg opacity-20" />
+                <div className="relative xrag-arena-ring text-indigo-400 w-20 h-20 rounded-3xl bg-slate-800 border border-indigo-500/50 flex items-center justify-center mb-5 shadow-lg shadow-indigo-500/10">
                   <FlaskConical size={32} />
                 </div>
-                <p className="relative text-base font-black text-slate-700">No audit sessions yet</p>
-                <p className="relative text-xs text-slate-400 mt-1.5 max-w-xs">Create one to start blind-testing your flows side by side.</p>
+                <p className="relative text-base font-black text-slate-200">No audit sessions yet</p>
+                <p className="relative text-xs text-slate-500 mt-1.5 max-w-xs">Create one to start blind-testing your flows side by side.</p>
                 <button
                   type="button"
                   onClick={() => setView('create')}

@@ -38,7 +38,7 @@ export const useChat = (selectedDBName) => {
     });
   }, [selectedDBName]);
 
-  const handleSendMessage = (event, attachments = []) => {
+  const handleSendMessage = (event, attachments = [], flowId = null) => {
     event.preventDefault();
 
     if (!inputValue.trim() && attachments.length === 0) {
@@ -54,11 +54,22 @@ export const useChat = (selectedDBName) => {
     setInputValue('');
     setIsTyping(true);
 
-    xragApi
-      .chat({
-        message: userMessage.content,
-        attachments: userMessage.attachments,
-      })
+    const apiCall = flowId
+      ? xragApi
+          .runCanvasFlow({ flow_id: flowId, question: userMessage.content, inputs: { question: userMessage.content } })
+          .then((result) => ({
+            content: result.answer || result.final_outputs?.answer || result.final_outputs?.text || '[No answer returned by flow]',
+            reasoning: result.reasoning || result.trace?.map((t) => `${t.label} (${t.duration_ms}ms)`).join(' → ') || '',
+            traceSteps: (result.trace || []).map((t) => ({ label: t.label, duration: `${t.duration_ms} ms` })),
+            sources: [],
+            flowTrace: result.trace || [],
+          }))
+      : xragApi.chat({
+          message: userMessage.content,
+          attachments: userMessage.attachments,
+        });
+
+    apiCall
       .then((assistantMessage) => {
         setMessages((previousMessages) => [...previousMessages, { role: 'assistant', ...assistantMessage }]);
       })
@@ -67,8 +78,10 @@ export const useChat = (selectedDBName) => {
           ...previousMessages,
           {
             role: 'assistant',
-            content: `Backend is currently unavailable. Showing fallback response for ${selectedDBName}.`,
-            reasoning: 'Fallback mode activated because /api/chat did not respond.',
+            content: flowId
+              ? 'The canvas flow could not be reached. Make sure the backend is running and the flow is saved.'
+              : `Backend is currently unavailable. Showing fallback response for ${selectedDBName}.`,
+            reasoning: 'Fallback mode activated because the backend did not respond.',
             traceSteps: [
               { label: 'Fallback', duration: '3 ms' },
               { label: 'Answer', duration: '8 ms' },
