@@ -38,15 +38,17 @@ const MAX_Q = 15;
 
 // ── Small helpers ─────────────────────────────────────────────────────────
 
+// Distinct flow accent colours – chosen for legibility on the dark audit bg.
+// Each entry drives: numbered dot bg, border accent, label text, subtle row tint.
 const ACCENT_PALETTE = [
-  { bg: 'bg-indigo-600', light: 'bg-indigo-50', border: 'border-indigo-300', text: 'text-indigo-700', badge: 'bg-indigo-100 text-indigo-800' },
-  { bg: 'bg-amber-600', light: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800' },
-  { bg: 'bg-sky-600',    light: 'bg-sky-50',    border: 'border-sky-300',    text: 'text-sky-700',    badge: 'bg-sky-100 text-sky-800'    },
-  { bg: 'bg-emerald-600',light: 'bg-emerald-50',border: 'border-emerald-300',text: 'text-emerald-700',badge: 'bg-emerald-100 text-emerald-800' },
-  { bg: 'bg-rose-600',   light: 'bg-rose-50',   border: 'border-rose-300',   text: 'text-rose-700',   badge: 'bg-rose-100 text-rose-800'   },
-  { bg: 'bg-amber-600',  light: 'bg-amber-50',  border: 'border-amber-300',  text: 'text-amber-700',  badge: 'bg-amber-100 text-amber-800'  },
-  { bg: 'bg-amber-600',light: 'bg-amber-50',border: 'border-amber-300',text: 'text-amber-700',badge: 'bg-amber-100 text-amber-800' },
-  { bg: 'bg-teal-600',   light: 'bg-teal-50',   border: 'border-teal-300',   text: 'text-teal-700',   badge: 'bg-teal-100 text-teal-800'   },
+  { bg: 'bg-violet-500',  border: 'border-violet-400',  text: 'text-violet-300',  rowBg: 'bg-violet-900/20'  },
+  { bg: 'bg-amber-500',   border: 'border-amber-400',   text: 'text-amber-300',   rowBg: 'bg-amber-900/20'   },
+  { bg: 'bg-sky-500',     border: 'border-sky-400',     text: 'text-sky-300',     rowBg: 'bg-sky-900/20'     },
+  { bg: 'bg-emerald-500', border: 'border-emerald-400', text: 'text-emerald-300', rowBg: 'bg-emerald-900/20' },
+  { bg: 'bg-rose-500',    border: 'border-rose-400',    text: 'text-rose-300',    rowBg: 'bg-rose-900/20'    },
+  { bg: 'bg-cyan-500',    border: 'border-cyan-400',    text: 'text-cyan-300',    rowBg: 'bg-cyan-900/20'    },
+  { bg: 'bg-fuchsia-500', border: 'border-fuchsia-400', text: 'text-fuchsia-300', rowBg: 'bg-fuchsia-900/20' },
+  { bg: 'bg-lime-500',    border: 'border-lime-400',    text: 'text-lime-300',    rowBg: 'bg-lime-900/20'    },
 ];
 
 const labelAccent = (label) => {
@@ -253,7 +255,7 @@ const SessionCard = ({ session, onOpen, onDelete }) => {
 
       <div className="relative flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-amber-600 shadow-md shadow-indigo-500/30 flex items-center justify-center text-white">
+          <div className="shrink-0 w-11 h-11 rounded-2xl bg-slate-800 border border-indigo-500/50 shadow-md flex items-center justify-center text-indigo-400">
             <FlaskConical size={18} />
           </div>
           <div className="min-w-0">
@@ -323,7 +325,7 @@ const ResponseCard = ({ resp, index, selected, onSelect, revealed, flowName }) =
       <div className={`absolute inset-x-0 top-0 h-1 transition-colors ${isWinner ? accent.bg : 'bg-slate-200 group-hover:bg-indigo-300'}`} />
 
       {/* Header */}
-      <div className={`relative flex items-center justify-between px-4 pt-4 pb-3 ${isWinner ? accent.light : 'bg-gradient-to-b from-slate-50 to-white'}`}>
+      <div className={`relative flex items-center justify-between px-4 pt-4 pb-3 ${isWinner ? 'bg-slate-800' : 'bg-gradient-to-b from-slate-50 to-white'}`}>
         <div className="flex items-center gap-2.5">
           <span className={`w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white shadow-md ${isWinner ? accent.bg : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
             {resp.blind_label.replace('Flow ', '')}
@@ -487,8 +489,9 @@ const ReportView = ({ report, onClose }) => {
 
 // ── Benchmark Panel ─────────────────────────────────────────────────────
 
-const mColor = (v) => { const p = v * 100; return p >= 80 ? 'text-emerald-700' : p >= 50 ? 'text-amber-700' : 'text-rose-700'; };
-const mBg = (v) => { const p = v * 100; return p >= 80 ? 'bg-emerald-500' : p >= 50 ? 'bg-amber-500' : 'bg-rose-500'; };
+// Metric signal colours — bright enough to read on dark navy background.
+const mColor = (v) => { const p = v * 100; return p >= 80 ? 'text-emerald-400' : p >= 50 ? 'text-amber-300' : 'text-rose-400'; };
+const mBg = (v) => { const p = v * 100; return p >= 80 ? 'bg-emerald-400' : p >= 50 ? 'bg-amber-300' : 'bg-rose-400'; };
 
 const METRIC_GROUPS = [
   {
@@ -1330,7 +1333,7 @@ const BenchmarkPanel = () => {
 
                 <div className="relative flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-md shadow-amber-500/30 flex items-center justify-center text-white">
+                    <div className="shrink-0 w-11 h-11 rounded-2xl bg-slate-800 border border-amber-500/50 shadow-md flex items-center justify-center text-amber-400">
                       <BookOpen size={18} />
                     </div>
                     <div className="min-w-0">
@@ -1508,7 +1511,7 @@ const BenchmarkPanel = () => {
                   <button key={flow.id} type="button"
                     onClick={() => setSelectedFlows(prev => sel ? prev.filter(id => id !== flow.id) : prev.length < 8 ? [...prev, flow.id] : prev)}
                     className={`w-full flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all ${
-                      sel ? `${accent.border} ${accent.light} shadow-sm` : 'border-slate-200 bg-white hover:border-indigo-200'
+                      sel ? `${accent.border} bg-slate-800 shadow-sm` : 'border-slate-200 bg-white hover:border-indigo-200'
                     }`}>
                     <div className={`shrink-0 w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black text-white ${sel ? accent.bg : 'bg-slate-300'}`}>
                       {sel ? String.fromCharCode(65 + idx) : <Network size={12} />}
@@ -1879,7 +1882,7 @@ const BenchmarkPanel = () => {
               const v = value || 0;
               const display = invert ? (1 - v) : v;
               return (
-                <td className={`px-2 py-3 text-center ${accent ? 'bg-amber-50/60' : ''}`}>
+                <td className={`px-2 py-3 text-center ${accent ? 'bg-amber-900/25' : ''}`}>
                   <div className="flex flex-col items-center gap-1">
                     <span className={`font-black text-[11px] ${mColor(display)}`}>{Math.round(v * 100)}%</span>
                     <div className="w-12 h-1 rounded-full bg-slate-100 overflow-hidden">
@@ -2029,6 +2032,9 @@ const BenchmarkPanel = () => {
             );
           })()}
 
+          {/* ── Metric glossary ── */}
+          {bmReport.status === 'finished' && <MetricGlossary />}
+
           {bmReport.status === 'finished' && <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Per-question breakdown</p>
             {[...new Set(bmReport.results.map(r => r.question_index))].sort((a, b) => a - b).map(qi => {
@@ -2048,7 +2054,7 @@ const BenchmarkPanel = () => {
                       const accent = ACCENT_PALETTE[i % ACCENT_PALETTE.length];
                       const hasRag = (r.overall_score || 0) > 0;
                       return (
-                        <div key={r.flow_id} className={`rounded-xl border ${accent.border} ${accent.light} p-3`}>
+                        <div key={r.flow_id} className={`rounded-xl border ${accent.border} bg-slate-800 p-3`}>
                           <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
                             <span className={`text-[10px] font-black uppercase tracking-wider ${accent.text}`}>{r.flow_name}</span>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -2076,8 +2082,6 @@ const BenchmarkPanel = () => {
             })}
           </div>}
 
-          {/* ── Metric glossary ── */}
-          {bmReport.status === 'finished' && <MetricGlossary />}
         </div>
       )}
       {hfOpen && (
@@ -2774,7 +2778,7 @@ const AuditTab = () => {
                       }}
                       className={`w-full flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all ${
                         isSelected
-                          ? `${accent.border} ${accent.light} shadow-sm`
+                          ? `${accent.border} bg-slate-800 shadow-sm`
                           : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/40'
                       }`}
                     >
@@ -2857,7 +2861,7 @@ const AuditTab = () => {
                   const accent = labelAccent(entry.blind_label);
                   const wins = activeSession.tally?.[entry.flow_id] || 0;
                   return (
-                    <div key={entry.flow_id} className={`rounded-2xl border ${accent.border} ${accent.light} px-3 py-2 text-center`}>
+                    <div key={entry.flow_id} className={`rounded-2xl border ${accent.border} bg-slate-800 px-3 py-2 text-center`}>
                       <p className={`text-lg font-black ${accent.text}`}>{wins}</p>
                       <p className="text-[9px] font-black uppercase tracking-wider text-slate-500 truncate">{entry.blind_label}</p>
                     </div>
