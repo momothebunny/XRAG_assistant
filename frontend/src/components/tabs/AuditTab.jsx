@@ -325,7 +325,7 @@ const ResponseCard = ({ resp, index, selected, onSelect, revealed, flowName }) =
       <div className={`absolute inset-x-0 top-0 h-1 transition-colors ${isWinner ? accent.bg : 'bg-slate-200 group-hover:bg-indigo-300'}`} />
 
       {/* Header */}
-      <div className={`relative flex items-center justify-between px-4 pt-4 pb-3 ${isWinner ? accent.light : 'bg-gradient-to-b from-slate-50 to-white'}`}>
+      <div className={`relative flex items-center justify-between px-4 pt-4 pb-3 ${isWinner ? accent.rowBg : 'bg-gradient-to-b from-slate-50 to-white'}`}>
         <div className="flex items-center gap-2.5">
           <span className={`w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white shadow-md ${isWinner ? accent.bg : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
             {resp.blind_label.replace('Flow ', '')}
@@ -1511,7 +1511,7 @@ const BenchmarkPanel = () => {
                   <button key={flow.id} type="button"
                     onClick={() => setSelectedFlows(prev => sel ? prev.filter(id => id !== flow.id) : prev.length < 8 ? [...prev, flow.id] : prev)}
                     className={`w-full flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all ${
-                      sel ? `${accent.border} ${accent.light} shadow-sm` : 'border-slate-200 bg-white hover:border-indigo-200'
+                      sel ? `${accent.border} ${accent.rowBg} shadow-sm` : 'border-slate-200 bg-white hover:border-indigo-200'
                     }`}>
                     <div className={`shrink-0 w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black text-white ${sel ? accent.bg : 'bg-slate-300'}`}>
                       {sel ? String.fromCharCode(65 + idx) : <Network size={12} />}
@@ -1882,7 +1882,7 @@ const BenchmarkPanel = () => {
               const v = value || 0;
               const display = invert ? (1 - v) : v;
               return (
-                <td className={`px-2 py-3 text-center ${accent ? 'bg-amber-50/60' : ''}`}>
+                <td className={`px-2 py-3 text-center ${accent ? 'bg-amber-900/25' : ''}`}>
                   <div className="flex flex-col items-center gap-1">
                     <span className={`font-black text-[11px] ${mColor(display)}`}>{Math.round(v * 100)}%</span>
                     <div className="w-12 h-1 rounded-full bg-slate-100 overflow-hidden">
@@ -2051,7 +2051,7 @@ const BenchmarkPanel = () => {
                       const accent = ACCENT_PALETTE[i % ACCENT_PALETTE.length];
                       const hasRag = (r.overall_score || 0) > 0;
                       return (
-                        <div key={r.flow_id} className={`rounded-xl border ${accent.border} ${accent.light} p-3`}>
+                        <div key={r.flow_id} className={`rounded-xl border ${accent.border} ${accent.rowBg} p-3`}>
                           <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
                             <span className={`text-[10px] font-black uppercase tracking-wider ${accent.text}`}>{r.flow_name}</span>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -2777,7 +2777,7 @@ const AuditTab = () => {
                       }}
                       className={`w-full flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all ${
                         isSelected
-                          ? `${accent.border} ${accent.light} shadow-sm`
+                          ? `${accent.border} ${accent.rowBg} shadow-sm`
                           : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/40'
                       }`}
                     >
@@ -2860,7 +2860,7 @@ const AuditTab = () => {
                   const accent = labelAccent(entry.blind_label);
                   const wins = activeSession.tally?.[entry.flow_id] || 0;
                   return (
-                    <div key={entry.flow_id} className={`rounded-2xl border ${accent.border} ${accent.light} px-3 py-2 text-center`}>
+                    <div key={entry.flow_id} className={`rounded-2xl border ${accent.border} ${accent.rowBg} px-3 py-2 text-center`}>
                       <p className={`text-lg font-black ${accent.text}`}>{wins}</p>
                       <p className="text-[9px] font-black uppercase tracking-wider text-slate-500 truncate">{entry.blind_label}</p>
                     </div>
