@@ -5,14 +5,14 @@ import ApiKeyImportPanel from '../settings/ApiKeyImportPanel';
 
 const SettingsTab = ({ selectedDB, onSelectDB, aiConfig, onAiConfigChange, retrievalConfig, onRetrievalConfigChange }) => {
   return (
-    <div className="p-4 md:p-8 overflow-y-auto h-full space-y-8 bg-slate-50">
+    <div className="xrag-settings-theme h-full space-y-8 overflow-y-auto bg-slate-950 p-4 text-slate-100 md:p-8">
       <header>
-        <h2 className="text-2xl font-black text-slate-800 tracking-tight">XRAG Infrastructure</h2>
-        <p className="text-sm text-slate-500 font-medium">Technical configurations and provider management</p>
+        <h2 className="text-2xl font-black tracking-tight text-amber-200">XRAG Infrastructure</h2>
+        <p className="text-sm font-medium text-slate-300">Technical configurations and provider management</p>
       </header>
 
       <section className="space-y-4">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+        <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-amber-300">
           <SafeDatabase size={16} /> Active Vector Store
         </h3>
 
@@ -26,46 +26,46 @@ const SettingsTab = ({ selectedDB, onSelectDB, aiConfig, onAiConfigChange, retri
                 onClick={() => onSelectDB(provider)}
                 className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col gap-3 ${
                   selectedDB.id === provider.id
-                    ? 'border-indigo-600 bg-indigo-50 shadow-md scale-[1.02]'
-                    : 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'
+                    ? 'scale-[1.02] border-amber-400 bg-slate-900 shadow-md'
+                    : 'border-slate-700 bg-slate-900 hover:border-amber-500/40 shadow-sm'
                 }`}
               >
-                <ProviderIcon size={20} className={selectedDB.id === provider.id ? 'text-indigo-600' : 'text-slate-400'} />
+                <ProviderIcon size={20} className={selectedDB.id === provider.id ? 'text-amber-300' : 'text-slate-400'} />
                 <div>
-                  <p className="text-xs font-black text-slate-800">{provider.name}</p>
-                  <p className="text-[9px] text-slate-500 uppercase tracking-tighter">{provider.type}</p>
+                  <p className="text-xs font-black text-slate-100">{provider.name}</p>
+                  <p className="text-[9px] uppercase tracking-tighter text-slate-400">{provider.type}</p>
                 </div>
               </button>
             );
           })}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+        <div className="overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-sm">
           <div className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Provider Endpoint</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Provider Endpoint</label>
                 <input
                   type="text"
                   placeholder={`https://${selectedDB.id}-cluster-xrag.api`}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition-all focus:ring-2 focus:ring-amber-500/25"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">API Key</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">API Key</label>
                 <input
                   type="password"
                   defaultValue="ENC:SECRET_XRAG_PRO"
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition-all focus:ring-2 focus:ring-amber-500/25"
                 />
               </div>
             </div>
-            <div className="flex justify-between items-center pt-6 border-t border-slate-50">
+            <div className="flex items-center justify-between border-t border-slate-800 pt-6">
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span className="text-xs font-bold text-slate-600">Configuration is valid</span>
+                <CheckCircle2 size={16} className="text-amber-300" />
+                <span className="text-xs font-bold text-slate-300">Configuration is valid</span>
               </div>
-              <button className="flex items-center gap-2 px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95">
+              <button className="flex items-center gap-2 rounded-xl border border-amber-400 bg-amber-500 px-8 py-2.5 text-xs font-black text-slate-950 shadow-lg transition-all hover:bg-amber-400 active:scale-95">
                 <RefreshCw size={14} /> Refresh Settings
               </button>
             </div>

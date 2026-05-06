@@ -19,6 +19,11 @@ body {
   min-width: 320px;
 }
 
+:root {
+  --xrag-yellow: rgb(252 211 77);
+  --xrag-yellow-soft: rgb(253 230 138);
+}
+
 /* ---------------------------------------------------------------------- */
 /* Cross-browser range slider — uniform look on Chrome / Firefox / Safari */
 /* / Edge. The thumb tint follows the Tailwind `accent-*` utility via the */
@@ -56,7 +61,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 9999px;
-  background: var(--xrag-thumb, #f0abfc); /* fuchsia-300 default */
+  background: var(--xrag-thumb, #f59e0b);
   border: 2px solid #ffffff;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
   margin-top: -5px;
@@ -66,7 +71,7 @@ input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 9999px;
-  background: var(--xrag-thumb, #f0abfc);
+  background: var(--xrag-thumb, #f59e0b);
   border: 2px solid #ffffff;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
   transition: transform 120ms ease, box-shadow 120ms ease;
@@ -81,10 +86,10 @@ input[type="range"]:hover::-moz-range-thumb {
 }
 input[type="range"]:focus { outline: none; }
 input[type="range"]:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.30); /* fuchsia-400/30 */
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.30);
 }
 input[type="range"]:focus::-moz-range-thumb {
-  box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.30);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.30);
 }
 
 /* Per-palette thumb colors — set on the <input> via Tailwind's accent-*  */
@@ -377,19 +382,19 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 .xrag-kb-theme [class*="text-rose-"],
 .xrag-kb-theme [class*="text-cyan-"],
 .xrag-kb-dark [class*="text-amber-"] {
-  color: rgb(252 211 77) !important;
+  color: var(--xrag-yellow) !important;
 }
 
 .xrag-kb-dark [class*="text-emerald-"],
 .xrag-kb-dark [class*="text-sky-"],
 .xrag-kb-dark [class*="text-rose-"],
 .xrag-kb-dark [class*="text-cyan-"] {
-  color: rgb(252 211 77) !important;
+  color: var(--xrag-yellow) !important;
 }
 
 .xrag-kb-theme .font-black,
 .xrag-kb-dark .font-black {
-  color: rgb(253 230 138);
+  color: var(--xrag-yellow-soft);
 }
 
 .xrag-kb-theme select,
@@ -452,7 +457,7 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 .xrag-chat-theme [class*="text-emerald-"],
 .xrag-chat-theme [class*="text-rose-"],
 .xrag-chat-theme [class*="text-amber-"] {
-  color: rgb(252 211 77) !important;
+  color: var(--xrag-yellow) !important;
 }
 
 .xrag-canvas-theme [class*="text-slate-"],
@@ -464,7 +469,28 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 
 .xrag-canvas-theme .font-black,
 .xrag-chat-theme .font-black {
-  color: rgb(253 230 138);
+  color: var(--xrag-yellow-soft);
+}
+
+.xrag-chat-theme .xrag-user-bubble {
+  background-color: var(--xrag-yellow-soft) !important;
+  border-color: rgb(245 158 11) !important;
+  color: rgb(15 23 42) !important;
+}
+
+.xrag-chat-theme .xrag-user-bubble p,
+.xrag-chat-theme .xrag-user-bubble span,
+.xrag-chat-theme .xrag-user-bubble svg {
+  color: rgb(15 23 42) !important;
+}
+
+.xrag-chat-theme .xrag-user-avatar {
+  background-color: var(--xrag-yellow) !important;
+  border-color: rgb(245 158 11) !important;
+}
+
+.xrag-chat-theme .xrag-user-avatar svg {
+  color: rgb(15 23 42) !important;
 }
 
 .xrag-canvas-theme input,
@@ -489,7 +515,7 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 .xrag-canvas-theme .react-flow__controls-button {
   background: rgb(15 23 42);
   border-color: rgb(51 65 85);
-  color: rgb(252 211 77);
+  color: var(--xrag-yellow);
 }
 
 .xrag-canvas-theme .react-flow__controls-button:hover {
@@ -499,4 +525,205 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 .xrag-canvas-theme .react-flow__attribution {
   background: rgba(2, 6, 23, 0.92);
   color: rgb(226 232 240);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Shared Space — base black/yellow readable skin                         */
+/* ---------------------------------------------------------------------- */
+.xrag-shared-theme {
+  background: rgb(2 6 23);
+  color: rgb(226 232 240);
+}
+
+.xrag-shared-theme [class*="bg-white"],
+.xrag-shared-theme [class*="bg-slate-50"],
+.xrag-shared-theme [class*="bg-slate-100"],
+.xrag-shared-theme [class*="bg-indigo-50"],
+.xrag-shared-theme [class*="bg-amber-50"],
+.xrag-shared-theme [class*="bg-emerald-50"],
+.xrag-shared-theme [class*="bg-rose-50"] {
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-shared-theme [class*="border-slate-"],
+.xrag-shared-theme [class*="border-indigo-"],
+.xrag-shared-theme [class*="border-amber-"],
+.xrag-shared-theme [class*="border-emerald-"],
+.xrag-shared-theme [class*="border-rose-"] {
+  border-color: rgb(51 65 85) !important;
+}
+
+.xrag-shared-theme [class*="text-slate-"],
+.xrag-shared-theme [class*="text-white"] {
+  color: rgb(226 232 240) !important;
+}
+
+.xrag-shared-theme [class*="text-indigo-"],
+.xrag-shared-theme [class*="text-amber-"],
+.xrag-shared-theme [class*="text-emerald-"],
+.xrag-shared-theme [class*="text-rose-"] {
+  color: var(--xrag-yellow) !important;
+}
+
+.xrag-shared-theme .font-black,
+.xrag-shared-theme .font-extrabold {
+  color: var(--xrag-yellow-soft);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Model Health — base black/yellow readable skin                         */
+/* ---------------------------------------------------------------------- */
+.xrag-health-theme {
+  background: rgb(2 6 23);
+  color: rgb(226 232 240);
+}
+
+.xrag-health-theme [class*="bg-white"],
+.xrag-health-theme [class*="bg-slate-50"],
+.xrag-health-theme [class*="bg-slate-100"],
+.xrag-health-theme [class*="bg-indigo-50"],
+.xrag-health-theme [class*="bg-amber-50"],
+.xrag-health-theme [class*="bg-emerald-50"],
+.xrag-health-theme [class*="bg-rose-50"],
+.xrag-health-theme [class*="bg-orange-50"] {
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-health-theme [class*="border-slate-"],
+.xrag-health-theme [class*="border-indigo-"],
+.xrag-health-theme [class*="border-amber-"],
+.xrag-health-theme [class*="border-emerald-"],
+.xrag-health-theme [class*="border-rose-"],
+.xrag-health-theme [class*="border-orange-"] {
+  border-color: rgb(51 65 85) !important;
+}
+
+.xrag-health-theme [class*="text-slate-"],
+.xrag-health-theme [class*="text-white"] {
+  color: rgb(226 232 240) !important;
+}
+
+.xrag-health-theme [class*="text-amber-"],
+.xrag-health-theme [class*="text-indigo-"],
+.xrag-health-theme [class*="text-emerald-"],
+.xrag-health-theme [class*="text-rose-"],
+.xrag-health-theme [class*="text-orange-"] {
+  color: var(--xrag-yellow) !important;
+}
+
+.xrag-health-theme .font-black,
+.xrag-health-theme .font-extrabold {
+  color: var(--xrag-yellow-soft);
+}
+
+.xrag-health-theme input,
+.xrag-health-theme select,
+.xrag-health-theme textarea,
+.xrag-health-theme option {
+  background-color: rgb(15 23 42);
+  color: rgb(226 232 240);
+  border-color: rgb(71 85 105);
+}
+
+/* ---------------------------------------------------------------------- */
+/* System Settings — base black/yellow readable skin                      */
+/* ---------------------------------------------------------------------- */
+.xrag-settings-theme {
+  background: rgb(2 6 23);
+  color: rgb(226 232 240);
+}
+
+.xrag-settings-theme [class*="bg-white"],
+.xrag-settings-theme [class*="bg-slate-50"],
+.xrag-settings-theme [class*="bg-slate-100"],
+.xrag-settings-theme [class*="bg-indigo-50"],
+.xrag-settings-theme [class*="bg-indigo-100"],
+.xrag-settings-theme [class*="bg-amber-50"],
+.xrag-settings-theme [class*="bg-blue-50"],
+.xrag-settings-theme [class*="bg-emerald-50"],
+.xrag-settings-theme [class*="bg-rose-50"] {
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-settings-theme [class*="bg-gradient"] {
+  background-image: none !important;
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-settings-theme [class*="border-slate-"],
+.xrag-settings-theme [class*="border-indigo-"],
+.xrag-settings-theme [class*="border-amber-"],
+.xrag-settings-theme [class*="border-blue-"],
+.xrag-settings-theme [class*="border-emerald-"],
+.xrag-settings-theme [class*="border-rose-"] {
+  border-color: rgb(51 65 85) !important;
+}
+
+.xrag-settings-theme [class*="text-slate-"],
+.xrag-settings-theme [class*="text-white"] {
+  color: rgb(226 232 240) !important;
+}
+
+.xrag-settings-theme [class*="text-indigo-"],
+.xrag-settings-theme [class*="text-amber-"],
+.xrag-settings-theme [class*="text-blue-"],
+.xrag-settings-theme [class*="text-emerald-"],
+.xrag-settings-theme [class*="text-rose-"] {
+  color: var(--xrag-yellow) !important;
+}
+
+.xrag-settings-theme .font-black,
+.xrag-settings-theme .font-extrabold {
+  color: var(--xrag-yellow-soft);
+}
+
+.xrag-settings-theme input,
+.xrag-settings-theme select,
+.xrag-settings-theme textarea,
+.xrag-settings-theme option {
+  background-color: rgb(15 23 42);
+  color: rgb(226 232 240);
+  border-color: rgb(71 85 105);
+}
+
+.xrag-settings-theme input:focus,
+.xrag-settings-theme select:focus,
+.xrag-settings-theme textarea:focus {
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
+}
+
+.xrag-settings-theme input[type="range"] {
+  --xrag-thumb: #f59e0b;
+}
+
+.xrag-settings-theme input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.30) !important;
+}
+
+.xrag-settings-theme input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.30) !important;
+}
+
+.xrag-settings-theme .xrag-settings-amber-btn {
+  background-color: var(--xrag-yellow) !important;
+  border-color: rgb(245 158 11) !important;
+  color: rgb(15 23 42) !important;
+}
+
+.xrag-settings-theme .xrag-settings-amber-btn:hover {
+  background-color: var(--xrag-yellow-soft) !important;
+}
+
+.xrag-settings-theme .xrag-settings-amber-btn svg {
+  color: rgb(15 23 42) !important;
+}
+
+.xrag-settings-theme .xrag-settings-dark-btn {
+  background-color: rgb(15 23 42) !important;
+  border-color: rgb(71 85 105) !important;
+  color: var(--xrag-yellow) !important;
+}
+
+.xrag-settings-theme .xrag-settings-dark-btn:hover {
+  background-color: rgb(30 41 59) !important;
 }

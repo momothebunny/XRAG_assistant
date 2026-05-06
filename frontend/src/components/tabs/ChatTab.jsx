@@ -271,7 +271,7 @@ const ChatTab = ({
             <div className={`max-w-[85%] flex gap-4 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
-                  message.role === 'user' ? 'bg-amber-500' : 'bg-slate-900 border border-slate-700'
+                  message.role === 'user' ? 'xrag-user-avatar bg-amber-400 border border-amber-300' : 'bg-slate-900 border border-slate-700'
                 }`}
               >
                 {message.role === 'user' ? (
@@ -290,7 +290,7 @@ const ChatTab = ({
                 <div
                   className={`p-5 rounded-2xl shadow-sm border ${
                     message.role === 'user'
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 rounded-tr-none'
+                      ? 'xrag-user-bubble bg-amber-400 text-slate-950 border-amber-300 rounded-tr-none'
                       : 'bg-slate-900 text-slate-100 border-slate-700 rounded-tl-none'
                   }`}
                 >
@@ -307,7 +307,7 @@ const ChatTab = ({
                           key={attachment.id}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${
                             message.role === 'user'
-                              ? 'bg-slate-950/60 border-amber-300/60 text-slate-100'
+                              ? 'bg-amber-200/90 border-amber-500/60 text-slate-900'
                               : 'bg-slate-950 border-slate-700 text-slate-300'
                           }`}
                         >

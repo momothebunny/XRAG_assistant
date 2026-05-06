@@ -31,6 +31,9 @@ const DEFAULT_AI_CONFIG = {
   systemPrompt:
     'You are a professional research assistant. Always cite your sources and clearly separate verified context from assumptions.',
   strictMode: true,
+  environmentProfile: 'staging',
+  promptVersions: [],
+  selectedPromptVersionId: '',
 };
 
 const DEFAULT_RETRIEVAL_CONFIG = {
@@ -38,6 +41,24 @@ const DEFAULT_RETRIEVAL_CONFIG = {
   topK: 5,
   rerankerEnabled: true,
   rerankerModel: 'cohere-rerank-v3',
+  costGuardrails: {
+    dailyBudgetUsd: 25,
+    monthlyBudgetUsd: 400,
+    perRequestTokenCap: 8000,
+    hardStopOnLimit: true,
+  },
+  retryPolicy: {
+    timeoutMs: 12000,
+    maxRetries: 2,
+    backoffStrategy: 'exponential',
+    requestsPerMinute: 60,
+  },
+  observability: {
+    logLevel: 'info',
+    piiMasking: true,
+    retentionDays: 30,
+    traceSamplingPercent: 25,
+  },
 };
 
 const readStoredJson = (key, fallbackValue) => {
@@ -290,7 +311,7 @@ const App = () => {
               retrievalConfig={retrievalConfig}
               onRetrievalConfigChange={setRetrievalConfig}
             />,
-            'bg-slate-50'
+            'xrag-settings-theme bg-slate-950'
           )}
         </>
       );
