@@ -134,6 +134,7 @@ class BenchmarkDataset(BaseModel):
     name: str
     description: str = ""
     entries: list[BenchmarkEntry]
+    document_ids: list[str] = Field(default_factory=list)
     created_at: int
 
 
@@ -142,6 +143,7 @@ class BenchmarkDatasetSummary(BaseModel):
     name: str
     description: str = ""
     entry_count: int
+    document_count: int = 0
     created_at: int
 
 
@@ -185,6 +187,12 @@ class BenchmarkQuestionResult(BaseModel):
     # UI so the audit view can resolve clickable [1]…[N] citations back to
     # the underlying passage. Capped server-side to keep payloads small.
     retrieved_contexts: list[dict] = Field(default_factory=list)
+
+    # ── Lightweight token/cost estimates (for ops visibility)
+    estimated_prompt_tokens: int = 0
+    estimated_completion_tokens: int = 0
+    estimated_total_tokens: int = 0
+    estimated_cost_usd: float = 0.0
 
     error: str | None = None
 
@@ -243,6 +251,22 @@ class FlowBenchmarkSummary(BaseModel):
     avg_overall_score: float = 0.0
     judge_mode: str = "lexical"
 
+    # ── Performance & coverage aggregates ──────────────────────────────
+    avg_duration_ms: float = 0.0       # mean wall-clock latency per question
+    min_duration_ms: float = 0.0       # fastest question
+    p95_duration_ms: float = 0.0       # 95th percentile latency
+    max_duration_ms: float = 0.0       # slowest question
+    error_count: int = 0               # questions that returned an error
+    success_rate: float = 0.0          # 1 - (error_count / total_questions_for_flow)
+    avg_retrieved_context_count: float = 0.0  # mean chunks retrieved per question
+
+    # ── Cost/size estimates ────────────────────────────────────────────
+    avg_prompt_tokens: float = 0.0
+    avg_completion_tokens: float = 0.0
+    avg_total_tokens: float = 0.0
+    avg_estimated_cost_usd: float = 0.0
+    total_estimated_cost_usd: float = 0.0
+
 
 class BenchmarkReport(BaseModel):
     run_id: str
@@ -262,7 +286,7 @@ class BenchmarkReport(BaseModel):
 
 class StartBenchmarkRunRequest(BaseModel):
     name: str
-    flow_ids: list[str] = Field(min_length=2)
+    flow_ids: list[str] = Field(min_length=1)
     # When True (default), run the full RAGAS+RAGChecker validator
     # against every (flow, question) pair using an LLM judge if
     # OPENROUTER_API_KEY is set, otherwise the deterministic lexical

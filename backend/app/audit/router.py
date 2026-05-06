@@ -5,6 +5,7 @@ from __future__ import annotations
 import difflib
 import hashlib
 import logging
+import math
 import os
 import random
 import re
@@ -15,6 +16,7 @@ import urllib.request
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from time import time
+from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request
@@ -55,6 +57,8 @@ from .validation import (
     evaluate as rag_evaluate,
     extract_retrieved_chunks,
     extract_retrieved_contexts,
+    _lexical_scores,
+    _aggregate_overall,
 )
 
 router = APIRouter(prefix="/api/audit", tags=["audit"])
@@ -328,12 +332,27 @@ def _get_benchmark_store(request) -> BenchmarkStore:
     return request.app.state.benchmark_store
 
 
+_CITATION_RE = re.compile(r"\[\d{1,3}\]")
+
+
+def _normalize_answer(text: str) -> str:
+    """Strip citation markers and extra whitespace, lowercase."""
+    return _CITATION_RE.sub("", text).strip().lower()
+
+
 def _compute_metrics(answer: str, expected: str) -> tuple[float, float, float]:
-    """Return (exact_match, char_similarity, token_f1)."""
-    a = answer.strip().lower()
+    """Return (exact_match, char_similarity, token_f1).
+
+    Uses SQuAD-style normalisation: citation markers like [1] are stripped,
+    text is lowercased, and a short expected answer that appears verbatim
+    anywhere inside the generated answer counts as an exact match (models
+    almost never repeat the bare expected string — they embed it in a
+    sentence, e.g. expected="France", answer="Normandy is in France [1].").
+    """
+    a = _normalize_answer(answer)
     e = expected.strip().lower()
 
-    exact_match = 1.0 if a == e else 0.0
+    exact_match = 1.0 if (a == e or (e and e in a)) else 0.0
     char_sim = difflib.SequenceMatcher(None, a, e).ratio()
 
     a_toks = a.split()
@@ -347,6 +366,66 @@ def _compute_metrics(answer: str, expected: str) -> tuple[float, float, float]:
         token_f1 = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
 
     return exact_match, round(char_sim, 4), round(token_f1, 4)
+
+
+_MODEL_PRICING_PER_1M = {
+    "openai/gpt-4o-mini": (0.15, 0.60),
+    "openai/gpt-4o": (5.00, 15.00),
+    "openai/gpt-4.1-mini": (0.40, 1.60),
+    "anthropic/claude-3.5-sonnet": (3.00, 15.00),
+    "anthropic/claude-3.5-haiku": (0.80, 4.00),
+    "google/gemini-2.0-flash-001": (0.10, 0.40),
+    "google/gemini-pro-1.5": (1.25, 5.00),
+}
+
+
+def _estimate_tokens(text: str) -> int:
+    if not text:
+        return 0
+    return max(1, math.ceil(len(text) / 4))
+
+
+def _resolve_flow_model_id(flow_obj: Any) -> str:
+    """Best-effort extraction of generator model id from a flow."""
+    try:
+        for node in getattr(flow_obj, "nodes", []) or []:
+            if getattr(node, "templateKey", "") != "brain-llm":
+                continue
+            cfg = getattr(node, "config", {}) or {}
+            meta = cfg.get("metadata") or {}
+            return (
+                str(meta.get("model_id") or "").strip()
+                or str(cfg.get("model_id") or "").strip()
+                or str(cfg.get("model") or "").strip()
+                or "openai/gpt-4o-mini"
+            )
+    except Exception:  # noqa: BLE001
+        pass
+    return "openai/gpt-4o-mini"
+
+
+def _estimate_cell_cost_usd(
+    *,
+    model_id: str,
+    question: str,
+    contexts: list[str],
+    answer: str,
+) -> tuple[int, int, int, float]:
+    """Return (prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd)."""
+    overhead_tokens = int(os.environ.get("XRAG_BENCHMARK_PROMPT_OVERHEAD_TOKENS", "120"))
+    prompt_tokens = (
+        _estimate_tokens(question)
+        + _estimate_tokens("\n".join(contexts or []))
+        + max(0, overhead_tokens)
+    )
+    completion_tokens = _estimate_tokens(answer)
+    total_tokens = prompt_tokens + completion_tokens
+
+    default_in = float(os.environ.get("XRAG_BENCHMARK_DEFAULT_INPUT_USD_PER_1M", "0.15"))
+    default_out = float(os.environ.get("XRAG_BENCHMARK_DEFAULT_OUTPUT_USD_PER_1M", "0.60"))
+    in_per_1m, out_per_1m = _MODEL_PRICING_PER_1M.get(model_id, (default_in, default_out))
+    estimated_cost = (prompt_tokens / 1_000_000.0) * in_per_1m + (completion_tokens / 1_000_000.0) * out_per_1m
+    return prompt_tokens, completion_tokens, total_tokens, round(estimated_cost, 8)
 
 
 def _build_benchmark_report(run_data: dict) -> BenchmarkReport:
@@ -367,6 +446,11 @@ def _build_benchmark_report(run_data: dict) -> BenchmarkReport:
 
         def _mean(field_name: str) -> float:
             return round(sum(getattr(r, field_name) for r in flow_results) / n, 4)
+
+        sorted_durations = sorted(r.duration_ms for r in flow_results)
+        p95_idx = max(0, math.ceil(0.95 * len(sorted_durations)) - 1)
+        p95_duration = float(sorted_durations[p95_idx]) if sorted_durations else 0.0
+        err_count = sum(1 for r in flow_results if r.error)
 
         # Judge mode: pick the dominant mode across questions (typically all
         # the same — only mixed when the LLM judge intermittently failed).
@@ -391,6 +475,18 @@ def _build_benchmark_report(run_data: dict) -> BenchmarkReport:
             avg_context_utilization=_mean("context_utilization"),
             avg_overall_score=_mean("overall_score"),
             judge_mode=dominant_mode,
+            avg_duration_ms=round(_mean("duration_ms"), 1),
+            min_duration_ms=round(min(r.duration_ms for r in flow_results), 1),
+            p95_duration_ms=round(p95_duration, 1),
+            max_duration_ms=round(max(r.duration_ms for r in flow_results), 1),
+            error_count=err_count,
+            success_rate=round((n - err_count) / n if n else 0.0, 4),
+            avg_retrieved_context_count=round(_mean("retrieved_context_count"), 2),
+            avg_prompt_tokens=round(_mean("estimated_prompt_tokens"), 2),
+            avg_completion_tokens=round(_mean("estimated_completion_tokens"), 2),
+            avg_total_tokens=round(_mean("estimated_total_tokens"), 2),
+            avg_estimated_cost_usd=round(_mean("estimated_cost_usd"), 8),
+            total_estimated_cost_usd=round(sum(r.estimated_cost_usd for r in flow_results), 8),
         ))
 
     # Sort summaries: best avg_overall_score first when validation ran,
@@ -433,6 +529,7 @@ def list_benchmark_datasets(request_obj: Request):
             name=d["name"],
             description=d.get("description", ""),
             entry_count=len(d.get("entries", [])),
+            document_count=len(d.get("document_ids", [])),
             created_at=d["created_at"],
         )
         for d in store.list_datasets()
@@ -535,8 +632,8 @@ def run_benchmark(
         raise HTTPException(404, "Dataset not found.")
     dataset = BenchmarkDataset(**raw_dataset)
 
-    if len(body.flow_ids) < 2:
-        raise HTTPException(400, "At least 2 flows are required.")
+    if len(body.flow_ids) < 1:
+        raise HTTPException(400, "At least 1 flow is required.")
 
     flow_names: dict[str, str] = {}
     flow_objects: dict[str, object] = {}
@@ -609,6 +706,7 @@ def _run_benchmark_worker(
     total_cells = (run.progress or {}).get("total", len(dataset.entries) * len(body.flow_ids))
     started_at_ms = (run.progress or {}).get("started_at", int(time() * 1000))
     flow_ids = list(body.flow_ids)
+    flow_model_ids = {fid: _resolve_flow_model_id(flow_objects[fid]) for fid in flow_ids}
 
     def _persist(stage: str, idx: int, q_idx: int, fid: str | None, extra: dict | None = None) -> None:
         prog = {
@@ -641,7 +739,22 @@ def _run_benchmark_worker(
             cell_timeout_s = float(os.environ.get("XRAG_BENCHMARK_CELL_TIMEOUT", "180"))
         except ValueError:
             cell_timeout_s = 180.0
+        try:
+            score_timeout_s = float(os.environ.get("XRAG_BENCHMARK_SCORE_TIMEOUT", "45"))
+        except ValueError:
+            score_timeout_s = 45.0
+        # Execution pool: one thread — flows must run serially per cell.
         cell_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"bm-{run.id}-cell")
+        # Scoring pool: multiple workers so LLM judge calls for different
+        # cells run in parallel and don't block execution of subsequent cells.
+        _score_workers = max(1, min(8, total_cells))
+        score_pool = ThreadPoolExecutor(max_workers=_score_workers, thread_name_prefix=f"bm-{run.id}-score")
+
+        # List of (cell_data_dict, score_future | None) tuples, assembled
+        # during the execution phase. Scores are collected afterwards.
+        pending: list[tuple[dict, Any]] = []
+
+        # ── Phase 1: execute every (question, flow) cell ─────────────────
         for q_idx, entry in enumerate(dataset.entries):
             for fid in flow_ids:
                 _persist("executing", cell_idx, q_idx, fid)
@@ -651,7 +764,14 @@ def _run_benchmark_worker(
                 error = None
                 retrieved_contexts: list[str] = []
                 retrieved_chunks: list[dict] = []
-                exec_req = FlowExecutionRequest(question=entry.question, inputs={})
+                _has_corpus = bool(dataset.document_ids)
+                exec_req = FlowExecutionRequest(
+                    question=entry.question,
+                    inputs={
+                        "benchmark_scope_active": _has_corpus,
+                        "benchmark_document_ids": list(dataset.document_ids or []),
+                    },
+                )
                 future = cell_pool.submit(runner.run, exec_req, flow)
                 try:
                     result = future.result(timeout=cell_timeout_s)
@@ -667,11 +787,6 @@ def _run_benchmark_worker(
                         "Benchmark %s cell q=%d flow=%s timed out after %.0fs — moving on.",
                         run.id, q_idx, fid, cell_timeout_s,
                     )
-                    # We deliberately do NOT cancel the future — runner.run
-                    # is synchronous and may hold non-thread-safe resources.
-                    # The orphan thread will terminate when its LLM call
-                    # eventually returns; we rotate the executor below so a
-                    # stuck thread can't starve subsequent cells.
                     cell_pool.shutdown(wait=False, cancel_futures=True)
                     cell_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"bm-{run.id}-cell")
                 except (CanvasFlowError, Exception) as exc:  # noqa: BLE001
@@ -680,22 +795,14 @@ def _run_benchmark_worker(
                     error = str(exc)
 
                 exact, char_sim, tok_f1 = _compute_metrics(answer, entry.expected_answer)
+                ptok, ctok, ttok, ecost = _estimate_cell_cost_usd(
+                    model_id=flow_model_ids.get(fid, "openai/gpt-4o-mini"),
+                    question=entry.question,
+                    contexts=retrieved_contexts,
+                    answer=answer,
+                )
 
-                if body.enable_rag_validation and not error:
-                    _persist("scoring", cell_idx, q_idx, fid)
-                    rag_scores: RagValidationScores = rag_evaluate(
-                        question=entry.question,
-                        answer=answer,
-                        contexts=retrieved_contexts,
-                        ground_truth=entry.expected_answer,
-                        use_llm_judge=body.use_llm_judge,
-                    )
-                    if not run.judge_mode and rag_scores.judge_mode:
-                        run.judge_mode = rag_scores.judge_mode
-                else:
-                    rag_scores = RagValidationScores()
-
-                results.append(BenchmarkQuestionResult(
+                cell_data = dict(
                     question_index=q_idx,
                     question=entry.question,
                     expected_answer=entry.expected_answer,
@@ -706,31 +813,102 @@ def _run_benchmark_worker(
                     exact_match=exact,
                     char_similarity=char_sim,
                     token_f1=tok_f1,
-                    faithfulness=rag_scores.faithfulness,
-                    answer_relevancy=rag_scores.answer_relevancy,
-                    context_precision=rag_scores.context_precision,
-                    context_recall=rag_scores.context_recall,
-                    answer_similarity=rag_scores.answer_similarity,
-                    answer_correctness=rag_scores.answer_correctness,
-                    claim_recall=rag_scores.claim_recall,
-                    claim_precision=rag_scores.claim_precision,
-                    hallucination_rate=rag_scores.hallucination_rate,
-                    context_utilization=rag_scores.context_utilization,
-                    overall_score=rag_scores.overall_score,
-                    judge_mode=rag_scores.judge_mode,
                     retrieved_context_count=len(retrieved_contexts),
-                    # Cap to first 12 chunks and 1500 chars each so the
-                    # persisted run JSON stays manageable while still
-                    # giving the UI enough material to render every
-                    # [n] citation popover.
+                    estimated_prompt_tokens=ptok,
+                    estimated_completion_tokens=ctok,
+                    estimated_total_tokens=ttok,
+                    estimated_cost_usd=ecost,
                     retrieved_contexts=[
                         {**c, "index": i + 1, "text": (c.get("text") or "")[:1500]}
                         for i, c in enumerate(retrieved_chunks[:12])
                     ],
                     error=error,
-                ))
+                    _retrieved_contexts_raw=retrieved_contexts,
+                )
+
+                # Fire off scoring immediately — runs in parallel with
+                # the next cell's flow execution.
+                if body.enable_rag_validation and not error:
+                    sf = score_pool.submit(
+                        rag_evaluate,
+                        question=entry.question,
+                        answer=answer,
+                        contexts=retrieved_contexts,
+                        ground_truth=entry.expected_answer,
+                        use_llm_judge=body.use_llm_judge,
+                    )
+                else:
+                    sf = None
+                pending.append((cell_data, sf))
+
                 cell_idx += 1
                 _persist("executing", cell_idx, q_idx, fid)
+
+        # ── Phase 2: collect scoring futures ─────────────────────────────
+        _persist("scoring", cell_idx, len(dataset.entries) - 1, flow_ids[-1])
+        for cell_data, sf in pending:
+            if sf is not None:
+                try:
+                    rag_scores: RagValidationScores = sf.result(timeout=score_timeout_s)
+                except FutureTimeout:
+                    log.warning(
+                        "Benchmark %s scoring q=%d flow=%s timed out after %.0fs — lexical fallback.",
+                        run.id, cell_data["question_index"], cell_data["flow_id"], score_timeout_s,
+                    )
+                    rag_scores = _lexical_scores(
+                        question=cell_data["question"],
+                        answer=cell_data["answer"],
+                        contexts=cell_data["_retrieved_contexts_raw"],
+                        ground_truth=cell_data["expected_answer"],
+                    )
+                    rag_scores.overall_score = _aggregate_overall(rag_scores)
+                    rag_scores.judge_mode = "lexical"
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("Benchmark %s scoring error: %s — lexical fallback.", run.id, exc)
+                    rag_scores = _lexical_scores(
+                        question=cell_data["question"],
+                        answer=cell_data["answer"],
+                        contexts=cell_data["_retrieved_contexts_raw"],
+                        ground_truth=cell_data["expected_answer"],
+                    )
+                    rag_scores.overall_score = _aggregate_overall(rag_scores)
+                    rag_scores.judge_mode = "lexical"
+                if not run.judge_mode and rag_scores.judge_mode:
+                    run.judge_mode = rag_scores.judge_mode
+            else:
+                rag_scores = RagValidationScores()
+
+            results.append(BenchmarkQuestionResult(
+                question_index=cell_data["question_index"],
+                question=cell_data["question"],
+                expected_answer=cell_data["expected_answer"],
+                flow_id=cell_data["flow_id"],
+                flow_name=cell_data["flow_name"],
+                answer=cell_data["answer"],
+                duration_ms=cell_data["duration_ms"],
+                exact_match=cell_data["exact_match"],
+                char_similarity=cell_data["char_similarity"],
+                token_f1=cell_data["token_f1"],
+                faithfulness=rag_scores.faithfulness,
+                answer_relevancy=rag_scores.answer_relevancy,
+                context_precision=rag_scores.context_precision,
+                context_recall=rag_scores.context_recall,
+                answer_similarity=rag_scores.answer_similarity,
+                answer_correctness=rag_scores.answer_correctness,
+                claim_recall=rag_scores.claim_recall,
+                claim_precision=rag_scores.claim_precision,
+                hallucination_rate=rag_scores.hallucination_rate,
+                context_utilization=rag_scores.context_utilization,
+                overall_score=rag_scores.overall_score,
+                judge_mode=rag_scores.judge_mode,
+                retrieved_context_count=cell_data["retrieved_context_count"],
+                estimated_prompt_tokens=cell_data["estimated_prompt_tokens"],
+                estimated_completion_tokens=cell_data["estimated_completion_tokens"],
+                estimated_total_tokens=cell_data["estimated_total_tokens"],
+                estimated_cost_usd=cell_data["estimated_cost_usd"],
+                retrieved_contexts=cell_data["retrieved_contexts"],
+                error=cell_data["error"],
+            ))
 
         run.status = "finished"
         run.finished_at = int(time() * 1000)
@@ -744,6 +922,7 @@ def _run_benchmark_worker(
         }
         bm_store.save_run(run)
         cell_pool.shutdown(wait=False, cancel_futures=True)
+        score_pool.shutdown(wait=False, cancel_futures=True)
     except Exception as exc:  # noqa: BLE001
         log.exception("Benchmark run %s failed: %s", run.id, exc)
         run.status = "error"
@@ -757,6 +936,7 @@ def _run_benchmark_worker(
         }
         try:
             cell_pool.shutdown(wait=False, cancel_futures=True)
+            score_pool.shutdown(wait=False, cancel_futures=True)
         except Exception:  # noqa: BLE001
             pass
         bm_store.save_run(run)
@@ -983,14 +1163,14 @@ def _provision_hf_documents(
     *,
     category: str = "squad-v2",
     name_prefix: str = "squad",
-) -> int:
+) -> list[str]:
     """Create KnowledgeDocuments for unique (title, context) pairs.
 
-    Returns the number of documents actually created. Existing documents
-    (deduped by content_hash) are reused.
+    Returns the document IDs associated with the provided contexts. Existing
+    documents (deduped by content_hash) are reused.
     """
     if max_documents <= 0 or not contexts:
-        return 0
+        return []
 
     knowledge_store = request_obj.app.state.knowledge_store
     knowledge_processor = request_obj.app.state.knowledge_processor
@@ -1001,20 +1181,26 @@ def _provision_hf_documents(
     chunking_config = knowledge_processor.resolve_chunking_config(None)
 
     existing_docs = knowledge_store.list_documents()
+    existing_by_hash = {
+        d.content_hash: d.id for d in existing_docs if getattr(d, "content_hash", "")
+    }
     existing_hashes = {d.content_hash for d in existing_docs if getattr(d, "content_hash", "")}
 
     # Local imports to avoid circular at module load
     from ..knowledge.models import KnowledgeDocument
 
-    created = 0
+    document_ids: list[str] = []
     for title, context_text in contexts:
-        if created >= max_documents:
+        if len(document_ids) >= max_documents:
             break
         if not context_text or not context_text.strip():
             continue
 
         content_hash = hashlib.sha256(context_text.encode("utf-8")).hexdigest()
         if content_hash in existing_hashes:
+            existing_id = existing_by_hash.get(content_hash)
+            if existing_id and existing_id not in document_ids:
+                document_ids.append(existing_id)
             continue
 
         doc_id = f"doc-{uuid4().hex[:12]}"
@@ -1068,15 +1254,16 @@ def _provision_hf_documents(
         except Exception as exc:  # noqa: BLE001
             _SQUAD_LOG.warning("Pinecone upsert failed for HF doc %s: %s", doc_id, exc)
         existing_hashes.add(content_hash)
-        created += 1
-    return created
+        existing_by_hash[content_hash] = doc_id
+        document_ids.append(doc_id)
+    return document_ids
 
 
 def _provision_squad_documents(
     request_obj: Request,
     contexts: list[tuple[str, str]],
     max_documents: int,
-) -> int:
+) -> list[str]:
     """Backwards-compatible SQuAD wrapper."""
     return _provision_hf_documents(
         request_obj, contexts, max_documents,
@@ -1168,18 +1355,21 @@ def import_squad_benchmark(body: ImportSquadRequest, request_obj: Request):
     bm_store.save_dataset(dataset)
 
     # Optionally ingest documents
-    document_count = 0
+    document_ids: list[str] = []
     if body.upload_documents:
         contexts_list = list(contexts_by_title.items())
-        document_count = _provision_squad_documents(
+        document_ids = _provision_squad_documents(
             request_obj, contexts_list, body.max_documents
         )
+
+    dataset.document_ids = list(document_ids)
+    bm_store.save_dataset(dataset)
 
     return ImportSquadResponse(
         dataset_id=dataset.id,
         dataset_name=dataset.name,
         question_count=len(entries),
-        document_count=document_count,
+        document_count=len(document_ids),
         skipped_unanswerable=skipped_unanswerable,
         skipped_duplicates=skipped_duplicates,
     )
@@ -1307,7 +1497,7 @@ def import_hf_benchmark(body: ImportHFRequest, request_obj: Request):
     )
     bm_store.save_dataset(dataset)
 
-    document_count = 0
+    document_ids: list[str] = []
     if body.upload_documents:
         slug = _slugify(body.dataset.replace("/", "-")) or "hf"
         # Guarantee the import produces *something* retrievable so RAG flows
@@ -1328,7 +1518,7 @@ def import_hf_benchmark(body: ImportHFRequest, request_obj: Request):
                 fallback_body = "\n\n".join(fallback_lines)
                 fallback_title = f"{slug}-answer-key"
                 items = [(fallback_title, fallback_body)]
-        document_count = _provision_hf_documents(
+        document_ids = _provision_hf_documents(
             request_obj,
             items,
             body.max_documents,
@@ -1336,11 +1526,14 @@ def import_hf_benchmark(body: ImportHFRequest, request_obj: Request):
             name_prefix=slug,
         )
 
+    dataset.document_ids = list(document_ids)
+    bm_store.save_dataset(dataset)
+
     return ImportHFResponse(
         dataset_id=dataset.id,
         dataset_name=dataset.name,
         question_count=len(entries),
-        document_count=document_count,
+        document_count=len(document_ids),
         skipped_empty=skipped_empty,
         skipped_duplicates=skipped_duplicates,
         resolved_config=config,

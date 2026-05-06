@@ -581,6 +581,16 @@ def _exec_upload(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) 
     scope = str(cfg.get("scope", "all")).lower()
     selected_folders = list(cfg.get("selectedFolders") or [])
     selected_doc_ids = set(cfg.get("selectedDocumentIds") or [])
+    benchmark_scope_active = bool(context.inputs.get("benchmark_scope_active"))
+    request_doc_ids = context.inputs.get("benchmark_document_ids") or context.inputs.get("selectedDocumentIds") or []
+    if benchmark_scope_active:
+        scope = "documents"
+        selected_doc_ids = {
+            str(doc_id) for doc_id in request_doc_ids if str(doc_id).strip()
+        }
+    elif isinstance(request_doc_ids, list) and request_doc_ids:
+        scope = "documents"
+        selected_doc_ids = {str(doc_id) for doc_id in request_doc_ids if str(doc_id).strip()}
     status_filter = str(cfg.get("statusFilter", "indexed")).lower()
     type_filter = str(cfg.get("contentTypeFilter", "all")).lower()
 
@@ -647,7 +657,7 @@ def _exec_upload(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) 
         docs = [doc for doc in docs if _bucket(doc) == type_filter]
 
     # ── fallback simulation when the KB is empty ────────────────────────
-    if not docs and not (selected_folders or selected_doc_ids):
+    if not docs and not benchmark_scope_active and not (selected_folders or selected_doc_ids):
         docs = [
             {"id": "demo-doc-1", "name": "BCP_Plan_2024.pdf", "title": "BCP_Plan_2024.pdf", "text": "Critical operation cutover requires dual-control approval."},
             {"id": "demo-doc-2", "name": "Infra_Security_v2.docx", "title": "Infra_Security_v2.docx", "text": "All operational changes follow least-privilege access policies."},
@@ -969,10 +979,22 @@ def _exec_retriever(node: CanvasNode, context: RunContext, inputs: dict[str, Any
     pinecone_used = False
     pinecone_error: str | None = None
     upstream_is_pinecone = (upstream_store or "").lower() == "pinecone"
+
+    # Benchmark scope: restrict Pinecone search to only the dataset documents
+    # so retrieval noise from unrelated KB content doesn't pollute metrics.
+    _bm_scope = bool(context.inputs.get("benchmark_scope_active"))
+    _bm_doc_ids: list[str] = []
+    if _bm_scope:
+        _bm_doc_ids = [
+            str(d) for d in (context.inputs.get("benchmark_document_ids") or [])
+            if str(d).strip()
+        ]
+
     if upstream_is_pinecone and pinecone_index.is_available() and query.strip():
         try:
             fetch_k = max(top_k, mmr_fetch_k)
-            hits = pinecone_index.search(query, top_k=fetch_k)
+            pc_filter = {"doc_id": {"$in": _bm_doc_ids}} if _bm_doc_ids else None
+            hits = pinecone_index.search(query, top_k=fetch_k, metadata_filter=pc_filter)
             if hits:
                 # Replace the candidate pool with Pinecone-scored chunks.
                 # Each hit becomes a chunk dict the rest of the function understands.
@@ -2181,9 +2203,49 @@ def _exec_system_prompt(node: CanvasNode, context: RunContext, inputs: dict[str,
 
 def _exec_hyde(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
     n = int(node.config.get("hypothesesPerQuery", 3))
+    max_tokens = int(node.config.get("maxTokens", 256))
+    temperature = float(node.config.get("temperature", 0.7))
+    model = str(node.config.get("model", "openai/gpt-4o-mini"))
+    system_prompt = str(
+        node.config.get(
+            "systemPrompt",
+            "Write a concise hypothetical passage that would appear in a document that directly answers the user's question. "
+            "Output only the passage itself, no preamble.",
+        )
+    )
+
     query = context.scratch.get("query") or _first_text(inputs, context)
-    hypotheses = [f"Hypothetical doc #{i + 1} for: {query}" for i in range(n)]
-    combined = "\n".join(hypotheses)
+
+    hypotheses: list[str] = []
+    has_api_key = bool(os.environ.get("OPENROUTER_API_KEY"))
+    if has_api_key and query.strip():
+        try:
+            raw = _call_openrouter_chat(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Generate {n} short hypothetical document passage(s) "
+                            "that would answer the following question. "
+                            "Separate each passage with a blank line.\n\n"
+                            f"Question: {query}"
+                        ),
+                    },
+                ],
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens * n,
+                timeout=30.0,
+            )
+            hypotheses = [p.strip() for p in raw.split("\n\n") if p.strip()][:n]
+        except Exception:  # noqa: BLE001 — fall back to placeholder
+            pass
+
+    if not hypotheses:
+        hypotheses = [f"Hypothetical passage about: {query}" for _ in range(n)]
+
+    combined = "\n\n".join(hypotheses)
     context.scratch["query"] = combined
     return {"text": combined, "query": combined, "hypotheses": hypotheses}
 

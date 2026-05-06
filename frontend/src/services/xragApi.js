@@ -28,6 +28,7 @@ const requestJson = async (path, options = {}) => {
   const {
     headers: optionHeaders,
     signal: externalSignal,
+    timeoutMs,
     ...restOptions
   } = options;
 
@@ -38,8 +39,9 @@ const requestJson = async (path, options = {}) => {
   if (_authToken && !headers.Authorization) {
     headers.Authorization = `Bearer ${_authToken}`;
   }
+  const effectiveTimeout = timeoutMs ?? API_TIMEOUT_MS;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), effectiveTimeout);
 
   if (externalSignal) {
     if (externalSignal.aborted) {
@@ -59,7 +61,7 @@ const requestJson = async (path, options = {}) => {
   } catch (error) {
     if (error?.name === 'AbortError') {
       const timeoutErr = new Error(
-        `Request timed out after ${Math.round(API_TIMEOUT_MS / 1000)}s. Backend may be offline (${API_BASE_URL}).`
+        `Request timed out after ${Math.round(effectiveTimeout / 1000)}s. Backend may be offline (${API_BASE_URL}).`
       );
       timeoutErr.status = 0;
       throw timeoutErr;
@@ -324,6 +326,7 @@ export const xragApi = {
     requestJson(`/api/audit/sessions/${encodeURIComponent(sessionId)}/ask`, {
       method: 'POST',
       body: JSON.stringify({ question }),
+      timeoutMs: 120000, // arena runs multiple flows — allow up to 2 min
     }),
   auditVote: (sessionId, questionIndex, winnerLabel) =>
     requestJson(`/api/audit/sessions/${encodeURIComponent(sessionId)}/vote`, {

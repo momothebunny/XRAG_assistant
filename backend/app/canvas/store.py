@@ -116,8 +116,8 @@ def _build_naive_provider_flow(
             "label": "Retriever",
             "config": {
                 "strategy": "similarity",
-                "topK": 6,
-                "similarityThreshold": 0.7,
+                "topK": 5,
+                "similarityThreshold": 0.68,
                 "includeMetadata": True,
                 "includeScores": True,
                 "retrieverProvider": retriever_provider,
@@ -133,9 +133,9 @@ def _build_naive_provider_flow(
             "config": {
                 "gateway": "backend_proxy",
                 "model_id": "openai/gpt-4o-mini",
-                "temperature": 0.2,
-                "max_tokens": 900,
-                "systemPrompt": "You are a helpful RAG assistant. Answer only from retrieved context. If evidence is missing, say so explicitly.",
+                "temperature": 0.1,
+                "max_tokens": 800,
+                "systemPrompt": "You are a grounded RAG assistant. Answer ONLY using the provided numbered evidence list. Be concise and factual. Cite each supporting fact inline with the actual evidence number like [1] or [2].",
                 "citationMode": True,
             },
             "position": {"x": 740.0, "y": 260.0},
