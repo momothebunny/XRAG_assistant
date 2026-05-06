@@ -856,3 +856,69 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
     letter-spacing: normal;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Audit tab — black/amber theme (Arena + Benchmark + header)            */
+/* ---------------------------------------------------------------------- */
+.xrag-audit-theme {
+  background-color: rgb(2 6 23) !important;
+  color: rgb(226 232 240) !important;
+}
+
+.xrag-audit-theme [class*="bg-white"],
+.xrag-audit-theme [class*="bg-slate-50"],
+.xrag-audit-theme [class*="bg-slate-100"],
+.xrag-audit-theme [class*="bg-slate-200"] {
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-audit-theme [class*="border-slate-100"],
+.xrag-audit-theme [class*="border-slate-200"],
+.xrag-audit-theme [class*="border-slate-300"],
+.xrag-audit-theme [class*="border-indigo-"],
+.xrag-audit-theme [class*="border-sky-"] {
+  border-color: rgb(71 85 105) !important;
+}
+
+.xrag-audit-theme [class*="text-slate-"],
+.xrag-audit-theme [class*="text-indigo-"],
+.xrag-audit-theme [class*="text-sky-"] {
+  color: rgb(252 211 77) !important;
+}
+
+.xrag-audit-theme [class*="text-white"] {
+  color: rgb(15 23 42) !important;
+}
+
+.xrag-audit-theme [class*="from-indigo-"],
+.xrag-audit-theme [class*="from-sky-"] {
+  --tw-gradient-from: rgb(245 158 11) var(--tw-gradient-from-position) !important;
+}
+
+.xrag-audit-theme [class*="to-indigo-"],
+.xrag-audit-theme [class*="to-sky-"] {
+  --tw-gradient-to: rgb(252 211 77) var(--tw-gradient-to-position) !important;
+}
+
+.xrag-audit-theme [class*="via-indigo-"] {
+  --tw-gradient-via: rgb(245 158 11) var(--tw-gradient-via-position) !important;
+}
+
+.xrag-audit-theme [class*="bg-indigo-600"],
+.xrag-audit-theme [class*="bg-indigo-500"] {
+  background-color: rgb(245 158 11) !important;
+}
+
+.xrag-audit-theme [class*="hover:bg-indigo-700"]:hover,
+.xrag-audit-theme [class*="hover:bg-indigo-600"]:hover {
+  background-color: rgb(252 211 77) !important;
+}
+
+.xrag-audit-theme [class*="ring-indigo-"] {
+  --tw-ring-color: rgb(245 158 11 / 0.35) !important;
+}
+
+/* Keep audit typography aligned with other main tabs under zoom */
+.xrag-audit-theme [class*="text-[9px]"] { font-size: 0.72rem; }
+.xrag-audit-theme [class*="text-[10px]"] { font-size: 0.78rem; }
+.xrag-audit-theme [class*="text-[11px]"] { font-size: 0.82rem; }
