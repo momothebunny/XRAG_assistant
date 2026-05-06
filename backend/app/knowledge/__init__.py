@@ -5,6 +5,7 @@ from .models import (
     KnowledgeDocumentSummary,
     KnowledgeChunk,
     UploadResponse,
+        UrlSource,
 )
 from .store import KnowledgeStore
 from .processor import KnowledgeProcessor

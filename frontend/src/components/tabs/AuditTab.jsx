@@ -2567,7 +2567,7 @@ const AuditTab = () => {
 
   // ── Render ─────────────────────────────────────────────────────
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50">
+    <div data-xrag-tab="audit" className="xrag-audit-theme h-full w-full overflow-y-auto bg-slate-950 text-slate-100">
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-amber-950 px-6 py-12 md:px-12 md:py-14 border-b border-indigo-900/40">
         {/* Grid pattern */}

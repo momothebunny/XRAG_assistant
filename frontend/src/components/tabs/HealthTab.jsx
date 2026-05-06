@@ -481,7 +481,7 @@ const HealthTab = () => {
   );
 
   return (
-    <div className="xrag-health-theme flex h-full w-full flex-col gap-4 overflow-y-auto bg-slate-950 p-4 text-slate-100 md:p-6">
+    <div data-xrag-tab="health" className="xrag-health-theme flex h-full w-full flex-col gap-4 overflow-y-auto bg-slate-950 p-4 text-slate-100 md:p-6">
       <section className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-sm md:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">

@@ -10,6 +10,7 @@ import re
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import json
 
 # Load secrets from backend/.env BEFORE importing any module that reads env vars.
@@ -39,6 +40,7 @@ from .knowledge import (
     UploadResponse,
     classify_documents,
 )
+from .knowledge.models import UrlSource as KnowledgeUrlSource
 from .knowledge import pinecone_index
 from .models import AssistantSettings, ChatRequest, ChatResponse, CompareDocumentsRequest, CompareDocumentsSummaryResult, FactCheckResult, FactCheckIssue, SaveAnswerRequest, SaveAnswerResponse, SourceSnippet
 from .api_keys import (
@@ -68,10 +70,6 @@ def _push_to_pinecone(document: KnowledgeDocument) -> None:
     Errors are logged but never propagated — the local KnowledgeStore is
     still authoritative for the UI; Pinecone is only used for retrieval.
     """
-    if not pinecone_index.is_available():
-        return
-    if document.status != "indexed" or not document.chunks:
-        return
     try:
         meta = {
             "name": document.name,
@@ -1083,6 +1081,69 @@ def compare_documents_summary(payload: CompareDocumentsRequest) -> CompareDocume
 # ---------------------------------------------------------------------------
 # Single-container SPA hosting (Hugging Face Spaces & similar PaaS)
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# URL Sources (AI-searchable web URLs)
+
+# ---------------------------------------------------------------------------
+# URL Sources (AI-searchable web URLs)
+# ---------------------------------------------------------------------------
+
+
+class _UrlSourceCreate(BaseModel):
+    url: str
+    label: str = ""
+    enabled: bool = True
+
+
+class _UrlSourceUpdate(BaseModel):
+    enabled: bool
+
+
+@app.get("/api/knowledge/url-sources", response_model=list[KnowledgeUrlSource])
+def list_url_sources() -> list[KnowledgeUrlSource]:
+    """Return all registered URL knowledge sources."""
+    return knowledge_store.list_url_sources()
+
+
+@app.post("/api/knowledge/url-sources", response_model=KnowledgeUrlSource, status_code=201)
+def create_url_source(payload: _UrlSourceCreate) -> KnowledgeUrlSource:
+    """Register a new URL as a knowledge source."""
+    import time, uuid
+    source = KnowledgeUrlSource(
+        id=f"url-{uuid.uuid4().hex[:12]}",
+        url=payload.url,
+        label=payload.label or payload.url,
+        enabled=payload.enabled,
+        created_at=int(time.time()),
+    )
+    return knowledge_store.add_url_source(source)
+
+
+@app.patch("/api/knowledge/url-sources/{source_id}", response_model=KnowledgeUrlSource)
+def update_url_source(source_id: str, payload: _UrlSourceUpdate) -> KnowledgeUrlSource:
+    """Enable or disable a URL source."""
+    updated = knowledge_store.update_url_source(source_id, payload.enabled)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="URL source not found")
+    return updated
+
+
+@app.delete("/api/knowledge/url-sources/{source_id}", status_code=204)
+def delete_url_source(source_id: str) -> None:
+    """Remove a URL source."""
+    if not knowledge_store.delete_url_source(source_id):
+        raise HTTPException(status_code=404, detail="URL source not found")
+
+
+# ---------------------------------------------------------------------------
+# (end URL sources)
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Single-container SPA hosting (Hugging Face Spaces & similar PaaS)
+# ---------------------------------------------------------------------------
+
 # When XRAG_FRONTEND_DIST points at a built Vite `dist/` directory, mount the
 # SPA on `/` so a single port serves both the API (`/api/...`) and the UI.
 # Registered LAST so all explicit FastAPI routes take precedence.
