@@ -20,6 +20,7 @@
  */
 
 import { useMemo } from 'react';
+import SliderRow from './SliderRow';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -38,11 +39,11 @@ import {
 
 // ─── Shared atoms (modern, soft fuchsia — mirrors UserSettingsPanel) ─────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-xs text-slate-200 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
       {title}
     </label>
     {help && (
@@ -70,7 +71,7 @@ const ToggleChip = ({ checked, onChange, label, help }) => (
     className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
       checked
         ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800 shadow-sm shadow-fuchsia-200/30'
-        : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+        : 'border-slate-700/50 bg-[#0d1117] text-slate-400 hover:border-fuchsia-200 hover:text-fuchsia-700'
     }`}
   >
     <span
@@ -253,20 +254,16 @@ export default function QuestionSettingsPanel({
   return (
     <div className="space-y-3">
       {/* ── Hero card ───────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fuchsia-300 via-fuchsia-400 to-pink-300"
-        />
+      <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3.5 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-50 to-pink-50 text-fuchsia-600 ring-1 ring-fuchsia-200/60">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-800/50 to-fuchsia-900/70 text-fuchsia-200 ring-1 ring-fuchsia-600/30">
             <MessageSquare size={20} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold text-slate-800">
+            <p className="truncate text-[13px] font-bold text-slate-100">
               {config.mode === 'multiple_choice' ? 'Multiple choice' : 'Free-text query'}
             </p>
-            <p className="truncate font-mono text-[10.5px] text-slate-500">
+            <p className="truncate font-mono text-[10.5px] text-slate-400">
               {langLabel} · {config.minLength}–{config.maxLength} chars
             </p>
           </div>
@@ -274,13 +271,13 @@ export default function QuestionSettingsPanel({
             <span className="text-[10.5px] font-bold text-fuchsia-700">
               {enabledPrep} {enabledPrep === 1 ? 'rule' : 'rules'}
             </span>
-            <span className="font-mono text-[10px] text-slate-500">
+            <span className="font-mono text-[10px] text-slate-400">
               {config.appendHistory ? `+${config.historyTurns} turns` : 'no history'}
             </span>
           </div>
         </div>
-        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-500">
-          Defines the <span className="font-semibold text-slate-700">input contract</span> of the
+        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-400">
+          Defines the <span className="font-semibold text-slate-200">input contract</span> of the
           pipeline — shape, validation, normalization. Output styling, follow-ups, and token
           budgets live in the Response / LLM nodes.
         </p>
@@ -291,7 +288,7 @@ export default function QuestionSettingsPanel({
         className={`flex items-start gap-2 rounded-xl border px-3 py-2 ${
           hasUserContextUpstream
             ? 'border-fuchsia-200 bg-fuchsia-50/50'
-            : 'border-slate-200 bg-slate-50/50'
+            : 'border-slate-700/50 bg-slate-800/40/50'
         }`}
       >
         <Sparkles
@@ -300,7 +297,7 @@ export default function QuestionSettingsPanel({
             hasUserContextUpstream ? 'text-fuchsia-500' : 'text-slate-400'
           }`}
         />
-        <p className="text-[10.5px] leading-snug text-slate-600">
+        <p className="text-[10.5px] leading-snug text-slate-300">
           {hasUserContextUpstream ? (
             <>
               <span className="font-semibold text-fuchsia-700">User node connected.</span>{' '}
@@ -308,7 +305,7 @@ export default function QuestionSettingsPanel({
             </>
           ) : (
             <>
-              <span className="font-semibold text-slate-700">No user-actor upstream.</span>{' '}
+              <span className="font-semibold text-slate-200">No user-actor upstream.</span>{' '}
               Works standalone, but won&rsquo;t receive locale defaults.
             </>
           )}
@@ -316,10 +313,10 @@ export default function QuestionSettingsPanel({
       </div>
 
       {/* ── Input shape ─────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <MessageSquare size={12} className="text-fuchsia-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Input shape
           </h4>
         </header>
@@ -333,31 +330,31 @@ export default function QuestionSettingsPanel({
                 key={mode.value}
                 type="button"
                 onClick={() => setField('mode', mode.value)}
-                className={`group flex flex-col gap-1 rounded-xl border bg-white p-2 text-left transition ${
+                className={`group flex flex-col gap-1 rounded-xl border bg-[#0d1117] p-2 text-left transition ${
                   active
-                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-200/50'
-                    : 'border-slate-200 hover:border-fuchsia-200'
+                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-600/50'
+                    : 'border-slate-700/50 hover:border-fuchsia-200'
                 }`}
               >
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-md transition ${
                       active
-                        ? 'bg-fuchsia-100 text-fuchsia-600'
-                        : 'bg-slate-100 text-slate-500 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
+                        ? 'bg-fuchsia-900/40 text-fuchsia-300'
+                        : 'bg-slate-800/60 text-slate-400 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
                     }`}
                   >
                     <Icon size={11} />
                   </span>
                   <span
                     className={`text-[11px] font-bold ${
-                      active ? 'text-fuchsia-800' : 'text-slate-700'
+                      active ? 'text-fuchsia-800' : 'text-slate-200'
                     }`}
                   >
                     {mode.label}
                   </span>
                 </div>
-                <span className="text-[9.5px] leading-snug text-slate-500">
+                <span className="text-[9.5px] leading-snug text-slate-400">
                   {mode.description}
                 </span>
               </button>
@@ -419,7 +416,7 @@ export default function QuestionSettingsPanel({
                   key={sample}
                   type="button"
                   onClick={() => setField('sampleQuery', sample)}
-                  className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 transition hover:border-fuchsia-200 hover:text-fuchsia-700"
+                  className="rounded-md border border-slate-700/50 bg-[#0d1117] px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 transition hover:border-fuchsia-200 hover:text-fuchsia-700"
                   title={sample}
                 >
                   <Sparkles size={9} className="mr-0.5 inline-block text-fuchsia-400" />
@@ -443,7 +440,7 @@ export default function QuestionSettingsPanel({
               className={`${inputClass} font-mono`}
               placeholder={'Yes\nNo\nI don\u2019t know'}
             />
-            <p className="mt-1 text-[10px] text-slate-500">
+            <p className="mt-1 text-[10px] text-slate-400">
               {choiceCount} {choiceCount === 1 ? 'option' : 'options'} recognized.
             </p>
           </div>
@@ -451,10 +448,10 @@ export default function QuestionSettingsPanel({
       </section>
 
       {/* ── Validation ──────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <Ruler size={12} className="text-fuchsia-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Validation
           </h4>
         </header>
@@ -495,7 +492,7 @@ export default function QuestionSettingsPanel({
           className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
             config.required
               ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800'
-              : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+              : 'border-slate-700/50 bg-[#0d1117] text-slate-400 hover:border-fuchsia-200 hover:text-fuchsia-700'
           }`}
         >
           <CheckCircle2
@@ -521,7 +518,7 @@ export default function QuestionSettingsPanel({
               onChange={(event) => setField('blocklistRegex', event.target.value)}
               placeholder="(?i)\\b(jailbreak|ignore previous)\\b"
               className={`${inputClass} pl-7 font-mono ${
-                regexValidation.ok ? '' : 'border-rose-300 focus:border-rose-300 focus:ring-rose-200/40'
+                regexValidation.ok ? '' : 'border-rose-600/60 focus:border-rose-500 focus:ring-rose-600/40'
               }`}
             />
           </div>
@@ -534,19 +531,19 @@ export default function QuestionSettingsPanel({
       </section>
 
       {/* ── Pre-processing ──────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wand2 size={12} className="text-fuchsia-500" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               Pre-processing
             </h4>
           </div>
-          <span className="font-mono text-[10px] text-slate-500">
+          <span className="font-mono text-[10px] text-slate-400">
             {enabledPrep} / {PREPROCESSING_TOGGLES.length}
           </span>
         </header>
-        <p className="text-[10px] leading-snug text-slate-500">
+        <p className="text-[10px] leading-snug text-slate-400">
           Applied in order before the query is handed off to the Retriever.
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -563,11 +560,11 @@ export default function QuestionSettingsPanel({
       </section>
 
       {/* ── Multi-turn ──────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <History size={12} className="text-fuchsia-500" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               Multi-turn
             </h4>
           </div>
@@ -582,7 +579,7 @@ export default function QuestionSettingsPanel({
           className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
             config.appendHistory
               ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800'
-              : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+              : 'border-slate-700/50 bg-[#0d1117] text-slate-400 hover:border-fuchsia-200 hover:text-fuchsia-700'
           }`}
         >
           <History
@@ -591,31 +588,23 @@ export default function QuestionSettingsPanel({
           />
           Append conversation history
         </button>
-        <input
-          type="range"
+        <SliderRow
+          label="History turns"
+          value={config.historyTurns}
           min={0}
           max={16}
           step={1}
-          value={config.historyTurns}
+          onChange={(v) => setField('historyTurns', Math.max(0, Math.min(16, v)))}
+          accentColor="#e879f9"
           disabled={!config.appendHistory}
-          onChange={(event) =>
-            setField('historyTurns', Math.max(0, Math.min(16, Number(event.target.value) || 0)))
-          }
-          className="w-full accent-fuchsia-400 disabled:opacity-40"
         />
-        <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-          <span>0</span>
-          <span>4</span>
-          <span>8</span>
-          <span>16</span>
-        </div>
       </section>
 
       {/* ── Modality ────────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <Mic size={12} className="text-fuchsia-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Input modality
           </h4>
         </header>
@@ -641,7 +630,7 @@ export default function QuestionSettingsPanel({
           {warnings.map((warning) => (
             <li
               key={warning}
-              className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800"
+              className="flex items-start gap-1.5 rounded-lg border border-amber-700/40 bg-amber-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-300"
             >
               <AlertTriangle size={11} className="mt-0.5 shrink-0" />
               <span>{warning}</span>
@@ -649,15 +638,15 @@ export default function QuestionSettingsPanel({
           ))}
         </ul>
       ) : (
-        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-300">
           <CheckCircle2 size={11} />
           Configuration valid — all checks passed.
         </div>
       )}
 
       {/* ── Output payload preview ──────────────────────────────────────── */}
-      <details className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
-        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+      <details className="rounded-2xl border border-slate-700/50 bg-slate-800/40/40 p-3">
+        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-300">
           Output payload (read-only)
         </summary>
         <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-fuchsia-200">
@@ -666,7 +655,7 @@ export default function QuestionSettingsPanel({
       </details>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
         <Zap size={11} className="text-fuchsia-400" />
         Output: <span className="font-mono text-fuchsia-700">query_input</span> → Retriever, Router, LLM
       </div>

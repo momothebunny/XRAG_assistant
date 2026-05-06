@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GraphDatabaseSettingsPanel — knowledge-graph store inspector, designed
  * symmetric to VectorDatabaseSettingsPanel.
  *
@@ -83,29 +83,29 @@ const loadRegistry = () => {
 // Distinguishing accent: violet (graph) vs. emerald (vector).
 // ─────────────────────────────────────────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-emerald-400';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2 py-1.5 text-xs text-slate-200 outline-none focus:ring-2 focus:ring-emerald-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{title}</label>
+    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">{title}</label>
     {help && (
-      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
+      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-200">
         <CircleHelp size={11} />
       </button>
     )}
   </div>
 );
 
-const SectionHeading = ({ children, color = 'text-slate-600' }) => (
+const SectionHeading = ({ children, color = 'text-slate-300' }) => (
   <h4 className={`text-[10px] font-black uppercase tracking-wider ${color}`}>{children}</h4>
 );
 
 const Toggle = ({ value, onChange, label, help }) => (
-  <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
+  <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5">
     <div className="flex min-w-0 items-center gap-1">
-      <p className="truncate text-[11px] font-bold text-slate-700">{label}</p>
+      <p className="truncate text-[11px] font-bold text-slate-200">{label}</p>
       {help && (
-        <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
+        <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-200">
           <CircleHelp size={12} />
         </button>
       )}
@@ -198,28 +198,28 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
   // ─── SLEEPING STATE ─────────────────────────────────────────────────────
   if (!isAwake) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-4">
+      <div className="rounded-xl border-2 border-dashed border-slate-600/60 bg-slate-800/40 p-4">
         <div className="flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm">
-            <Lock size={16} className="text-slate-500" />
+            <Lock size={16} className="text-slate-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
               Graph DB · idle / sleeping
             </p>
-            <p className="text-xs font-semibold text-slate-700">
+            <p className="text-xs font-semibold text-slate-200">
               Connect a chunks source to continue.
             </p>
           </div>
         </div>
-        <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
+        <p className="mt-3 text-[11px] leading-relaxed text-slate-300">
           The knowledge graph builds entities and relations from incoming chunks.
-          Drop in a <span className="font-bold text-emerald-700">Chunking</span>,
-          {' '}<span className="font-bold text-emerald-700">Document Upload</span>
-          {' '}or <span className="font-bold text-emerald-700">Cleaning</span>
+          Drop in a <span className="font-bold text-emerald-400">Chunking</span>,
+          {' '}<span className="font-bold text-emerald-400">Document Upload</span>
+          {' '}or <span className="font-bold text-emerald-400">Cleaning</span>
           {' '}node, wire it to this store, and the panel will auto-wake.
         </p>
-        <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-white/70 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-slate-900/60 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
           <Sparkles size={11} />
           Only <span className="font-mono">chunks</span> input is allowed
         </div>
@@ -231,28 +231,28 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
   return (
     <div className="space-y-3">
       {/* ── Upstream handshake card ─────────────────────────────────────── */}
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+      <div className="rounded-xl border border-emerald-700/40 bg-emerald-900/20 p-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={14} className="text-emerald-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-emerald-800">
+          <ShieldCheck size={14} className="text-emerald-400" />
+          <p className="text-[11px] font-black uppercase tracking-wider text-emerald-300">
             Upstream source · connected
           </p>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-          <div className="rounded-lg bg-white/70 px-2 py-1.5">
+          <div className="rounded-lg bg-slate-900/60 px-2 py-1.5">
             <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Source node</p>
-            <p className="truncate font-mono text-[11px] font-bold text-slate-800" title={upstreamProfile.sourceTemplate}>
+            <p className="truncate font-mono text-[11px] font-bold text-slate-100" title={upstreamProfile.sourceTemplate}>
               {upstreamProfile.sourceTemplate || 'chunks'}
             </p>
           </div>
-          <div className="rounded-lg bg-white/70 px-2 py-1.5">
+          <div className="rounded-lg bg-slate-900/60 px-2 py-1.5">
             <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Query language</p>
-            <p className="font-mono text-[11px] font-bold text-slate-800">
+            <p className="font-mono text-[11px] font-bold text-slate-100">
               {provider?.queryLanguage || '—'}
             </p>
           </div>
         </div>
-        <p className="mt-2 text-[10px] leading-relaxed text-emerald-900/80">
+        <p className="mt-2 text-[10px] leading-relaxed text-emerald-200/80">
           The query language is bound to the selected provider — Neo4j/Memgraph/Kùzu →
           Cypher, Nebula → nGQL, Arango → AQL, Neptune → Gremlin/SPARQL, Blazegraph → SPARQL.
         </p>
@@ -260,7 +260,7 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
 
       {/* ── Provider picker ─────────────────────────────────────────────── */}
       <div>
-        <SectionHeading color="text-emerald-700">Provider</SectionHeading>
+        <SectionHeading color="text-emerald-400">Provider</SectionHeading>
         <div className="mt-1.5 grid grid-cols-2 gap-1.5">
           {providers.map((entry) => {
             const selected = entry.id === provider?.id;
@@ -271,12 +271,12 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
                 onClick={() => setField('provider', entry.id)}
                 className={`flex flex-col items-start gap-0.5 rounded-lg border px-2 py-1.5 text-left transition ${
                   selected
-                    ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300'
-                    : 'border-slate-200 bg-white hover:border-emerald-300'
+                    ? 'border-emerald-500 bg-emerald-900/20 ring-2 ring-emerald-300'
+                    : 'border-slate-700/50 bg-[#0d1117] hover:border-emerald-600/60'
                 }`}
               >
                 <div className="flex w-full items-center justify-between gap-1">
-                  <span className="text-[11px] font-bold text-slate-800">{entry.label}</span>
+                  <span className="text-[11px] font-bold text-slate-100">{entry.label}</span>
                   <Network size={11} className="text-slate-400" />
                 </div>
                 <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">
@@ -286,7 +286,7 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
             );
           })}
         </div>
-        <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">{provider?.description}</p>
+        <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">{provider?.description}</p>
       </div>
 
       {/* ── Storage mode (constrained to provider) ──────────────────────── */}
@@ -302,8 +302,8 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
                 onClick={() => setField('mode', mode)}
                 className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-left text-[11px] font-bold transition ${
                   selected
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-300'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-300'
+                    ? 'border-emerald-500 bg-emerald-900/20 text-emerald-300 ring-2 ring-emerald-300'
+                    : 'border-slate-700/50 bg-[#0d1117] text-slate-300 hover:border-emerald-600/60'
                 }`}
               >
                 <Workflow size={12} className={selected ? 'text-emerald-600' : 'text-slate-400'} />
@@ -315,7 +315,7 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
       </div>
 
       {/* ── Provider-specific connection fields ─────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+      <div className="space-y-2 rounded-xl border border-slate-700/50 bg-[#0d1117] p-3">
         <SectionHeading>Connection</SectionHeading>
 
         {provider?.fields.includes('url') && (
@@ -406,7 +406,7 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
       </div>
 
       {/* ── Knowledge-graph extraction ──────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+      <div className="space-y-2 rounded-xl border border-slate-700/50 bg-[#0d1117] p-3">
         <SectionHeading>
           <span className="inline-flex items-center gap-1">
             <GitBranch size={11} /> Knowledge-graph extraction
@@ -428,13 +428,13 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
                   onClick={() => setField('extractorStrategy', strategy.id)}
                   className={`flex flex-col items-start rounded-lg border px-2 py-1.5 text-left transition ${
                     selected
-                      ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300'
-                      : 'border-slate-200 bg-white hover:border-emerald-300'
+                      ? 'border-emerald-500 bg-emerald-900/20 ring-2 ring-emerald-300'
+                      : 'border-slate-700/50 bg-[#0d1117] hover:border-emerald-600/60'
                   }`}
                   title={strategy.description}
                 >
-                  <span className="text-[11px] font-bold text-slate-800">{strategy.label}</span>
-                  <span className="text-[9.5px] leading-snug text-slate-500">{strategy.description}</span>
+                  <span className="text-[11px] font-bold text-slate-100">{strategy.label}</span>
+                  <span className="text-[9.5px] leading-snug text-slate-400">{strategy.description}</span>
                 </button>
               );
             })}
@@ -496,10 +496,10 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
 
       {/* ── Credentials (env-var names only) ────────────────────────────── */}
       {(provider?.fields.includes('passwordEnvVar') || provider?.fields.includes('usernameEnvVar')) && (
-        <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+        <div className="space-y-2 rounded-xl border border-emerald-700/40 bg-emerald-900/20 p-3">
           <div className="flex items-center gap-1.5">
-            <ShieldCheck size={12} className="text-emerald-700" />
-            <SectionHeading color="text-emerald-700">Credentials</SectionHeading>
+            <ShieldCheck size={12} className="text-emerald-400" />
+            <SectionHeading color="text-emerald-400">Credentials</SectionHeading>
           </div>
           {provider.fields.includes('usernameEnvVar') && (
             <div>
@@ -530,7 +530,7 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
               />
             </div>
           )}
-          <p className="text-[10px] leading-relaxed text-emerald-900/80">
+          <p className="text-[10px] leading-relaxed text-emerald-200/80">
             Add the secrets to <span className="font-mono font-bold">backend/.env</span> —
             the browser will never see them.
           </p>
@@ -538,7 +538,7 @@ export default function GraphDatabaseSettingsPanel({ value = {}, onChange, upstr
       )}
 
       {/* ── Footer hint ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <div className="flex items-center gap-1.5 rounded-lg bg-slate-800/60 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
         <Zap size={11} className="text-emerald-500" />
         Allowed input: <span className="font-mono">chunks</span>
       </div>

@@ -40,12 +40,12 @@ export default function CanvasConnectionLine({
         d={path}
         fill="none"
         stroke={stroke}
-        strokeWidth={5.5}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeDasharray={isInvalid ? '10 6' : undefined}
         style={isInvalid ? { filter: 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.55))' } : undefined}
       />
-      <circle cx={toX} cy={toY} r={6} fill={stroke} />
+      <circle cx={toX} cy={toY} r={3.5} fill={stroke} />
     </g>
   );
 }

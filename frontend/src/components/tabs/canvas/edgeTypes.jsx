@@ -50,7 +50,7 @@ export const GradientStepEdge = (props) => {
   const runStatus = data?.runStatus;
   const runStamp = data?.runStamp || 0;
 
-  const baseWidth = selected ? 6 : 5;
+  const baseWidth = selected ? 2.6 : 2;
   const dashDuration = selected ? '0.9s' : '1.4s';
 
   const isWipeStatus = runStatus === 'ok' || runStatus === 'error' || runStatus === 'running';
@@ -87,7 +87,7 @@ export const GradientStepEdge = (props) => {
             d={path}
             fill="none"
             stroke={isWipeStatus ? statusColor : `url(#${gradId})`}
-            strokeWidth={baseWidth + 14}
+            strokeWidth={baseWidth + 8}
             strokeLinecap="round"
             style={{
               opacity: 0.2,
@@ -101,7 +101,7 @@ export const GradientStepEdge = (props) => {
             d={path}
             fill="none"
             stroke={isWipeStatus ? statusColor : `url(#${gradId})`}
-            strokeWidth={baseWidth + 6}
+            strokeWidth={baseWidth + 4}
             strokeLinecap="round"
             style={{
               opacity: 0.38,
@@ -112,7 +112,7 @@ export const GradientStepEdge = (props) => {
             d={path}
             fill="none"
             stroke="#e2e8f0"
-            strokeWidth={1.2}
+            strokeWidth={0.8}
             strokeLinecap="round"
             strokeDasharray="6 5"
             style={{
@@ -163,7 +163,7 @@ export const GradientStepEdge = (props) => {
           d={path}
           fill="none"
           stroke={statusColor}
-          strokeWidth={baseWidth + 2}
+          strokeWidth={baseWidth + 1}
           strokeLinecap="round"
           pathLength={100}
           strokeDasharray="100 100"
@@ -181,7 +181,7 @@ export const GradientStepEdge = (props) => {
           d={path}
           fill="none"
           stroke={statusColor}
-          strokeWidth={baseWidth + 1}
+          strokeWidth={baseWidth + 0.5}
           strokeLinecap="round"
           strokeDasharray="14 10"
           style={{

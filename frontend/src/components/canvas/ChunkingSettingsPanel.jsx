@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, CircleHelp, Lock, Settings2, Sparkles } from 'lucide-react';
 
 const Toggle = ({ value, onChange, label, help }) => (
-  <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
+  <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5">
     <div className="flex min-w-0 items-center gap-1">
-      <p className="truncate text-[11px] font-bold text-slate-700">{label}</p>
+      <p className="truncate text-[11px] font-bold text-slate-200">{label}</p>
       <button
         type="button"
         title={help}
-        className="shrink-0 text-slate-400 hover:text-slate-700"
+        className="shrink-0 text-slate-400 hover:text-slate-200"
       >
         <CircleHelp size={12} />
       </button>
@@ -32,8 +32,8 @@ const Toggle = ({ value, onChange, label, help }) => (
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{title}</label>
-    <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
+    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">{title}</label>
+    <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-200">
       <CircleHelp size={11} />
     </button>
   </div>
@@ -44,14 +44,14 @@ const SectionHeading = ({ children, color }) => (
 );
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-sky-400';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2 py-1.5 text-xs text-slate-200 outline-none focus:ring-2 focus:ring-sky-400';
 
 const STRATEGY_OPTIONS = [
   {
     value: 'recursive',
     label: 'Recursive (LangChain)',
     description:
-      'Splits along ranked separators (paragraph → line → sentence → word → character). The most universal option — this is what LangChain RecursiveCharacterTextSplitter uses.',
+      'Splits along ranked separators (paragraph · line · sentence · word · character). The most universal option — this is what LangChain RecursiveCharacterTextSplitter uses.',
   },
   {
     value: 'fixed',
@@ -81,7 +81,7 @@ const STRATEGY_OPTIONS = [
     value: 'html',
     label: 'HTML structure',
     description:
-      'Splits along HTML tags (<h1>…<h3>, <p>, <li>) while preserving the section hierarchy. Use for scraped websites / docs portals.',
+      'Splits along HTML tags (<h1>–<h3>, <p>, <li>) while preserving the section hierarchy. Use for scraped websites / docs portals.',
   },
   {
     value: 'code',
@@ -166,8 +166,8 @@ const CODE_LANGUAGE_OPTIONS = [
 
 const SEMANTIC_BREAKPOINT_OPTIONS = [
   { value: 'percentile', label: 'Percentile (95)' },
-  { value: 'standard_deviation', label: 'Standard deviation (3σ)' },
-  { value: 'interquartile', label: 'Interquartile (1.5·IQR)' },
+  { value: 'standard_deviation', label: 'Standard deviation (3?)' },
+  { value: 'interquartile', label: 'Interquartile (1.5×IQR)' },
   { value: 'gradient', label: 'Gradient (derivative peaks)' },
 ];
 
@@ -176,25 +176,25 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
 
   const isAwake = Boolean(embeddingProfile);
 
-  // ── Sleep state ────────────────────────────────────────────────────────
+  // Sleep state
   // When no embedding model is wired into this Chunking node, render a
   // dimmed, disabled placeholder so the user can't pick parameters that
   // would later turn out to be incompatible with their chosen model.
   if (!isAwake) {
     return (
-      <div className="space-y-3 rounded-2xl border border-dashed border-slate-300 bg-slate-100/60 p-3 text-slate-500">
+      <div className="space-y-3 rounded-2xl border border-dashed border-slate-600/60 bg-slate-900/50 p-3 text-slate-400">
         <div className="flex items-start gap-2">
-          <div className="mt-0.5 rounded-lg border border-slate-300 bg-white p-1.5 text-slate-400">
+          <div className="mt-0.5 rounded-lg border border-slate-600/60 bg-[#0d1117] p-1.5 text-slate-400">
             <Lock size={14} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-wider text-slate-600">Chunking node · sleeping</p>
-            <p className="mt-1 text-[11px] leading-snug text-slate-500">
-              Please connect an <span className="font-bold text-slate-700">Embedding model</span> to unlock the configuration. This way chunk_size, the unit of measure and token limits all align with the requirements of the chosen model.
+            <p className="text-xs font-black uppercase tracking-wider text-slate-300">Chunking node — sleeping</p>
+            <p className="mt-1 text-[11px] leading-snug text-slate-400">
+              Please connect an <span className="font-bold text-slate-200">Embedding model</span> to unlock the configuration. This way chunk_size, the unit of measure and token limits all align with the requirements of the chosen model.
             </p>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white/70 p-2.5 text-[11px] leading-snug text-slate-400">
+        <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-2.5 text-[11px] leading-snug text-slate-400">
           <p className="font-black uppercase tracking-wider text-slate-400">What will be auto-configured?</p>
           <ul className="mt-1.5 space-y-0.5 list-disc pl-4">
             <li>chunk_size and overlap tailored to the model's context window</li>
@@ -236,6 +236,17 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
     if (embeddingProfile.lengthFunction === 'huggingface' && value.hfTokenizerModel !== embeddingProfile.modelId) {
       onChange('hfTokenizerModel', embeddingProfile.modelId);
     }
+    // Auto-clamp chunk_size and overlap to the model's context window on first connect.
+    const cap = Number(embeddingProfile.maxChunkSize) || 512;
+    if (Number(value.chunkSize ?? 0) > cap) {
+      const nextSize = embeddingProfile.defaults?.chunkSize ?? Math.floor(cap * 0.8);
+      const nextOverlap = Math.min(
+        Number(value.overlap ?? 0),
+        embeddingProfile.defaults?.overlap ?? Math.floor(cap * 0.15),
+      );
+      onChange('chunkSize', nextSize);
+      onChange('overlap', nextOverlap);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embeddingProfile?.modelId, embeddingProfile?.lengthFunction]);
 
@@ -266,27 +277,27 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <div className="space-y-3 rounded-2xl border border-sky-300 bg-gradient-to-br from-sky-50/80 via-white to-white p-2.5 shadow-[0_0_0_1px_rgba(56,189,248,0.25)]">
-      <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50/80 p-2">
-        <div className="mt-0.5 rounded-lg border border-sky-300 bg-white p-1.5 text-sky-600">
+    <div className="space-y-3 rounded-2xl border border-sky-600/60 bg-[#0d1117] p-2.5 shadow-[0_0_0_1px_rgba(56,189,248,0.25)]">
+      <div className="flex items-start gap-2 rounded-xl border border-sky-700/40 bg-sky-900/25 p-2">
+        <div className="mt-0.5 rounded-lg border border-sky-600/60 bg-[#0d1117] p-1.5 text-sky-400">
           <Sparkles size={14} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-wider text-sky-700">
-            Awake · {embeddingProfile.badge}
+          <p className="text-[10px] font-black uppercase tracking-wider text-sky-400">
+            Awake ◆ {embeddingProfile.badge}
           </p>
-          <p className="text-[11px] font-bold text-slate-700 truncate">{embeddingProfile.label}</p>
-          <p className="text-[10px] text-slate-500 leading-snug">
-            Unit: <span className="font-bold text-slate-700">{embeddingProfile.unitLabel}</span> · max {embeddingProfile.maxChunkSize.toLocaleString()} {embeddingProfile.unit} · {embeddingProfile.nativeDimension}-dim
+          <p className="text-[11px] font-bold text-slate-200 truncate">{embeddingProfile.label}</p>
+          <p className="text-[10px] text-slate-400 leading-snug">
+            Unit: <span className="font-bold text-slate-200">{embeddingProfile.unitLabel}</span> ◆ max {embeddingProfile.maxChunkSize.toLocaleString()} {embeddingProfile.unit} ◆ {embeddingProfile.nativeDimension}-dim
           </p>
         </div>
       </div>
 
       <section className="space-y-3">
-        <SectionHeading color="text-sky-700">Splitter</SectionHeading>
+        <SectionHeading color="text-sky-400">Splitter</SectionHeading>
 
         <div>
-          <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+          <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
             strategy
           </label>
           <select
@@ -301,7 +312,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
             ))}
           </select>
           {strategyOption && (
-            <p className="mt-1.5 rounded-lg border border-sky-100 bg-sky-50/70 px-2 py-1.5 text-[11px] leading-snug text-sky-800">
+            <p className="mt-1.5 rounded-lg border border-sky-800/40 bg-sky-900/20 px-2 py-1.5 text-[11px] leading-snug text-sky-300">
               {strategyOption.description}
             </p>
           )}
@@ -309,27 +320,27 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
 
         {(lengthFunction === 'tiktoken' || lengthFunction === 'huggingface' || strategy === 'token') && (
           <div>
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
               tokenizer
             </label>
             {embeddingProfile?.modelId ? (
-              <div className="flex items-start gap-2 rounded-lg border border-emerald-300 bg-emerald-50/70 px-2.5 py-2">
+              <div className="flex items-start gap-2 rounded-lg border border-emerald-600/60 bg-emerald-900/20 px-2.5 py-2">
                 <Lock size={13} className="mt-0.5 shrink-0 text-emerald-600" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold leading-tight text-emerald-800">
+                  <p className="text-[11px] font-bold leading-tight text-emerald-300">
                     Tokenizer: Auto-synced
                   </p>
-                  <p className="mt-0.5 truncate font-mono text-[11px] text-emerald-900/80">
+                  <p className="mt-0.5 truncate font-mono text-[11px] text-emerald-200/80">
                     {embeddingProfile.modelId}
                   </p>
-                  <p className="mt-1 text-[10px] leading-snug text-emerald-700/80">
+                  <p className="mt-1 text-[10px] leading-snug text-emerald-400/80">
                     The backend uses a tokenizer matching the connected
                     embedding model, so there are no token-limit collisions.
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-100/70 px-2.5 py-2 text-[11px] text-slate-400">
+              <div className="flex items-center gap-2 rounded-lg border border-dashed border-slate-600/60 bg-slate-900/60 px-2.5 py-2 text-[11px] text-slate-400">
                 <Lock size={13} className="shrink-0" />
                 <span className="italic">Waiting for the Embedding model…</span>
               </div>
@@ -339,7 +350,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
 
         {strategy === 'code' && (
           <div>
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
               code_language
             </label>
             <select
@@ -353,8 +364,8 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-[10px] text-slate-500">
-              Selects the language-specific separator set (class/def/function/} etc.).
+            <p className="mt-1 text-[10px] text-slate-400">
+              Selects the language-specific separator set (class/def/function/{'}'} etc.).
             </p>
           </div>
         )}
@@ -362,7 +373,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
         {(strategy === 'markdown' || strategy === 'html') && (
           <>
             <div>
-              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 headers_to_split_on
               </label>
               <input
@@ -372,7 +383,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                 onChange={(event) => update('headersToSplitOn', event.target.value)}
                 className={inputClass}
               />
-              <p className="mt-1 text-[10px] text-slate-500">
+              <p className="mt-1 text-[10px] text-slate-400">
                 Comma-separated list — at which heading levels to start a new chunk.
               </p>
             </div>
@@ -386,9 +397,9 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
         )}
 
         {strategy === 'semantic' && (
-          <div className="space-y-2 rounded-lg border border-sky-100 bg-sky-50/40 p-2">
+          <div className="space-y-2 rounded-lg border border-sky-800/40 bg-sky-900/20 p-2">
             <div>
-              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 breakpoint_type
               </label>
               <select
@@ -404,7 +415,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 threshold
               </label>
               <input
@@ -416,8 +427,8 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                 onChange={(event) => update('semanticThreshold', Number(event.target.value || 0))}
                 className={inputClass}
               />
-              <p className="mt-1 text-[10px] text-slate-500">
-                For percentile: 0–100, for std: σ count, for IQR: multiplier. Higher → fewer, longer chunks.
+              <p className="mt-1 text-[10px] text-slate-400">
+                For percentile: 0–100, for std: ? count, for IQR: multiplier. Higher → fewer, longer chunks.
               </p>
             </div>
           </div>
@@ -425,7 +436,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
       </section>
 
       <section className="space-y-2">
-        <SectionHeading color="text-sky-700">Window ({embeddingProfile.unitLabel})</SectionHeading>
+        <SectionHeading color="text-sky-400">Window ({embeddingProfile.unitLabel})</SectionHeading>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <FieldLabel
@@ -439,7 +450,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
               step={50}
               value={chunkSize}
               onChange={(event) => update('chunkSize', Number(event.target.value || 0))}
-              className={`${inputClass} ${exceedsLimit ? 'border-rose-400 bg-rose-50 text-rose-700' : ''}`}
+              className={`${inputClass} ${exceedsLimit ? 'border-rose-400 bg-rose-900/20 text-rose-400' : ''}`}
             />
           </div>
           <div>
@@ -458,15 +469,15 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
             />
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500">
-          <span>≈ {overlapPercent}% overlap</span>
+        <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
+          <span>? {overlapPercent}% overlap</span>
           <span>
             {overlap}/{chunkSize} {embeddingProfile.unit}
           </span>
         </div>
         {exceedsLimit && (
-          <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">
-            ⚠ {embeddingProfile.label} accepts at most {embeddingProfile.maxChunkSize} {embeddingProfile.unit} — lower the chunk_size!
+          <p className="rounded-lg border border-rose-700/40 bg-rose-900/20 px-2 py-1.5 text-[11px] font-bold text-rose-400">
+            ? {embeddingProfile.label} accepts at most {embeddingProfile.maxChunkSize} {embeddingProfile.unit} — lower the chunk_size!
           </p>
         )}
       </section>
@@ -474,7 +485,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
       <button
         type="button"
         onClick={() => setShowAdvanced((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:border-sky-300 hover:text-sky-700"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-700/50 bg-[#0d1117] px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-300 hover:border-sky-600/60 hover:text-sky-400"
       >
         <span className="flex items-center gap-1.5">
           <Settings2 size={13} />
@@ -487,11 +498,11 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
       </button>
 
       {showAdvanced && (
-        <div className="space-y-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-2.5">
+        <div className="space-y-3 rounded-xl border border-dashed border-slate-600/60 bg-slate-900/50 p-2.5">
           <section className="space-y-2">
-            <SectionHeading color="text-sky-700">Length function</SectionHeading>
+            <SectionHeading color="text-sky-400">Length function</SectionHeading>
             <div>
-              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 length_function
               </label>
               <select
@@ -506,7 +517,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                 ))}
               </select>
               {lengthOption && (
-                <p className="mt-1.5 rounded-lg border border-sky-100 bg-sky-50/70 px-2 py-1.5 text-[11px] leading-snug text-sky-800">
+                <p className="mt-1.5 rounded-lg border border-sky-800/40 bg-sky-900/20 px-2 py-1.5 text-[11px] leading-snug text-sky-300">
                   {lengthOption.description}
                 </p>
               )}
@@ -514,7 +525,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
           </section>
 
           <section className="space-y-2">
-            <SectionHeading color="text-emerald-700">Separators</SectionHeading>
+            <SectionHeading color="text-emerald-400">Separators</SectionHeading>
             <div>
               <FieldLabel
                 title="separators"
@@ -526,7 +537,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                 disabled={separatorsDisabled}
                 placeholder="\n\n,\n,. , ,"
                 onChange={(event) => update('separators', event.target.value)}
-                className={`${inputClass} resize-none font-mono text-[11px] disabled:bg-slate-100 disabled:text-slate-400`}
+                className={`${inputClass} resize-none font-mono text-[11px] disabled:bg-slate-800/60 disabled:text-slate-400`}
               />
               {separatorsDisabled && (
                 <p className="mt-1 text-[10px] text-slate-400">
@@ -543,7 +554,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
             <div>
               <FieldLabel
                 title="min_chunk_chars"
-                help="Chunks shorter than this are dropped. 0 → no minimum."
+                help="Chunks shorter than this are dropped. 0 = no minimum."
               />
               <input
                 type="number"
@@ -558,7 +569,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
           </section>
 
           <section className="space-y-2">
-            <SectionHeading color="text-rose-700">Quality</SectionHeading>
+            <SectionHeading color="text-rose-400">Quality</SectionHeading>
             <Toggle
               value={smartMergeShortChunks}
               onChange={(next) => update('smartMergeShortChunks', next)}
@@ -585,7 +596,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
             />
             {dedupNearDuplicates && (
               <div>
-                <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+                <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                   dedup_similarity
                 </label>
                 <input
@@ -597,7 +608,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
                   onChange={(event) => update('dedupSimilarity', Number(event.target.value || 0))}
                   className={inputClass}
                 />
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-[10px] text-slate-400">
                   Cosine similarity threshold (0.85–0.98 is typical).
                 </p>
               </div>
@@ -605,7 +616,7 @@ const ChunkingSettingsPanel = ({ value = {}, onChange, embeddingProfile = null }
           </section>
 
           <section className="space-y-2">
-            <SectionHeading color="text-slate-700">Cleanup</SectionHeading>
+            <SectionHeading color="text-slate-200">Cleanup</SectionHeading>
             <Toggle
               value={stripWhitespace}
               onChange={(next) => update('stripWhitespace', next)}

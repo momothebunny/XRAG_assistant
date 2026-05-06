@@ -222,22 +222,29 @@ export const buildChunkingDefaultsForProfile = (profile) => {
 // embedding node. The Chunking inspector consumes this so it can wake up
 // and adapt its UI to the upstream model.
 export const profileFromEmbeddingConfig = (config) => {
-  if (!config || config.gateway !== 'backend_proxy') {
-    return null;
-  }
+  if (!config) return null;
 
+  // Accept both the raw node config (fields stored directly by EmbeddingSettingsPanel)
+  // and the built payload shape (gateway + metadata wrapper). The panel stores
+  // embeddingProvider (not 'backend_proxy') as the gateway, so we must not
+  // gate on that value.
   const metadata = config.metadata || null;
   const modelId = metadata?.model_id || config.model_id || '';
-  if (!metadata || !modelId) {
-    return null;
-  }
+  if (!modelId) return null;
+
+  // Resolve numeric caps from either the metadata wrapper or direct fields.
+  const maxTokens =
+    Number(metadata?.max_token_capacity ?? config.max_token_capacity) || 512;
+  const outputDims =
+    Number(metadata?.output_dimensions ?? config.output_dimensions) || 1536;
+  const batchSz =
+    Number(metadata?.batch_size ?? config.batch_size) || 100;
 
   // Heuristic: pick a length function from the model id.
   const idLower = modelId.toLowerCase();
   const isOpenAi = idLower.startsWith('openai/');
   const isCohere = idLower.startsWith('cohere/');
   const lengthFunction = isOpenAi ? 'tiktoken' : isCohere ? 'characters' : 'huggingface';
-  const maxTokens = Number(metadata.max_token_capacity) || 512;
 
   return {
     provider: 'openrouter',
@@ -252,10 +259,10 @@ export const profileFromEmbeddingConfig = (config) => {
       chunkSize: Math.min(1000, Math.floor(maxTokens * 0.8)),
       overlap: Math.min(200, Math.floor(maxTokens * 0.15)),
     },
-    nativeDimension: Number(metadata.output_dimensions) || 1536,
-    minDimension: Number(metadata.output_dimensions) || 1536,
+    nativeDimension: outputDims,
+    minDimension: outputDims,
     metric: idLower.includes('bge') ? 'dot_product' : 'cosine',
-    batchSize: Number(metadata.batch_size) || 100,
+    batchSize: batchSz,
     queryPrefix: '',
     documentPrefix: '',
     supportsMatryoshka: idLower.includes('text-embedding-3-'),

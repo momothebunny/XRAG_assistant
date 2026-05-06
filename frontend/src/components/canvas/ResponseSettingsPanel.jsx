@@ -1,34 +1,35 @@
 /**
- * ResponseSettingsPanel — final delivery node for the RAG pipeline.
+ * ResponseSettingsPanel  final delivery node for the RAG pipeline.
  *
  * Visual language matches UserSettingsPanel / QuestionSettingsPanel
- * (modern, soft fuchsia atoms — hero card, preset grid, ToggleChip pills,
+ * (modern, soft fuchsia atoms  hero card, preset grid, ToggleChip pills,
  * sectioned cards, range slider, validation strip, collapsible payload
  * preview). The schema and the `buildResponsePayload` helper are
  * preserved verbatim so the backend runner that consumes the typed
  * `final_response` payload keeps working unchanged.
  *
  * What belongs here, and ONLY here:
- *   1. Presentation     — format, citation style, reasoning trace, streaming.
- *   2. Length & shape   — character cap + truncation strategy.
- *   3. Post-processing  — PII redaction, profanity filter, language enforcement.
- *   4. Delivery         — chat, voice (TTS), file export, webhook.
- *   5. Telemetry        — latency / token counters / feedback prompt.
+ *   1. Presentation      format, citation style, reasoning trace, streaming.
+ *   2. Length & shape    character cap + truncation strategy.
+ *   3. Post-processing   PII redaction, profanity filter, language enforcement.
+ *   4. Delivery          chat, voice (TTS), file export, webhook.
+ *   5. Telemetry         latency / token counters / feedback prompt.
  *
  * What does NOT belong here (delegated to sibling nodes):
- *   • Generation params (temperature, top_p, ...) → LLM node
- *   • Tone / persona / role instructions          → System Prompt node
- *   • Identity / RBAC / quotas                    → User node
+ *    Generation params (temperature, top_p, ...)  LLM node
+ *    Tone / persona / role instructions           System Prompt node
+ *    Identity / RBAC / quotas                     User node
  *
  * CONNECTION CONTRACT (CANONICAL_PIPELINE_RANK = 18)
- *   • Inputs (one of, preferred order):
+ *    Inputs (one of, preferred order):
  *       - `chat_completion` from `brain-llm`
  *       - `text` from `brain-tts` (already voice-narrated)
- *   • Outputs: terminal — produces a `final_response` payload that the
+ *    Outputs: terminal  produces a `final_response` payload that the
  *     runner persists to the chat transcript.
  */
 
 import { useMemo } from 'react';
+import SliderRow from './SliderRow';
 import {
   AlertTriangle,
   Bot,
@@ -48,13 +49,13 @@ import {
   Zap,
 } from 'lucide-react';
 
-// ─── Shared atoms (modern, soft fuchsia — mirrors User / Question panels) ─
+//  Shared atoms (modern, soft fuchsia  mirrors User / Question panels) 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-xs text-slate-200 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
       {title}
     </label>
     {help && (
@@ -66,11 +67,11 @@ const FieldLabel = ({ title, help }) => (
 );
 
 /**
- * ToggleChip — pill button with aria-pressed state.
+ * ToggleChip  pill button with aria-pressed state.
  *
  * Implemented as a real <button>, NOT a <label> wrapping a hidden <input>.
  * Hidden checkboxes inside <label> can cause the browser to scroll the page
- * when focus moves into a clipped (sr-only) element — visible to the user
+ * when focus moves into a clipped (sr-only) element  visible to the user
  * as the inspector "jumping" or a popup-like reflow.
  */
 const ToggleChip = ({ checked, onChange, label, help }) => (
@@ -82,7 +83,7 @@ const ToggleChip = ({ checked, onChange, label, help }) => (
     className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
       checked
         ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800 shadow-sm shadow-fuchsia-200/30'
-        : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+        : 'border-slate-700/50 bg-[#0d1117] text-slate-400 hover:border-fuchsia-200 hover:text-fuchsia-700'
     }`}
   >
     <span
@@ -95,13 +96,13 @@ const ToggleChip = ({ checked, onChange, label, help }) => (
   </button>
 );
 
-// ─── Domain options ──────────────────────────────────────────────────────
+//  Domain options 
 // Presentation formats. `inherit` = honour whatever the upstream LLM emits
 // (response_format on the LLM payload). The rest force a specific renderer.
 const FORMAT_OPTIONS = [
   { value: 'inherit',  label: 'Inherit from LLM', hint: 'Use whatever the LLM negotiated.' },
   { value: 'markdown', label: 'Markdown',          hint: 'Rich text with headings, lists, links.' },
-  { value: 'plain',    label: 'Plain text',        hint: 'Strip all formatting — safest for TTS.' },
+  { value: 'plain',    label: 'Plain text',        hint: 'Strip all formatting  safest for TTS.' },
   { value: 'html',     label: 'HTML (sanitised)',  hint: 'Rendered through a DOMPurify-like allowlist.' },
 ];
 
@@ -113,9 +114,9 @@ const CITATION_STYLES = [
 ];
 
 const TRUNCATION_BEHAVIOURS = [
-  { value: 'hard_cut',        label: 'Hard cut + ellipsis (…)' },
+  { value: 'hard_cut',        label: 'Hard cut + ellipsis ()' },
   { value: 'summarise_tail',  label: 'Summarise the tail (extra LLM call)' },
-  { value: 'show_more',       label: 'Cut + “Show more” expander' },
+  { value: 'show_more',       label: 'Cut + Show more expander' },
   { value: 'none',            label: 'No truncation' },
 ];
 
@@ -136,12 +137,12 @@ const EXPORT_FORMATS = [
 ];
 
 const TELEMETRY_TOGGLES = [
-  { key: 'logLatency',      label: 'Log latency',      help: 'Record request → response duration.' },
+  { key: 'logLatency',      label: 'Log latency',      help: 'Record request  response duration.' },
   { key: 'logTokens',       label: 'Log tokens',       help: 'Record prompt / completion token counts.' },
-  { key: 'collectFeedback', label: 'Feedback prompt',  help: 'Show 👍 / 👎 controls under the answer.' },
+  { key: 'collectFeedback', label: 'Feedback prompt',  help: 'Show ?? / ?? controls under the answer.' },
 ];
 
-// Quick presets — mirror the persona-preset pattern from UserSettingsPanel.
+// Quick presets  mirror the persona-preset pattern from UserSettingsPanel.
 // Each preset overrides a coherent subset of the schema; "custom" is
 // implicit (the chip simply lights up when the user diverges).
 const RESPONSE_PRESETS = [
@@ -206,7 +207,7 @@ const RESPONSE_PRESETS = [
   },
 ];
 
-// ─── Schema (UNCHANGED — backend `final_response` consumer depends on it) ─
+//  Schema (UNCHANGED  backend `final_response` consumer depends on it) 
 export const DEFAULT_RESPONSE_CONFIG = {
   // Presentation
   format: 'inherit',
@@ -234,13 +235,13 @@ export const DEFAULT_RESPONSE_CONFIG = {
   logLatency: true,
   logTokens: true,
   collectFeedback: true,
-  // Quick-preset hint (UI-only — not persisted in the typed payload).
+  // Quick-preset hint (UI-only  not persisted in the typed payload).
   preset: 'standard',
 };
 
 /**
  * Compose the typed `final_response` payload that the runner persists
- * to the chat transcript. Keys / nesting MUST stay stable — the backend
+ * to the chat transcript. Keys / nesting MUST stay stable  the backend
  * canvas runner pattern-matches on this exact shape.
  */
 export function buildResponsePayload(config = {}) {
@@ -279,7 +280,7 @@ export function buildResponsePayload(config = {}) {
   };
 }
 
-// ─── Component ───────────────────────────────────────────────────────────
+//  Component 
 export default function ResponseSettingsPanel({
   value = {},
   onChange,
@@ -303,7 +304,7 @@ export default function ResponseSettingsPanel({
   // Detect impossible / risky combinations so we can surface a warning chip.
   const warnings = [];
   if (config.channels?.voice && config.format === 'html') {
-    warnings.push('HTML format is not ideal for TTS — switch to plain text.');
+    warnings.push('HTML format is not ideal for TTS  switch to plain text.');
   }
   if (config.channels?.webhook && !config.webhookUrl?.trim()) {
     warnings.push('Webhook is enabled but no URL is provided.');
@@ -315,7 +316,7 @@ export default function ResponseSettingsPanel({
     warnings.push('Citations are enabled, but the upstream LLM does not produce citations.');
   }
   if (!Object.values(config.channels || {}).some(Boolean)) {
-    warnings.push('No delivery channel is enabled — the response will not be sent anywhere.');
+    warnings.push('No delivery channel is enabled  the response will not be sent anywhere.');
   }
 
   // Derived bits for the hero card.
@@ -324,57 +325,53 @@ export default function ResponseSettingsPanel({
     .map(([k]) => k);
   const channelLabel = activeChannels.length === 0
     ? 'no channel'
-    : activeChannels.join(' · ');
+    : activeChannels.join('  ');
   const formatLabel = FORMAT_OPTIONS.find((f) => f.value === config.format)?.label ?? config.format;
 
   return (
     <div className="space-y-3">
-      {/* ── Hero card ───────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fuchsia-300 via-fuchsia-400 to-pink-300"
-        />
+      {/*  Hero card  */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3.5 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-50 to-pink-50 text-fuchsia-600 ring-1 ring-fuchsia-200/60">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-800/50 to-fuchsia-900/70 text-fuchsia-200 ring-1 ring-fuchsia-600/30">
             <Send size={20} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold text-slate-800">Final response</p>
-            <p className="truncate font-mono text-[10.5px] text-slate-500">
-              {formatLabel} · {channelLabel}
+            <p className="truncate text-[13px] font-bold text-slate-100">Final response</p>
+            <p className="truncate font-mono text-[10.5px] text-slate-400">
+              {formatLabel}  {channelLabel}
             </p>
           </div>
           <div className="hidden @[280px]:flex shrink-0 flex-col items-end gap-0.5 text-right">
             <span className="text-[10.5px] font-bold text-fuchsia-700">
               {config.maxChars} chars
             </span>
-            <span className="font-mono text-[10px] text-slate-500">
+            <span className="font-mono text-[10px] text-slate-400">
               {config.streamTokens ? 'streamed' : 'one-shot'}
             </span>
           </div>
         </div>
-        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-500">
-          The <span className="font-semibold text-slate-700">last hop</span> before the answer
+        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-400">
+          The <span className="font-semibold text-slate-200">last hop</span> before the answer
           reaches the user. Shapes presentation, applies safety filters, and routes the result
           to the selected delivery channels.
         </p>
       </div>
 
-      {/* ── Upstream contract ───────────────────────────────────────────── */}
+      {/*  Upstream contract  */}
       <div
         className={`rounded-2xl border p-3 ${
           hasUpstreamProducer
             ? 'border-fuchsia-200 bg-fuchsia-50/50'
-            : 'border-amber-200 bg-amber-50/60'
+            : 'border-amber-700/40 bg-amber-900/20'
         }`}
       >
         <div className="flex items-start gap-2">
-          <Bot size={14} className={hasUpstreamProducer ? 'text-fuchsia-700' : 'text-amber-700'} />
+          <Bot size={14} className={hasUpstreamProducer ? 'text-fuchsia-700' : 'text-amber-400'} />
           <div className="min-w-0 flex-1">
             <p
               className={`text-[10px] font-semibold uppercase tracking-wider ${
-                hasUpstreamProducer ? 'text-fuchsia-800' : 'text-amber-800'
+                hasUpstreamProducer ? 'text-fuchsia-800' : 'text-amber-300'
               }`}
             >
               Upstream contract
@@ -384,7 +381,7 @@ export default function ResponseSettingsPanel({
                 Input: <span className="font-mono">chat_completion</span>
                 {upstreamFormat && (
                   <>
-                    {' '}· LLM format:{' '}
+                    {' '} LLM format:{' '}
                     <span className="font-mono font-bold">{upstreamFormat}</span>
                   </>
                 )}
@@ -400,14 +397,14 @@ export default function ResponseSettingsPanel({
         </div>
       </div>
 
-      {/* ── Quick presets ───────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
+      {/*  Quick presets  */}
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-slate-800/40/40 p-3">
         <header className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Quick presets
           </p>
           {!RESPONSE_PRESETS.some((p) => p.id === config.preset) && (
-            <span className="rounded-full border border-fuchsia-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fuchsia-700">
+            <span className="rounded-full border border-fuchsia-200 bg-[#0d1117] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fuchsia-700">
               custom
             </span>
           )}
@@ -421,31 +418,31 @@ export default function ResponseSettingsPanel({
                 key={preset.id}
                 type="button"
                 onClick={() => applyPreset(preset.id)}
-                className={`group flex flex-col gap-1 rounded-xl border bg-white p-2 text-left transition ${
+                className={`group flex flex-col gap-1 rounded-xl border bg-[#0d1117] p-2 text-left transition ${
                   active
-                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-200/50'
-                    : 'border-slate-200 hover:border-fuchsia-200'
+                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-600/50'
+                    : 'border-slate-700/50 hover:border-fuchsia-200'
                 }`}
               >
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-md transition ${
                       active
-                        ? 'bg-fuchsia-100 text-fuchsia-600'
-                        : 'bg-slate-100 text-slate-500 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
+                        ? 'bg-fuchsia-900/40 text-fuchsia-300'
+                        : 'bg-slate-800/60 text-slate-400 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
                     }`}
                   >
                     <Icon size={11} />
                   </span>
                   <span
                     className={`text-[11px] font-bold ${
-                      active ? 'text-fuchsia-800' : 'text-slate-700'
+                      active ? 'text-fuchsia-800' : 'text-slate-200'
                     }`}
                   >
                     {preset.label}
                   </span>
                 </div>
-                <span className="text-[9.5px] leading-snug text-slate-500">
+                <span className="text-[9.5px] leading-snug text-slate-400">
                   {preset.description}
                 </span>
               </button>
@@ -454,11 +451,11 @@ export default function ResponseSettingsPanel({
         </div>
       </section>
 
-      {/* ── Presentation ────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      {/*  Presentation  */}
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <FileText size={12} className="text-fuchsia-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Presentation
           </h4>
         </header>
@@ -478,7 +475,7 @@ export default function ResponseSettingsPanel({
           >
             {FORMAT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label} — {option.hint}
+                {option.label}  {option.hint}
               </option>
             ))}
           </select>
@@ -518,7 +515,7 @@ export default function ResponseSettingsPanel({
             >
               {CITATION_STYLES.map((style) => (
                 <option key={style.value} value={style.value}>
-                  {style.label} — {style.hint}
+                  {style.label}  {style.hint}
                 </option>
               ))}
             </select>
@@ -526,39 +523,32 @@ export default function ResponseSettingsPanel({
         )}
       </section>
 
-      {/* ── Length & shape ──────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      {/*  Length & shape  */}
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Quote size={12} className="text-fuchsia-500" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               Length &amp; shape
             </h4>
           </div>
-          <span className="font-mono text-[11px] font-bold text-fuchsia-700">
-            {config.maxChars} chars
-          </span>
         </header>
 
-        <input
-          type="range"
+        <SliderRow
+          label="Max chars"
+          value={config.maxChars}
           min={500}
           max={12000}
           step={500}
-          value={config.maxChars}
-          onChange={(event) => {
-            setField('maxChars', Math.max(500, Number(event.target.value) || 0));
+          onChange={(v) => {
+            setField('maxChars', Math.max(500, v));
             setField('preset', 'custom');
           }}
-          className="w-full accent-fuchsia-400"
+          format={(v) => `${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+          accentColor="#e879f9"
+          minLabel="500"
+          maxLabel="12k"
         />
-        <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-          <span>500</span>
-          <span>2k</span>
-          <span>4k</span>
-          <span>8k</span>
-          <span>12k</span>
-        </div>
 
         <div>
           <FieldLabel title="Truncation behaviour" />
@@ -579,11 +569,11 @@ export default function ResponseSettingsPanel({
         </div>
       </section>
 
-      {/* ── Post-processing ─────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      {/*  Post-processing  */}
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <ShieldCheck size={12} className="text-fuchsia-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Post-processing
           </h4>
         </header>
@@ -628,16 +618,16 @@ export default function ResponseSettingsPanel({
         </div>
       </section>
 
-      {/* ── Delivery channels ───────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      {/*  Delivery channels  */}
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap size={12} className="text-fuchsia-500" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               Delivery channels
             </h4>
           </div>
-          <span className="font-mono text-[10px] text-slate-500">
+          <span className="font-mono text-[10px] text-slate-400">
             {activeChannels.length} active
           </span>
         </header>
@@ -712,11 +702,11 @@ export default function ResponseSettingsPanel({
         )}
       </section>
 
-      {/* ── Telemetry ───────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      {/*  Telemetry  */}
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <Volume2 size={12} className="text-fuchsia-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Telemetry
           </h4>
         </header>
@@ -733,13 +723,13 @@ export default function ResponseSettingsPanel({
         </div>
       </section>
 
-      {/* ── Validation strip ────────────────────────────────────────────── */}
+      {/*  Validation strip  */}
       {warnings.length > 0 ? (
         <ul className="space-y-1">
           {warnings.map((warning) => (
             <li
               key={warning}
-              className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800"
+              className="flex items-start gap-1.5 rounded-lg border border-amber-700/40 bg-amber-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-300"
             >
               <AlertTriangle size={11} className="mt-0.5 shrink-0" />
               <span>{warning}</span>
@@ -747,15 +737,15 @@ export default function ResponseSettingsPanel({
           ))}
         </ul>
       ) : (
-        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-300">
           <CheckCircle2 size={11} />
-          Configuration valid — all checks passed.
+          Configuration valid  all checks passed.
         </div>
       )}
 
-      {/* ── Output payload preview ──────────────────────────────────────── */}
-      <details className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
-        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+      {/*  Output payload preview  */}
+      <details className="rounded-2xl border border-slate-700/50 bg-slate-800/40/40 p-3">
+        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-300">
           Output payload (read-only)
         </summary>
         <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-fuchsia-200">
@@ -763,10 +753,10 @@ export default function ResponseSettingsPanel({
         </pre>
       </details>
 
-      {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+      {/*  Footer  */}
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
         <Zap size={11} className="text-fuchsia-400" />
-        Output: <span className="font-mono text-fuchsia-700">final_response</span> → chat transcript
+        Output: <span className="font-mono text-fuchsia-700">final_response</span>  chat transcript
       </div>
     </div>
   );

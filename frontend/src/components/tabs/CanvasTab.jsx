@@ -66,7 +66,6 @@ import TTSSettingsPanel from '../canvas/TTSSettingsPanel';
 import ModelRouterSettingsPanel from '../canvas/ModelRouterSettingsPanel';
 import GuardrailsSettingsPanel from '../canvas/GuardrailsSettingsPanel';
 import PiiRedactionSettingsPanel from '../canvas/PIIRedactionSettingsPanel';
-import ChatTesterSettingsPanel from '../canvas/ChatTesterSettingsPanel';
 import ImageUploadSettingsPanel from '../canvas/ImageUploadSettingsPanel';
 import VisionLLMSettingsPanel from '../canvas/VisionLLMSettingsPanel';
 import { profileFromEmbeddingConfig } from '../canvas/embeddingModels';
@@ -241,7 +240,6 @@ const CANONICAL_PIPELINE_RANK = {
   'process-reflection-loop': 16,
   'brain-tts': 17,
   'output-response': 18,
-  'output-chat': 18,
 };
 
 const isConnectionAllowed = (connection, allNodes, typeMap = null) => {
@@ -272,13 +270,13 @@ const isConnectionAllowed = (connection, allNodes, typeMap = null) => {
   return true;
 };
 
-const EDGE_BASE_STYLE = { strokeWidth: 5.5 };
+const EDGE_BASE_STYLE = { strokeWidth: 2 };
 const EDGE_SELECTED_STYLE = {
-  strokeWidth: 7,
+  strokeWidth: 3,
 };
 
-const NODE_WIDTH = 290;
-const NODE_HEIGHT = 145;
+const NODE_WIDTH = 240;
+const NODE_HEIGHT = 80;
 const MIN_INSERT_SPACING_X = 285;
 const MIN_INSERT_SPACING_Y = 175;
 const BLUEPRINT_BASE_SPACING_X = 240;
@@ -1126,6 +1124,7 @@ const CanvasBoard = () => {
   const [selectionBox, setSelectionBox] = useState(null);
 
   const [paletteTab, setPaletteTab] = useState('nodes'); // 'nodes' | 'blueprints' | 'custom'
+  const [nodeSettingsOpen, setNodeSettingsOpen] = useState(false);
 
   // ── Custom user-defined nodes ──────────────────────────────────────────
   const [customNodes, setCustomNodes] = useState([]);
@@ -1484,6 +1483,8 @@ const CanvasBoard = () => {
           target: edge.target,
           sourceHandle: edge.sourceHandle,
           targetHandle: edge.targetHandle,
+          type: 'step',
+          animated: true,
         })),
       };
     },
@@ -1749,7 +1750,7 @@ const CanvasBoard = () => {
           // happens in `visibleEdges` below.
           const markerColor = STATUS_MARKER_COLOR[runStatus];
           const nextMarkerEnd = markerColor
-            ? { type: MarkerType.ArrowClosed, color: markerColor, width: 12, height: 12 }
+            ? { type: MarkerType.ArrowClosed, color: markerColor, width: 7, height: 7 }
             : edge.markerEnd;
           return {
             ...edge,
@@ -2075,6 +2076,15 @@ const CanvasBoard = () => {
     return () => window.removeEventListener('keydown', onDeleteKey);
   }, [setEdges, setNodes]);
 
+  // Close node-settings modal on Escape.
+  useEffect(() => {
+    const onEsc = (event) => {
+      if (event.key === 'Escape') setNodeSettingsOpen(false);
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, []);
+
   useEffect(() => {
     if (!selectedEdgeId) {
       return;
@@ -2260,8 +2270,6 @@ const CanvasBoard = () => {
       // (chunking → embedding → vector DB → retriever → ...). When two
       // adjacent ranks are connected, the arrowhead must always point at the
       // higher-rank one — regardless of which handle the user dragged from.
-      // Any pair without a defined rank falls through and keeps the user's
-      // chosen orientation.
       const sourceNodeForOrient = nodes.find((node) => node.id === orientedConnection.source);
       const targetNodeForOrient = nodes.find((node) => node.id === orientedConnection.target);
       const srcRank = CANONICAL_PIPELINE_RANK[sourceNodeForOrient?.data?.templateKey];
@@ -2276,7 +2284,11 @@ const CanvasBoard = () => {
         };
       }
 
-      if (!isConnectionAllowed(orientedConnection, nodes, nodeTypeMapRef.current)) {
+      if (!isConnectionAllowed(
+        { source: orientedConnection.source, target: orientedConnection.target },
+        nodes,
+        nodeTypeMapRef.current,
+      )) {
         const srcNode = nodes.find((n) => n.id === orientedConnection.source);
         const tgtNode = nodes.find((n) => n.id === orientedConnection.target);
         flashInvalidConnection(
@@ -2288,49 +2300,25 @@ const CanvasBoard = () => {
       }
 
       setEdges((currentEdges) => {
-        const sourceNode = nodes.find((node) => node.id === orientedConnection.source);
-        const targetNode = nodes.find((node) => node.id === orientedConnection.target);
-
-        if (!sourceNode || !targetNode) {
-          return addEdge(makeEdgePayload(orientedConnection), currentEdges);
-        }
-
-        const directionalHandles = getDirectionalHandles(sourceNode.position, targetNode.position);
-        const userPickedSourceSide = parseSideFromHandleId(orientedConnection.sourceHandle);
-        const userPickedTargetSide = parseSideFromHandleId(orientedConnection.targetHandle);
-        const preferredSourceSide = userPickedSourceSide || parseSideFromHandleId(directionalHandles.sourceHandle);
-        const preferredTargetSide = userPickedTargetSide || parseSideFromHandleId(directionalHandles.targetHandle);
-        const obstacleRects = buildObstacleRectsForPair(nodes, sourceNode.id, targetNode.id);
-        const resolvedHandles = chooseBestHandlePair({
-          sourceNode,
-          targetNode,
-          existingEdges: currentEdges,
-          preferredSourceSide,
-          preferredTargetSide,
-          obstacleRects,
-          // When the user explicitly dropped on specific source AND target handles,
-          // honour those handles exactly instead of letting routing heuristics pick
-          // a different side.
-          enforcePreferred: Boolean(userPickedSourceSide && userPickedTargetSide),
-        });
-
-        const nextConnection = {
-          ...orientedConnection,
-          sourceHandle: resolvedHandles.sourceHandle,
-          targetHandle: resolvedHandles.targetHandle,
-          type: pickEdgeRoutingType(sourceNode, targetNode, resolvedHandles.sourceHandle, resolvedHandles.targetHandle),
-          data: { userPinnedHandles: Boolean(userPickedSourceSide && userPickedTargetSide) },
-        };
-
         const alreadyExists = currentEdges.some(
           (edge) =>
-            edge.source === nextConnection.source && edge.target === nextConnection.target
+            edge.source === orientedConnection.source && edge.target === orientedConnection.target,
         );
-        if (alreadyExists) {
-          return currentEdges;
-        }
-
-        return addEdge(makeEdgePayload(nextConnection), currentEdges);
+        if (alreadyExists) return currentEdges;
+        const srcNode = nodes.find((n) => n.id === orientedConnection.source);
+        const tgtNode = nodes.find((n) => n.id === orientedConnection.target);
+        return addEdge(
+          makeEdgePayload({
+            ...orientedConnection,
+            type: pickEdgeRoutingType(
+              srcNode,
+              tgtNode,
+              orientedConnection.sourceHandle,
+              orientedConnection.targetHandle,
+            ),
+          }),
+          currentEdges,
+        );
       });
     },
     [nodes, setEdges, flashInvalidConnection]
@@ -2631,6 +2619,22 @@ const CanvasBoard = () => {
     window.addEventListener('xrag-node-click', handleNodeClick);
     return () => window.removeEventListener('xrag-node-click', handleNodeClick);
   }, [previewedSubGraphId, setNodeSelectionState]);
+
+  useEffect(() => {
+    const handleNodeDoubleClick = (event) => {
+      const { nodeId } = event.detail || {};
+      if (!nodeId) {
+        return;
+      }
+
+      pendingNodeSelectionRef.current = null;
+      setNodeSelectionState([nodeId]);
+      setNodeSettingsOpen(true);
+    };
+
+    window.addEventListener('xrag-node-double-click', handleNodeDoubleClick);
+    return () => window.removeEventListener('xrag-node-double-click', handleNodeDoubleClick);
+  }, [setNodeSelectionState]);
 
   const onCanvasMouseDown = useCallback(
     (event) => {
@@ -3034,175 +3038,17 @@ const CanvasBoard = () => {
     }, {});
   }, [nodes]);
 
-  const updateSelectedNodeConfig = (fieldName, fieldValue) => {
-    if (!selectedNode) {
-      return;
-    }
-
-    if (selectedNode.data?.isPreviewNode && previewedSubGraphId && isPreviewElementId(selectedNode.id)) {
-      const previewPrefix = `preview-${previewedSubGraphId}-`;
-      const originalNodeId = String(selectedNode.id).startsWith(previewPrefix) ? String(selectedNode.id).slice(previewPrefix.length) : null;
-      if (!originalNodeId) {
-        return;
-      }
-
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.id !== previewedSubGraphId || node.data?.templateKey !== SUBGRAPH_TEMPLATE_KEY) {
-            return node;
-          }
-
-          const collapsedNodes = Array.isArray(node.data?.config?.collapsedNodes) ? node.data.config.collapsedNodes : [];
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              config: {
-                ...node.data.config,
-                collapsedNodes: collapsedNodes.map((collapsedNode) => {
-                  if (collapsedNode.id !== originalNodeId) {
-                    return collapsedNode;
-                  }
-
-                  return {
-                    ...collapsedNode,
-                    data: {
-                      ...collapsedNode.data,
-                      config: {
-                        ...collapsedNode.data.config,
-                        [fieldName]: fieldValue,
-                      },
-                    },
-                  };
-                }),
-              },
-            },
-          };
-        })
-      );
-      return;
-    }
-
-    setNodes((currentNodes) =>
-      currentNodes.map((node) => {
-        if (node.id !== selectedNode.id) {
-          return node;
-        }
-
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            config: {
-              ...node.data.config,
-              [fieldName]: fieldValue,
-            },
-          },
-        };
-      })
-    );
-  };
-
-  const updateSelectedNodeLabel = (nextLabel) => {
-    if (!selectedNode) {
-      return;
-    }
-
-    if (selectedNode.data?.isPreviewNode && previewedSubGraphId && isPreviewElementId(selectedNode.id)) {
-      const previewPrefix = `preview-${previewedSubGraphId}-`;
-      const originalNodeId = String(selectedNode.id).startsWith(previewPrefix) ? String(selectedNode.id).slice(previewPrefix.length) : null;
-      if (!originalNodeId) {
-        return;
-      }
-
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.id !== previewedSubGraphId || node.data?.templateKey !== SUBGRAPH_TEMPLATE_KEY) {
-            return node;
-          }
-
-          const collapsedNodes = Array.isArray(node.data?.config?.collapsedNodes) ? node.data.config.collapsedNodes : [];
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              config: {
-                ...node.data.config,
-                collapsedNodes: collapsedNodes.map((collapsedNode) => {
-                  if (collapsedNode.id !== originalNodeId) {
-                    return collapsedNode;
-                  }
-
-                  return {
-                    ...collapsedNode,
-                    data: {
-                      ...collapsedNode.data,
-                      label: nextLabel,
-                    },
-                  };
-                }),
-              },
-            },
-          };
-        })
-      );
-      return;
-    }
-
-    setNodes((currentNodes) =>
-      currentNodes.map((node) => {
-        if (node.id !== selectedNode.id) {
-          return node;
-        }
-
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            label: nextLabel,
-          },
-        };
-      })
-    );
-  };
-
   const packSelectedNodes = () => {
-    if (isPreviewOpen && previewedSubGraphId) {
-      const previewedSubGraphNode = nodes.find((node) => node.id === previewedSubGraphId && node.data?.templateKey === SUBGRAPH_TEMPLATE_KEY);
-      if (!previewedSubGraphNode) {
+    if (!selectedNode) {
+      return;
+    }
+
+    if (selectedNode.data?.isPreviewNode && previewedSubGraphId && isPreviewElementId(selectedNode.id)) {
+      const previewPrefix = `preview-${previewedSubGraphId}-`;
+      const originalNodeId = String(selectedNode.id).startsWith(previewPrefix) ? String(selectedNode.id).slice(previewPrefix.length) : null;
+      if (!originalNodeId) {
         return;
       }
-
-      const selectedOriginalIds = Array.from(new Set(selectedPreviewNodeOriginalIds));
-      if (selectedOriginalIds.length < 2) {
-        return;
-      }
-
-      const collapsedNodes = Array.isArray(previewedSubGraphNode.data?.config?.collapsedNodes) ? previewedSubGraphNode.data.config.collapsedNodes : [];
-      const collapsedEdges = Array.isArray(previewedSubGraphNode.data?.config?.collapsedEdges) ? previewedSubGraphNode.data.config.collapsedEdges : [];
-      const selectedSet = new Set(selectedOriginalIds);
-      const selectedNodesBatch = collapsedNodes.filter((node) => selectedSet.has(node.id));
-      if (selectedNodesBatch.length < 2) {
-        return;
-      }
-
-      const currentSubGraphCount = collapsedNodes.filter((node) => node.data?.templateKey === SUBGRAPH_TEMPLATE_KEY).length;
-      const suggestedName = `Sub-graph ${currentSubGraphCount + 1}`;
-      const customName = window.prompt('Sub-graph name', suggestedName);
-      if (customName === null) {
-        return;
-      }
-
-      const subGraphLabel = customName.trim() || suggestedName;
-      const selectedRects = selectedNodesBatch.map((node) => getNodeRect(node));
-      const bounds = getRectBounds(selectedRects);
-      if (!bounds) {
-        return;
-      }
-
-      const centerX = bounds.left + (bounds.right - bounds.left) / 2;
-      const centerY = bounds.top + (bounds.bottom - bounds.top) / 2;
-      const nestedSubGraphId = `subgraph-${Date.now()}-${Math.round(Math.random() * 100000)}`;
 
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
@@ -3212,7 +3058,7 @@ const CanvasBoard = () => {
 
           const hostCollapsedNodes = Array.isArray(node.data?.config?.collapsedNodes) ? node.data.config.collapsedNodes : [];
           const hostCollapsedEdges = Array.isArray(node.data?.config?.collapsedEdges) ? node.data.config.collapsedEdges : [];
-          const hostSelectedNodes = hostCollapsedNodes.filter((candidate) => selectedSet.has(candidate.id));
+          const hostSelectedNodes = hostCollapsedNodes.filter((candidate) => selectedNodeIdSet.has(candidate.id));
           if (hostSelectedNodes.length < 2) {
             return node;
           }
@@ -3220,7 +3066,7 @@ const CanvasBoard = () => {
           const parentLevel = getSubGraphNestingLevel(node);
           const nestedLevel = Math.max(parentLevel + 1, ...hostSelectedNodes.map((candidate) => getSubGraphNestingLevel(candidate) + 1));
           const nestedSubGraphNode = {
-            id: nestedSubGraphId,
+            id: `subgraph-${Date.now()}-${Math.round(Math.random() * 100000)}`,
             type: 'ragNode',
             position: {
               x: Math.round(centerX - NODE_WIDTH / 2),
@@ -3241,7 +3087,10 @@ const CanvasBoard = () => {
                   };
                   return accumulator;
                 }, {}),
-                collapsedNodes: hostSelectedNodes.map((candidate) => ({ ...candidate, selected: false })),
+                collapsedNodes: hostSelectedNodes.map((candidate) => ({
+                  ...candidate,
+                  selected: false,
+                })),
                 collapsedEdges: [],
               },
             },
@@ -3249,7 +3098,7 @@ const CanvasBoard = () => {
           };
 
           const remainingCollapsedNodes = hostCollapsedNodes
-            .filter((candidate) => !selectedSet.has(candidate.id))
+            .filter((candidate) => !selectedNodeIdSet.has(candidate.id))
             .map((candidate) => ({ ...candidate, selected: false }));
           const nextCollapsedNodes = [...remainingCollapsedNodes, nestedSubGraphNode];
           const nodeById = new Map(nextCollapsedNodes.map((candidate) => [candidate.id, candidate]));
@@ -3294,8 +3143,8 @@ const CanvasBoard = () => {
           };
 
           hostCollapsedEdges.forEach((edge) => {
-            const sourceInside = selectedSet.has(edge.source);
-            const targetInside = selectedSet.has(edge.target);
+            const sourceInside = selectedNodeIdSet.has(edge.source);
+            const targetInside = selectedNodeIdSet.has(edge.target);
 
             if (sourceInside && targetInside) {
               nestedSubGraphNode.data.config.collapsedEdges.push(edge);
@@ -3480,6 +3329,65 @@ const CanvasBoard = () => {
     setSelectedEdgeId(null);
   };
 
+  const updateSelectedNodeConfig = (fieldName, fieldValue) => {
+    if (!selectedNode) return;
+
+    if (selectedNode.data?.isPreviewNode && previewedSubGraphId) {
+      const previewPrefix = `preview-${previewedSubGraphId}-`;
+      const originalNodeId = String(selectedNode.id).startsWith(previewPrefix)
+        ? String(selectedNode.id).slice(previewPrefix.length)
+        : null;
+      if (!originalNodeId) return;
+
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.id !== previewedSubGraphId) return node;
+          const collapsedNodes = Array.isArray(node.data?.config?.collapsedNodes)
+            ? node.data.config.collapsedNodes
+            : [];
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config: {
+                ...node.data.config,
+                collapsedNodes: collapsedNodes.map((cn) =>
+                  cn.id !== originalNodeId
+                    ? cn
+                    : { ...cn, data: { ...cn.data, config: { ...cn.data.config, [fieldName]: fieldValue } } }
+                ),
+              },
+            },
+          };
+        })
+      );
+      return;
+    }
+
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => {
+        if (node.id !== selectedNode.id) return node;
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            config: { ...node.data.config, [fieldName]: fieldValue },
+          },
+        };
+      })
+    );
+  };
+
+  const updateSelectedNodeLabel = (label) => {
+    if (!selectedNode) return;
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => {
+        if (node.id !== selectedNode.id) return node;
+        return { ...node, data: { ...node.data, label } };
+      })
+    );
+  };
+
   const openSelectedSubGraphPreview = () => {
     if (!selectedSubGraphNode || !selectedNode?.id) {
       return;
@@ -3592,6 +3500,7 @@ const CanvasBoard = () => {
     setSelectedNodeId(null);
     setSelectedNodeIds([]);
     setSelectedEdgeId(null);
+    setNodeSettingsOpen(false);
   };
 
   const runChatSimulation = () => {
@@ -3624,7 +3533,6 @@ const CanvasBoard = () => {
   const isTTSNode = selectedNode?.data?.templateKey === 'brain-tts';
   const isModelRouterNode = selectedNode?.data?.templateKey === 'brain-router';
   const isGuardrailsNode = selectedNode?.data?.templateKey === 'brain-guardrails';
-  const isChatTesterNode = selectedNode?.data?.templateKey === 'output-chat';
   const isImageUploadNode = selectedNode?.data?.templateKey === 'input-image';
   const isVisionLLMNode = selectedNode?.data?.templateKey === 'brain-vision';
   const selectedTemplate = selectedNode ? templateByKey[selectedNode.data?.templateKey] : null;
@@ -3740,11 +3648,12 @@ const CanvasBoard = () => {
   const QUERY_SOURCE_KEYS = ['input-question', 'process-query-rewriter', 'brain-hyde-gen'];
   const retrieverContextProfile = useMemo(() => {
     if (!isRetrieverNode || !selectedNode) {
-      return { embeddingProfile: null, vectorStore: null, hasQuerySource: false };
+      return { embeddingProfile: null, vectorStore: null, hasQuerySource: false, upstreamDocConfig: null };
     }
     let embeddingProfile = null;
     let vectorStore = null;
     let hasQuerySource = false;
+    let upstreamDocConfig = null;
     const visited = new Set();
     const stack = [selectedNode.id];
     while (stack.length > 0) {
@@ -3777,10 +3686,18 @@ const CanvasBoard = () => {
         if (QUERY_SOURCE_KEYS.includes(key)) {
           hasQuerySource = true;
         }
+        if (key === 'input-upload' && !upstreamDocConfig) {
+          upstreamDocConfig = {
+            scope: config.scope || 'all',
+            selectedFolders: Array.isArray(config.selectedFolders) ? config.selectedFolders : [],
+            selectedDocumentIds: Array.isArray(config.selectedDocumentIds) ? config.selectedDocumentIds : [],
+            source_label: config.source_label || 'knowledge_base',
+          };
+        }
         stack.push(neighborNode.id);
       }
     }
-    return { embeddingProfile, vectorStore, hasQuerySource };
+    return { embeddingProfile, vectorStore, hasQuerySource, upstreamDocConfig };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRetrieverNode, selectedNode, edges, nodes]);
 
@@ -4363,13 +4280,13 @@ const CanvasBoard = () => {
           className="relative flex-none overflow-visible"
           style={{ width: paletteWidth }}
         >
-          <div className="h-full rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="h-full rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-[0_8px_30px_rgba(0,0,0,0.35)] overflow-hidden">
             <div className="h-full">
-              {/* Tab switcher — gold themed with sliding pill indicator */}
-              <div className="relative flex border-b border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 p-1.5 gap-1">
+              {/* Tab switcher — dark with amber sliding pill (keeps brand identity) */}
+              <div className="relative flex border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm p-1.5 gap-1">
                 <span
                   aria-hidden
-                  className="absolute top-1.5 bottom-1.5 left-1.5 rounded-xl bg-amber-500 shadow-md shadow-amber-500/40 transition-transform duration-300 ease-out"
+                  className="absolute top-1.5 bottom-1.5 left-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 shadow-md shadow-amber-500/30 transition-transform duration-300 ease-out"
                   style={{
                     width: 'calc(33.333% - 0.292rem)',
                     transform:
@@ -4384,7 +4301,7 @@ const CanvasBoard = () => {
                   type="button"
                   onClick={() => setPaletteTab('nodes')}
                   className={`relative flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors duration-200 ${
-                    paletteTab === 'nodes' ? 'text-white' : 'text-amber-800 hover:text-amber-900'
+                    paletteTab === 'nodes' ? 'text-slate-950' : 'text-slate-300 hover:text-amber-300'
                   }`}
                 >
                   Nodes
@@ -4393,7 +4310,7 @@ const CanvasBoard = () => {
                   type="button"
                   onClick={() => setPaletteTab('blueprints')}
                   className={`relative flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors duration-200 ${
-                    paletteTab === 'blueprints' ? 'text-white' : 'text-amber-800 hover:text-amber-900'
+                    paletteTab === 'blueprints' ? 'text-slate-950' : 'text-slate-300 hover:text-amber-300'
                   }`}
                 >
                   Blueprints
@@ -4402,7 +4319,7 @@ const CanvasBoard = () => {
                   type="button"
                   onClick={() => setPaletteTab('custom')}
                   className={`relative flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors duration-200 ${
-                    paletteTab === 'custom' ? 'text-white' : 'text-amber-800 hover:text-amber-900'
+                    paletteTab === 'custom' ? 'text-slate-950' : 'text-slate-300 hover:text-amber-300'
                   }`}
                 >
                   Custom
@@ -4418,26 +4335,50 @@ const CanvasBoard = () => {
                   {paletteTab === 'nodes' && (
                     <div className="p-4 h-full overflow-y-auto">
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Node Palette</h3>
-                    <span className="text-[10px] text-slate-400 font-black uppercase">Drag to canvas</span>
+                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest">Node Palette</h3>
+                    <span className="text-[10px] text-slate-500 font-black uppercase">Drag to canvas</span>
                   </div>
 
                   <div className="mt-4 space-y-3">
                     {groupedNodeLibrary.map((group) => {
                       const isExpanded = expandedCategories[group.category];
+                      const groupPal = paletteFromColorClass(group.items[0]?.colorClass || '');
 
                       return (
-                        <div key={group.category} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2.5">
+                        <div
+                          key={group.category}
+                          className="rounded-2xl p-2.5 transition-colors"
+                          style={{
+                            background: `linear-gradient(160deg, ${groupPal.accent}55 0%, ${groupPal.accent2}30 55%, rgba(15,23,42,0.7) 100%)`,
+                            border: `1px solid ${groupPal.accent}80`,
+                            boxShadow: `0 0 24px ${groupPal.accent}25, 0 0 0 1px rgba(15,23,42,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)`,
+                          }}
+                        >
                           <button
                             type="button"
                             onClick={() => toggleCategory(group.category)}
-                            className="w-full flex items-center justify-between text-left px-2 py-1 rounded-xl hover:bg-white/80 transition-colors"
+                            className="w-full flex items-center justify-between text-left px-2 py-1 rounded-xl hover:bg-white/5 transition-colors"
                           >
                             <div className="flex items-center gap-2">
-                              {isExpanded ? <ChevronDown size={14} className="text-slate-500" /> : <ChevronRight size={14} className="text-slate-500" />}
-                              <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">{group.category}</span>
+                              {isExpanded
+                                ? <ChevronDown size={14} style={{ color: groupPal.accent }} />
+                                : <ChevronRight size={14} style={{ color: groupPal.accent }} />}
+                              <span
+                                className="text-[11px] font-black uppercase tracking-widest"
+                                style={{ color: groupPal.accent }}
+                              >
+                                {group.category}
+                              </span>
                             </div>
-                            <span className="text-[10px] font-black text-slate-400">{group.items.length}</span>
+                            <span
+                              className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
+                              style={{
+                                color: groupPal.accent,
+                                background: `${groupPal.accent}1f`,
+                              }}
+                            >
+                              {group.items.length}
+                            </span>
                           </button>
 
                           {isExpanded && (
@@ -4454,25 +4395,30 @@ const CanvasBoard = () => {
                                       event.dataTransfer.setData('application/xrag-node', buildPalettePayload(template));
                                       event.dataTransfer.effectAllowed = 'move';
                                     }}
-                                    className="group relative w-full text-left rounded-xl transition-all duration-150 cursor-grab active:cursor-grabbing overflow-hidden"
+                                    className="group relative w-full text-left rounded-xl transition-all duration-150 cursor-grab active:cursor-grabbing overflow-hidden flex items-stretch"
                                     style={{
-                                      borderTop: `3px solid ${pal.accent}`,
-                                      borderLeft: `1px solid ${pal.accent}60`,
-                                      borderRight: `1px solid ${pal.accent}60`,
-                                      borderBottom: `1px solid ${pal.accent}60`,
-                                      background: `linear-gradient(145deg, ${pal.accent}14 0%, #f8fafc 55%)`,
-                                      boxShadow: `0 2px 8px rgba(0,0,0,0.09), 0 0 0 1px ${pal.accent}40`,
+                                      background: 'linear-gradient(140deg, #0f172a 0%, #111827 100%)',
+                                      boxShadow: `0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(148,163,184,0.18)`,
                                     }}
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.transform = 'translateY(-1px)';
-                                      e.currentTarget.style.boxShadow = `0 6px 16px rgba(0,0,0,0.12), 0 0 0 2px ${pal.accent}80`;
+                                      e.currentTarget.style.boxShadow = `0 4px 14px rgba(0,0,0,0.55), 0 0 0 1px ${pal.accent}`;
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.transform = '';
-                                      e.currentTarget.style.boxShadow = `0 2px 8px rgba(0,0,0,0.09), 0 0 0 1px ${pal.accent}40`;
+                                      e.currentTarget.style.boxShadow = `0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(148,163,184,0.18)`;
                                     }}
                                   >
-                                    <div className="flex items-center gap-3 p-3">
+                                    {/* Left accent stripe */}
+                                    <div
+                                      aria-hidden
+                                      style={{
+                                        width: 4,
+                                        background: `linear-gradient(180deg, ${pal.accent} 0%, ${pal.accent2} 100%)`,
+                                        flexShrink: 0,
+                                      }}
+                                    />
+                                    <div className="flex items-center gap-3 p-2.5 flex-1 min-w-0">
                                       <div
                                         className="shrink-0 flex items-center justify-center rounded-xl"
                                         style={{
@@ -4481,11 +4427,11 @@ const CanvasBoard = () => {
                                           boxShadow: `0 2px 6px ${pal.accent}50`,
                                         }}
                                       >
-                                        <Icon size={16} style={{ color: '#ffffff' }} />
+                                        <Icon size={16} style={{ color: '#0f172a' }} />
                                       </div>
                                       <div className="min-w-0">
-                                        <p className="text-xs font-black text-slate-800 truncate leading-snug">{template.label}</p>
-                                        <p className="text-[10px] leading-snug mt-0.5 truncate" style={{ color: pal.accent2 }}>{template.description}</p>
+                                        <p className="text-xs font-semibold truncate leading-snug" style={{ color: '#f1f5f9' }}>{template.label}</p>
+                                        <p className="text-[10px] leading-snug mt-0.5 truncate" style={{ color: pal.accent }}>{template.description}</p>
                                       </div>
                                     </div>
                                   </button>
@@ -4503,10 +4449,10 @@ const CanvasBoard = () => {
               {paletteTab === 'blueprints' && (
                 <div className="p-4 h-full overflow-y-auto">
                   <div className="flex items-center justify-between gap-3 mb-1">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Blueprints</h3>
-                    <span className="text-[10px] text-slate-400 font-black uppercase">Static templates</span>
+                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest">Blueprints</h3>
+                    <span className="text-[10px] text-slate-500 font-black uppercase">Static templates</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 mb-4 leading-snug">
+                  <p className="text-[10px] text-slate-400 mb-4 leading-snug">
                     Pre-built reference architectures. Click to drop one onto the canvas.
                   </p>
                   <div className="space-y-2">
@@ -4515,20 +4461,54 @@ const CanvasBoard = () => {
                         key={blueprint.id}
                         type="button"
                         onClick={() => insertBlueprint(blueprint.id)}
-                        className="group w-full text-left rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-3 transition-all duration-150 hover:-translate-y-px"
-                        style={{ boxShadow: '0 2px 8px rgba(245,158,11,0.10), 0 0 0 1px rgba(245,158,11,0.18)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(245,158,11,0.18), 0 0 0 2px rgba(245,158,11,0.35)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.10), 0 0 0 1px rgba(245,158,11,0.18)'; }}
+                        className="group w-full text-left rounded-xl transition-all duration-150 hover:-translate-y-0.5 overflow-hidden flex items-stretch"
+                        style={{
+                          background: 'linear-gradient(140deg, #0f172a 0%, #111827 100%)',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(148,163,184,0.18)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.55), 0 0 0 1px #fbbf24';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(148,163,184,0.18)';
+                        }}
                       >
-                        <div className="flex items-start gap-2.5">
-                          <div className="shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 shadow-sm" style={{ width: 34, height: 34 }}>
-                            <Network size={15} style={{ color: '#fff' }} />
+                        {/* Left amber accent stripe */}
+                        <div
+                          aria-hidden
+                          style={{
+                            width: 4,
+                            flexShrink: 0,
+                            background: 'linear-gradient(180deg, #fde68a 0%, #f59e0b 100%)',
+                          }}
+                        />
+                        {/* Icon panel */}
+                        <div
+                          className="flex items-center justify-center"
+                          style={{
+                            width: 52,
+                            flexShrink: 0,
+                            background: 'linear-gradient(140deg, #fbbf2426 0%, #fbbf2410 100%)',
+                          }}
+                        >
+                          <div
+                            className="flex items-center justify-center"
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 10,
+                              background: 'linear-gradient(140deg, #fde68a 0%, #f59e0b 100%)',
+                              boxShadow: '0 2px 6px #fbbf2440',
+                            }}
+                          >
+                            <Network size={15} style={{ color: '#0f172a' }} />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-black text-slate-800 truncate leading-snug">{blueprint.label}</p>
-                            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{blueprint.description}</p>
-                            <p className="text-[10px] text-amber-600 font-black mt-1">{blueprint.templateKeys?.length || 0} nodes</p>
-                          </div>
+                        </div>
+                        {/* Text */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center px-3 py-2.5">
+                          <p className="text-[12px] font-semibold text-slate-100 truncate leading-snug">{blueprint.label}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5 leading-snug line-clamp-2">{blueprint.description}</p>
+                          <p className="text-[10px] text-amber-400 font-bold mt-1">{blueprint.templateKeys?.length || 0} nodes</p>
                         </div>
                       </button>
                     ))}
@@ -4539,7 +4519,7 @@ const CanvasBoard = () => {
               {paletteTab === 'custom' && (
                 <div className="p-4 h-full overflow-y-auto">
                   <div className="flex items-center justify-between gap-3 mb-1">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Custom Nodes</h3>
+                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest">Custom Nodes</h3>
                     <button
                       type="button"
                       onClick={() => {
@@ -4547,27 +4527,27 @@ const CanvasBoard = () => {
                         setCustomEditorOpen(true);
                       }}
                       title="Create a new custom node"
-                      className="inline-flex items-center gap-1 rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-amber-500/40 hover:bg-amber-600 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950 shadow-md shadow-amber-500/40 hover:bg-amber-400 transition-colors"
                     >
                       <Plus size={12} /> New
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-500 mb-4 leading-snug">
+                  <p className="text-[10px] text-slate-400 mb-4 leading-snug">
                     Build your own nodes with code, dependencies, color & icon. Optionally let the AI assistant generate one from a description.
                   </p>
 
                   {customNodesStatus === 'loading' && (
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
                       <Loader2 size={12} className="animate-spin" /> Loading custom nodes…
                     </div>
                   )}
 
                   {customNodes.length === 0 && customNodesStatus !== 'loading' && (
-                    <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/50 p-4 text-center">
-                      <Wand2 size={20} className="mx-auto text-amber-500" />
-                      <p className="text-[11px] font-black text-slate-700 mt-2">No custom nodes yet</p>
-                      <p className="text-[10px] text-slate-500 mt-1 leading-snug">
-                        Click <span className="font-black text-amber-700">+ New</span> to create one or use the AI assistant inside the editor.
+                    <div className="rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 p-4 text-center">
+                      <Wand2 size={20} className="mx-auto text-amber-400" />
+                      <p className="text-[11px] font-black text-slate-200 mt-2">No custom nodes yet</p>
+                      <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                        Click <span className="font-black text-amber-400">+ New</span> to create one or use the AI assistant inside the editor.
                       </p>
                     </div>
                   )}
@@ -4580,14 +4560,10 @@ const CanvasBoard = () => {
                       return (
                         <div
                           key={cn.id}
-                          className="group relative rounded-xl overflow-hidden"
+                          className="group relative rounded-xl overflow-hidden flex flex-col"
                           style={{
-                            borderTop: `3px solid ${pal.accent}`,
-                            borderLeft: `1px solid ${pal.accent}60`,
-                            borderRight: `1px solid ${pal.accent}60`,
-                            borderBottom: `1px solid ${pal.accent}60`,
-                            background: `linear-gradient(145deg, ${pal.accent}14 0%, #f8fafc 55%)`,
-                            boxShadow: `0 2px 8px rgba(0,0,0,0.09), 0 0 0 1px ${pal.accent}40`,
+                            background: 'linear-gradient(140deg, #0f172a 0%, #111827 100%)',
+                            boxShadow: `0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(148,163,184,0.18)`,
                           }}
                         >
                           <button
@@ -4600,9 +4576,18 @@ const CanvasBoard = () => {
                               );
                               event.dataTransfer.effectAllowed = 'move';
                             }}
-                            className="w-full text-left cursor-grab active:cursor-grabbing"
+                            className="w-full text-left cursor-grab active:cursor-grabbing flex items-stretch"
                           >
-                            <div className="flex items-center gap-3 p-3">
+                            {/* Left accent stripe */}
+                            <div
+                              aria-hidden
+                              style={{
+                                width: 4,
+                                background: `linear-gradient(180deg, ${pal.accent} 0%, ${pal.accent2} 100%)`,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <div className="flex items-center gap-3 p-2.5 flex-1 min-w-0">
                               <div
                                 className="shrink-0 flex items-center justify-center rounded-xl"
                                 style={{
@@ -4611,23 +4596,23 @@ const CanvasBoard = () => {
                                   boxShadow: `0 2px 6px ${pal.accent}50`,
                                 }}
                               >
-                                <Icon size={16} style={{ color: '#ffffff' }} />
+                                <Icon size={16} style={{ color: '#0f172a' }} />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-black text-slate-800 truncate leading-snug">{cn.name}</p>
-                                <p className="text-[10px] leading-snug mt-0.5 truncate" style={{ color: pal.accent2 }}>{cn.description || 'No description'}</p>
-                                <p className="text-[10px] text-slate-400 mt-0.5 truncate">{cn.category}</p>
+                                <p className="text-xs font-semibold truncate leading-snug" style={{ color: '#f1f5f9' }}>{cn.name}</p>
+                                <p className="text-[10px] leading-snug mt-0.5 truncate" style={{ color: pal.accent }}>{cn.description || 'No description'}</p>
+                                <p className="text-[10px] mt-0.5 truncate" style={{ color: '#64748b' }}>{cn.category}</p>
                               </div>
                             </div>
                           </button>
-                          <div className="flex border-t border-slate-200/60 bg-white/40">
+                          <div className="flex border-t border-slate-700/60 bg-slate-900/40">
                             <button
                               type="button"
                               onClick={() => {
                                 setCustomEditorDraft(cn);
                                 setCustomEditorOpen(true);
                               }}
-                              className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                              className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-amber-400 hover:bg-slate-800/60 transition-colors"
                             >
                               <Pencil size={10} /> Edit
                             </button>
@@ -4643,7 +4628,7 @@ const CanvasBoard = () => {
                                   alert(`Delete failed: ${err.message}`);
                                 }
                               }}
-                              className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors border-l border-slate-200/60"
+                              className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-rose-400 hover:bg-slate-800/60 transition-colors border-l border-slate-700/60"
                             >
                               <Trash2 size={10} /> Delete
                             </button>
@@ -4672,14 +4657,15 @@ const CanvasBoard = () => {
           <div className="absolute inset-y-2 left-1/2 -translate-x-1/2 w-0.5 rounded-full bg-slate-200 group-hover:bg-indigo-400 group-active:bg-indigo-500 transition-colors" />
         </div>
 
-        <section className="min-h-0 flex-1 min-w-0 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-12 border-b border-slate-100 px-4 flex items-center justify-between bg-slate-50/80">
-            <p className="text-xs font-black text-slate-700 uppercase tracking-wider">RAG Architecture Canvas</p>
+        <section className="min-h-0 flex-1 min-w-0 rounded-3xl border border-slate-700/50 shadow-sm overflow-hidden" style={{ background: '#1e2030' }}>
+          <div className="h-12 border-b border-slate-700/40 px-4 flex items-center justify-between" style={{ background: '#1e2030' }}>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-wider">RAG Architecture Canvas</p>
           </div>
 
           <div
             ref={canvasViewportRef}
-            className="relative h-[calc(100%-3rem)] bg-white"
+            className="relative h-[calc(100%-3rem)]"
+            style={{ background: '#1e2030' }}
             onDrop={onDrop}
             onDragOver={onDragOver}
             onMouseDownCapture={onCanvasMouseDownCapture}
@@ -4786,15 +4772,27 @@ const CanvasBoard = () => {
                 }}
                 onConnectStart={onConnectStart}
                 onConnectEnd={onConnectEnd}
+                onNodeClick={(_event, node) => {
+                  if (!node?.id) return;
+                  if (previewedSubGraphId) {
+                    setIsPreviewToolbarVisible(isPreviewElementId(node.id));
+                  }
+                }}
+                onNodeDoubleClick={(_event, node) => {
+                  if (!node?.id) return;
+                  pendingNodeSelectionRef.current = null;
+                  setNodeSelectionState([node.id], null);
+                  setNodeSettingsOpen(true);
+                }}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 defaultEdgeOptions={{
                   type: 'gradient',
                   animated: true,
-                  markerEnd: { type: MarkerType.ArrowClosed, color: '#fbbf24', width: 12, height: 12 },
-                  style: { strokeWidth: 5.5, stroke: '#fbbf24' },
+                  markerEnd: { type: MarkerType.ArrowClosed, color: '#fbbf24', width: 7, height: 7 },
+                  style: { strokeWidth: 2, stroke: '#fbbf24' },
                 }}
-                connectionLineStyle={{ stroke: '#fbbf24', strokeWidth: 5.5 }}
+                connectionLineStyle={{ stroke: '#fbbf24', strokeWidth: 2 }}
                 connectionLineType="step"
                 connectionLineComponent={CanvasConnectionLine}
                 elementsSelectable
@@ -4887,20 +4885,22 @@ const CanvasBoard = () => {
 
                   setSelectionMetaState(nextSelectedNodeIds, nextSelectedEdgeId);
                 }}
-                style={{ backgroundColor: '#f8fafc' }}
+                style={{ backgroundColor: '#1e2030' }}
               >
                 <Panel
                   position="bottom-right"
-                  className="!m-3 !p-0 rounded-lg overflow-hidden border border-slate-200 bg-white/95 shadow-lg backdrop-blur-sm"
+                  className="!m-3 !p-0 rounded-lg overflow-hidden shadow-lg"
+                  style={{ border: '1px solid rgba(71,85,105,0.5)', background: '#1e2030' }}
                 >
-                  <div className="flex items-center justify-between gap-2 px-2 py-1 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                    <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase select-none">
+                  <div className="flex items-center justify-between gap-2 px-2 py-1 border-b" style={{ background: '#252840', borderColor: 'rgba(71,85,105,0.4)' }}>
+                    <span className="text-[10px] font-semibold tracking-wider uppercase select-none" style={{ color: '#94a3b8' }}>
                       Mini Map
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsMinimapCollapsed((previous) => !previous)}
-                      className="h-5 w-5 inline-flex items-center justify-center rounded text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition"
+                      className="h-5 w-5 inline-flex items-center justify-center rounded transition"
+                      style={{ color: '#94a3b8' }}
                       aria-label={isMinimapCollapsed ? 'Expand mini map' : 'Collapse mini map'}
                       title={isMinimapCollapsed ? 'Expand' : 'Collapse'}
                     >
@@ -4922,7 +4922,7 @@ const CanvasBoard = () => {
                     </button>
                   </div>
                   {!isMinimapCollapsed && (
-                    <div className="relative bg-slate-50">
+                    <div className="relative" style={{ background: '#1e2030' }}>
                       {/* Resize handle — top-left corner. Drag toward upper-left to enlarge. */}
                       <div
                         role="presentation"
@@ -4952,9 +4952,10 @@ const CanvasBoard = () => {
                           window.addEventListener('mousemove', handleMove);
                           window.addEventListener('mouseup', handleUp);
                         }}
-                        className="absolute top-0 left-0 z-20 h-3 w-3 cursor-nwse-resize bg-slate-300 hover:bg-indigo-400 transition rounded-br"
+                        className="absolute top-0 left-0 z-20 h-3 w-3 cursor-nwse-resize transition rounded-br"
                         style={{
                           clipPath: 'polygon(0 0, 100% 0, 0 100%)',
+                          background: '#2d3148',
                         }}
                       />
                       {(() => {
@@ -5164,7 +5165,7 @@ const CanvasBoard = () => {
                   )}
                 </Panel>
                 <Controls />
-                <Background color="#cbd5e1" gap={26} size={1.2} />
+                <Background color="#2d3148" gap={26} size={1.2} />
               </ReactFlow>
             </div>
 
@@ -5263,24 +5264,24 @@ const CanvasBoard = () => {
         </div>
 
         <aside
-          className="@container bg-white rounded-3xl border border-slate-200 shadow-sm p-3 overflow-y-auto space-y-4 flex-none"
-          style={{ width: inspectorWidth }}
+          className="@container rounded-3xl border border-slate-700/50 shadow-sm p-3 overflow-y-auto space-y-4 flex-none"
+          style={{ width: inspectorWidth, background: '#131822' }}
         >
           {/* Inspector header — merged with Save / Browse / Run controls.
               Gold/amber themed. The list of saved architectures lives only
               in the Browse modal (FolderOpen icon). */}
-          <div className="relative overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 p-3 shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-amber-700/40 p-3 shadow-sm" style={{ background: '#0d1117' }}>
             <div
               aria-hidden
-              className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-300/40 blur-2xl"
+              className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/10 blur-2xl"
             />
             <div className="relative flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white shadow-md shadow-amber-500/40">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-black shadow-md shadow-amber-500/40">
                 <Layers size={16} />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-amber-800">Node Inspector</h3>
-                <p className="text-[10px] text-amber-700/80 truncate">
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-amber-400">Node Inspector</h3>
+                <p className="text-[10px] text-amber-300/60 truncate">
                   {selectedNode ? 'Editing selected node' : 'Select a node to edit'}
                 </p>
               </div>
@@ -5288,7 +5289,8 @@ const CanvasBoard = () => {
                 type="button"
                 onClick={() => { refreshBackendFlows(); setBrowseFlowsOpen(true); }}
                 title="Browse saved architectures"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-amber-300 bg-white/80 text-amber-700 hover:bg-amber-100 transition-colors shadow-sm"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-amber-700/40 text-amber-400 hover:bg-amber-900/30 transition-colors"
+                style={{ background: 'rgba(13,17,23,0.8)' }}
               >
                 <FolderOpen size={14} />
               </button>
@@ -5300,13 +5302,13 @@ const CanvasBoard = () => {
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value)}
                 placeholder="Architecture name…"
-                className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-white/90 px-2.5 py-1.5 text-xs text-slate-700 placeholder-amber-400/70 outline-none focus:bg-white focus:ring-2 focus:ring-amber-400"
+                className="min-w-0 flex-1 rounded-xl border border-slate-700/50 bg-slate-900/80 px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/60"
               />
               <button
                 type="button"
                 onClick={saveCanvasFlowToBackend}
                 title="Save current canvas as a new architecture"
-                className="inline-flex items-center gap-1 rounded-xl bg-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm shadow-amber-500/30 hover:bg-amber-600"
+                className="inline-flex items-center gap-1 rounded-xl bg-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black shadow-sm shadow-amber-500/30 hover:bg-amber-400"
               >
                 <Plus size={12} /> Save
               </button>
@@ -5317,7 +5319,7 @@ const CanvasBoard = () => {
                   setShareModalOpen(true);
                 }}
                 title="Share to community"
-                className="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-white/80 px-2.5 py-1.5 text-amber-700 hover:bg-amber-100"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-700/50 px-2.5 py-1.5 text-slate-300 hover:text-amber-400 hover:border-amber-700/40 transition-colors" style={{ background: 'rgba(13,17,23,0.8)' }}
               >
                 <Share2 size={12} />
               </button>
@@ -5333,233 +5335,67 @@ const CanvasBoard = () => {
               <Play size={13} /> {runStatus === 'running' ? 'Testing…' : 'Test flow'}
             </button>
             {saveFeedback ? (
-              <p className="relative mt-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-700 font-black uppercase tracking-wider text-center px-2 py-1">
+              <p className="relative mt-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider text-center px-2 py-1" style={{ background: 'rgba(16,185,129,0.10)', borderColor: 'rgba(16,185,129,0.30)', color: '#6ee7b7' }}>
                 {saveFeedback}
               </p>
             ) : (
-              <p className="relative mt-1 text-[10px] text-amber-700/70 text-center">Save not required, but recommended.</p>
+              <p className="relative mt-1 text-[10px] text-amber-400/50 text-center">Save not required, but recommended.</p>
             )}
           </div>
 
-          {selectedNode && (
-            <div
-              className={`space-y-3 rounded-2xl border p-3 transition-colors ${
-                selectedTemplate?.colorClass
-                  ? `${selectedTemplate.colorClass} bg-opacity-60`
-                  : 'border-slate-200 bg-slate-50/60'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-slate-800">{selectedNode.data.label}</p>
-                  <p className="text-[11px] text-slate-600">{selectedNode.data.description}</p>
-                  {selectedNodeIds.length > 1 && <p className="text-[10px] mt-1 font-black uppercase tracking-wider text-indigo-600">{selectedNodeIds.length} nodes selected</p>}
-                </div>
-                <button
-                  type="button"
-                  onClick={removeSelectedNode}
-                  className="p-2 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
+          {selectedNode && (() => {
+            const inspPal = paletteFromColorClass(selectedTemplate?.colorClass || '');
+            const InspNodeIcon = selectedTemplate?.icon;
+            return (
+              <div
+                className="flex items-center gap-2.5 rounded-2xl border p-3"
+                style={{
+                  background: `linear-gradient(160deg, ${inspPal.accent}20 0%, #0d1117 100%)`,
+                  borderColor: `${inspPal.accent}55`,
+                }}
+              >
+                <div
+                  className="flex shrink-0 items-center justify-center rounded-[10px]"
+                  style={{
+                    width: 36, height: 36,
+                    background: `linear-gradient(140deg, ${inspPal.accent2} 0%, ${inspPal.accent} 100%)`,
+                    boxShadow: `0 2px 8px ${inspPal.accent}55`,
+                    color: '#0f172a',
+                  }}
                 >
-                  <Trash2 size={14} />
-                </button>
+                  {InspNodeIcon ? <InspNodeIcon size={16} strokeWidth={2.4} /> : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-black text-slate-100 truncate">{selectedNode.data.label}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.13em] truncate" style={{ color: inspPal.accent }}>
+                    {selectedNode.data.category}
+                  </p>
+                </div>
               </div>
+            );
+          })()}
 
-              <div className="space-y-1">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">Node name</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.label || ''}
-                  onChange={(event) => updateSelectedNodeLabel(event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
-                />
-              </div>
-
-              {isDocumentUploadNode ? (
-                <UploadedDocumentsSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isChunkingNode ? (
-                <ChunkingSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  embeddingProfile={chunkingEmbeddingProfile}
-                />
-              ) : isEmbeddingNode ? (
-                <EmbeddingSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isVectorDatabaseNode ? (
-                <VectorDatabaseSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  embeddingProfile={vectorDatabaseEmbeddingProfile}
-                />
-              ) : isGraphDatabaseNode ? (
-                <GraphDatabaseSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  upstreamProfile={graphDatabaseUpstreamProfile}
-                />
-              ) : isRetrieverNode ? (
-                <RetrieverSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  embeddingProfile={retrieverContextProfile.embeddingProfile}
-                  vectorStore={retrieverContextProfile.vectorStore}
-                  hasQuerySource={retrieverContextProfile.hasQuerySource}
-                />
-              ) : isRerankerNode ? (
-                <RerankerSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  hasChunksUpstream={rerankerContextProfile.hasChunksUpstream}
-                  hasQuerySource={rerankerContextProfile.hasQuerySource}
-                  upstreamChunkCount={rerankerContextProfile.upstreamChunkCount}
-                />
-              ) : isLlmNode ? (
-                <LLMSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  hasQuerySource={llmContextProfile.hasQuerySource}
-                  hasChunksUpstream={llmContextProfile.hasChunksUpstream}
-                  hasSystemPromptUpstream={llmContextProfile.hasSystemPromptUpstream}
-                  upstreamChunkCount={llmContextProfile.upstreamChunkCount}
-                />
-              ) : isSystemPromptNode ? (
-                <SystemPromptSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                />
-              ) : isResponseNode ? (
-                <ResponseSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  upstreamFormat={responseContextProfile.upstreamFormat}
-                  upstreamHasCitations={responseContextProfile.upstreamHasCitations}
-                  hasUpstreamProducer={responseContextProfile.hasUpstreamProducer}
-                />
-              ) : isUserNode ? (
-                <UserSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                />
-              ) : isQuestionNode ? (
-                <QuestionSettingsPanel
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                  hasUserContextUpstream={questionContextProfile.hasUserContextUpstream}
-                />
-              ) : isUrlScraperNode ? (
-                <UrlScraperSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isQueryRewriterNode ? (
-                <QueryRewriterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isHybridMergeNode ? (
-                <HybridMergeSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isContextCompressionNode ? (
-                <ContextCompressionSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isHallucinationGuardNode ? (
-                <HallucinationGuardSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isReflectionLoopNode ? (
-                <ReflectionLoopSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isKVStoreNode ? (
-                <KVSessionStoreSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isHyDEGenNode ? (
-                <HyDEGenSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isSTTNode ? (
-                <STTSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isTTSNode ? (
-                <TTSSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isModelRouterNode ? (
-                <ModelRouterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isGuardrailsNode ? (
-                <GuardrailsSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isPiiRedactionNode ? (
-                <PiiRedactionSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isChatTesterNode ? (
-                <ChatTesterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isImageUploadNode ? (
-                <ImageUploadSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isVisionLLMNode ? (
-                <VisionLLMSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-              ) : isCustomNode ? (
-                <CustomNodeSettingsPanel
-                  template={selectedTemplate}
-                  value={selectedNode.data.config}
-                  onChange={updateSelectedNodeConfig}
-                />
-              ) : (
-                activeConfigEntries.map(([fieldName, fieldValue]) => {
-                  const normalizedField = String(fieldName);
-                  const valueAsString = String(fieldValue ?? '');
-                  const isLongText = normalizedField.toLowerCase().includes('prompt');
-
-                  return (
-                    <div key={fieldName} className="space-y-1">
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{normalizedField}</label>
-                      {isLongText ? (
-                        <textarea
-                          value={valueAsString}
-                          onChange={(event) => updateSelectedNodeConfig(fieldName, event.target.value)}
-                          rows={4}
-                          className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={valueAsString}
-                          onChange={(event) => updateSelectedNodeConfig(fieldName, event.target.value)}
-                          className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
-                        />
-                      )}
-                    </div>
-                  );
-                })
-              )}
-
-              {isDocumentUploadNode && (
-                <>
-                  <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-2.5">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">NodeState update preview</p>
-                    <pre className="text-[10px] leading-relaxed text-slate-700 overflow-auto max-h-32">
-                      {JSON.stringify(nodeState[selectedNode.id], null, 2)}
-                    </pre>
-                  </div>
-
-                  <div className="space-y-2 rounded-xl border border-indigo-200 bg-indigo-50/40 p-2.5">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-indigo-700">JSON export to Chunking</p>
-                    <pre className="text-[10px] leading-relaxed text-slate-700 overflow-auto max-h-44">
-                      {JSON.stringify(documentChunkingPayload, null, 2)}
-                    </pre>
-                  </div>
-
-                  <details className="rounded-xl border border-slate-200 bg-white p-2.5">
-                    <summary className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-slate-500">JSON schema</summary>
-                    <pre className="mt-2 text-[10px] leading-relaxed text-slate-700 overflow-auto max-h-44">
-                      {JSON.stringify(DOCUMENT_UPLOAD_JSON_SCHEMA, null, 2)}
-                    </pre>
-                  </details>
-                </>
-              )}
-            </div>
-          )}
-
-          <div className="rounded-2xl border border-slate-200 p-3 bg-white space-y-3">
+          <div className="rounded-2xl border border-slate-700/50 p-3 space-y-3" style={{ background: '#0d1117' }}>
             {runError && (
-              <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-2">{runError}</p>
+              <p className="text-[11px] text-rose-400 border border-rose-800/50 rounded-xl p-2" style={{ background: 'rgba(244,63,94,0.08)' }}>{runError}</p>
             )}
             {runDurationMs != null && (
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Last run</span>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{runDurationMs} ms</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Last run</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">{runDurationMs} ms</span>
               </div>
             )}
             {runTrace.length > 0 && (
-              <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/60 p-2">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Execution trace</p>
+              <div className="space-y-1.5 rounded-xl border border-slate-700/50 p-2" style={{ background: 'rgba(15,23,42,0.6)' }}>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Execution trace</p>
                 {runTrace.map((step) => (
                   <div key={step.node_id} className="flex items-center justify-between gap-2 text-[11px]">
                     <div className="min-w-0">
-                      <p className={`font-black truncate ${step.status === 'error' ? 'text-rose-700' : step.status === 'skipped' ? 'text-slate-500' : 'text-slate-800'}`}>
+                      <p className={`font-black truncate ${step.status === 'error' ? 'text-rose-400' : step.status === 'skipped' ? 'text-slate-500' : 'text-slate-200'}`}>
                         {step.label}
                       </p>
                       {step.output_preview && (
-                        <p className="text-[10px] text-slate-500 truncate" title={step.output_preview}>{step.output_preview}</p>
+                      <p className="text-[10px] text-slate-400 truncate" title={step.output_preview}>{step.output_preview}</p>
                       )}
                       {step.error && (
                         <p className="text-[10px] text-rose-600">{step.error}</p>
@@ -5576,6 +5412,256 @@ const CanvasBoard = () => {
           </div>
         </aside>
       </div>
+
+      {/* ── Node Settings Modal ─────────────────────────────────────────── */}
+      {nodeSettingsOpen && selectedNode && createPortal(
+        (() => {
+          const modalPal = paletteFromColorClass(selectedTemplate?.colorClass || '');
+          const ModalIcon = selectedTemplate?.icon;
+          return (
+            <div
+              className="fixed inset-0 z-[2147483000] flex items-center justify-center p-4"
+              style={{ background: 'rgba(2,6,23,0.72)', backdropFilter: 'blur(4px)' }}
+              onMouseDown={(e) => { if (e.target === e.currentTarget) setNodeSettingsOpen(false); }}
+            >
+              <div
+                className="relative flex flex-col rounded-3xl border shadow-2xl overflow-hidden"
+                style={{
+                  width: 520,
+                  maxWidth: '95vw',
+                  maxHeight: '90vh',
+                  background: `linear-gradient(160deg, ${modalPal.accent}18 0%, #0d1117 40%, #080d18 100%)`,
+                  borderColor: `${modalPal.accent}50`,
+                  boxShadow: `0 0 0 1px ${modalPal.accent}30, 0 24px 80px rgba(0,0,0,0.80), 0 0 60px ${modalPal.accent}18`,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div
+                  className="flex items-center gap-3 px-4 py-3 border-b shrink-0"
+                  style={{ borderColor: `${modalPal.accent}30`, background: `linear-gradient(90deg, ${modalPal.accent}20 0%, transparent 100%)` }}
+                >
+                  {/* Icon */}
+                  <div
+                    className="flex shrink-0 items-center justify-center rounded-xl"
+                    style={{
+                      width: 44, height: 44,
+                      background: `linear-gradient(140deg, ${modalPal.accent2} 0%, ${modalPal.accent} 100%)`,
+                      boxShadow: `0 2px 12px ${modalPal.accent}60`,
+                      color: '#0f172a',
+                    }}
+                  >
+                    {ModalIcon ? <ModalIcon size={20} strokeWidth={2.4} /> : null}
+                  </div>
+                  {/* Title */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-black text-slate-100 leading-tight truncate">{selectedNode.data.label}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: modalPal.accent }}>
+                      {selectedNode.data.category}
+                    </p>
+                  </div>
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={removeSelectedNode}
+                      className="p-2 rounded-xl border border-rose-800/50 text-rose-400 hover:bg-rose-900/20 transition-colors"
+                      title="Delete node"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNodeSettingsOpen(false)}
+                      className="p-2 rounded-xl border border-slate-700/50 text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition-colors"
+                      title="Close (Esc)"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Scrollable body */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {/* Description */}
+                  {selectedNode.data.description && (
+                    <p className="text-[11px] leading-relaxed text-slate-400 border-b pb-3" style={{ borderColor: `${modalPal.accent}20` }}>
+                      {selectedNode.data.description}
+                    </p>
+                  )}
+
+                  {/* Node name */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Node name</label>
+                    <input
+                      type="text"
+                      value={selectedNode.data.label || ''}
+                      onChange={(event) => updateSelectedNodeLabel(event.target.value)}
+                      className="w-full rounded-xl border border-slate-700/50 bg-slate-900/80 p-2 text-xs text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/60"
+                    />
+                  </div>
+
+                  {/* Settings panel */}
+                  {isDocumentUploadNode ? (
+                    <UploadedDocumentsSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isChunkingNode ? (
+                    <ChunkingSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      embeddingProfile={chunkingEmbeddingProfile}
+                    />
+                  ) : isEmbeddingNode ? (
+                    <EmbeddingSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isVectorDatabaseNode ? (
+                    <VectorDatabaseSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      embeddingProfile={vectorDatabaseEmbeddingProfile}
+                    />
+                  ) : isGraphDatabaseNode ? (
+                    <GraphDatabaseSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      upstreamProfile={graphDatabaseUpstreamProfile}
+                    />
+                  ) : isRetrieverNode ? (
+                    <RetrieverSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      embeddingProfile={retrieverContextProfile.embeddingProfile}
+                      vectorStore={retrieverContextProfile.vectorStore}
+                      hasQuerySource={retrieverContextProfile.hasQuerySource}
+                      upstreamDocConfig={retrieverContextProfile.upstreamDocConfig}
+                    />
+                  ) : isRerankerNode ? (
+                    <RerankerSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      hasChunksUpstream={rerankerContextProfile.hasChunksUpstream}
+                      hasQuerySource={rerankerContextProfile.hasQuerySource}
+                      upstreamChunkCount={rerankerContextProfile.upstreamChunkCount}
+                    />
+                  ) : isLlmNode ? (
+                    <LLMSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      hasQuerySource={llmContextProfile.hasQuerySource}
+                      hasChunksUpstream={llmContextProfile.hasChunksUpstream}
+                      hasSystemPromptUpstream={llmContextProfile.hasSystemPromptUpstream}
+                      upstreamChunkCount={llmContextProfile.upstreamChunkCount}
+                    />
+                  ) : isSystemPromptNode ? (
+                    <SystemPromptSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isResponseNode ? (
+                    <ResponseSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      upstreamFormat={responseContextProfile.upstreamFormat}
+                      upstreamHasCitations={responseContextProfile.upstreamHasCitations}
+                      hasUpstreamProducer={responseContextProfile.hasUpstreamProducer}
+                    />
+                  ) : isUserNode ? (
+                    <UserSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isQuestionNode ? (
+                    <QuestionSettingsPanel
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                      hasUserContextUpstream={questionContextProfile.hasUserContextUpstream}
+                    />
+                  ) : isUrlScraperNode ? (
+                    <UrlScraperSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isQueryRewriterNode ? (
+                    <QueryRewriterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isHybridMergeNode ? (
+                    <HybridMergeSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isContextCompressionNode ? (
+                    <ContextCompressionSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isHallucinationGuardNode ? (
+                    <HallucinationGuardSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isReflectionLoopNode ? (
+                    <ReflectionLoopSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isKVStoreNode ? (
+                    <KVSessionStoreSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isHyDEGenNode ? (
+                    <HyDEGenSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isSTTNode ? (
+                    <STTSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isTTSNode ? (
+                    <TTSSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isModelRouterNode ? (
+                    <ModelRouterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isGuardrailsNode ? (
+                    <GuardrailsSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isPiiRedactionNode ? (
+                    <PiiRedactionSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isImageUploadNode ? (
+                    <ImageUploadSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isVisionLLMNode ? (
+                    <VisionLLMSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
+                  ) : isCustomNode ? (
+                    <CustomNodeSettingsPanel
+                      template={selectedTemplate}
+                      value={selectedNode.data.config}
+                      onChange={updateSelectedNodeConfig}
+                    />
+                  ) : (
+                    activeConfigEntries.map(([fieldName, fieldValue]) => {
+                      const normalizedField = String(fieldName);
+                      const valueAsString = String(fieldValue ?? '');
+                      const isLongText = normalizedField.toLowerCase().includes('prompt');
+                      return (
+                        <div key={fieldName} className="space-y-1">
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{normalizedField}</label>
+                          {isLongText ? (
+                            <textarea
+                              value={valueAsString}
+                              onChange={(e) => updateSelectedNodeConfig(fieldName, e.target.value)}
+                              rows={4}
+                              className="w-full rounded-xl border border-slate-700/50 bg-slate-900/80 p-2 text-xs text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/60"
+                            />
+                          ) : (
+                            <input
+                              type="text"
+                              value={valueAsString}
+                              onChange={(e) => updateSelectedNodeConfig(fieldName, e.target.value)}
+                              className="w-full rounded-xl border border-slate-700/50 bg-slate-900/80 p-2 text-xs text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/60"
+                            />
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {/* Document upload debug panels */}
+                  {isDocumentUploadNode && (
+                    <>
+                      <div className="space-y-2 rounded-xl border border-slate-700/50 p-2.5" style={{ background: '#0d1117' }}>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">NodeState update preview</p>
+                        <pre className="text-[10px] leading-relaxed text-emerald-300 overflow-auto max-h-32">
+                          {JSON.stringify(nodeState[selectedNode.id], null, 2)}
+                        </pre>
+                      </div>
+                      <div className="space-y-2 rounded-xl border border-indigo-800/40 p-2.5" style={{ background: 'rgba(79,70,229,0.08)' }}>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-indigo-400">JSON export to Chunking</p>
+                        <pre className="text-[10px] leading-relaxed text-slate-300 overflow-auto max-h-44">
+                          {JSON.stringify(documentChunkingPayload, null, 2)}
+                        </pre>
+                      </div>
+                      <details className="rounded-xl border border-slate-700/50 p-2.5" style={{ background: '#0d1117' }}>
+                        <summary className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-slate-400">JSON schema</summary>
+                        <pre className="mt-2 text-[10px] leading-relaxed text-slate-300 overflow-auto max-h-44">
+                          {JSON.stringify(DOCUMENT_UPLOAD_JSON_SCHEMA, null, 2)}
+                        </pre>
+                      </details>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })(),
+        document.body
+      )}
 
       {/* Browse Saved Architectures modal */}
       {browseFlowsOpen && createPortal(

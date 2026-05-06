@@ -16,6 +16,7 @@
  */
 
 import { useMemo } from 'react';
+import SliderRow from './SliderRow';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -32,11 +33,11 @@ import {
 
 // ─── Shared atoms (modern, soft fuchsia) ──────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-xs text-slate-200 outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-200/40';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
       {title}
     </label>
     {help && (
@@ -64,7 +65,7 @@ const ToggleChip = ({ checked, onChange, label, help }) => (
     className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
       checked
         ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800 shadow-sm shadow-fuchsia-200/30'
-        : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+        : 'border-slate-700/50 bg-[#0d1117] text-slate-400 hover:border-fuchsia-200 hover:text-fuchsia-700'
     }`}
   >
     <span
@@ -214,18 +215,14 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
   return (
     <div className="space-y-3">
       {/* ── Hero card ───────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fuchsia-300 via-fuchsia-400 to-pink-300"
-        />
+      <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3.5 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-50 to-pink-50 text-fuchsia-600 ring-1 ring-fuchsia-200/60">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-800/50 to-fuchsia-900/70 text-fuchsia-200 ring-1 ring-fuchsia-600/30">
             <User size={20} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold text-slate-800">{previewName}</p>
-            <p className="truncate font-mono text-[10.5px] text-slate-500">
+            <p className="truncate text-[13px] font-bold text-slate-100">{previewName}</p>
+            <p className="truncate font-mono text-[10.5px] text-slate-400">
               {previewSub || 'no identity yet'}
             </p>
           </div>
@@ -233,26 +230,26 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
             <span className="text-[10.5px] font-bold text-fuchsia-700">
               {toolCount} {toolCount === 1 ? 'tool' : 'tools'}
             </span>
-            <span className="font-mono text-[10px] text-slate-500">
+            <span className="font-mono text-[10px] text-slate-400">
               {config.rateLimitRpm === 0 ? '∞ rpm' : `${config.rateLimitRpm} rpm`}
             </span>
           </div>
         </div>
-        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-500">
-          Tells downstream nodes <span className="font-semibold text-slate-700">who</span> is asking
-          and <span className="font-semibold text-slate-700">what they may do</span>. Output language
+        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-400">
+          Tells downstream nodes <span className="font-semibold text-slate-200">who</span> is asking
+          and <span className="font-semibold text-slate-200">what they may do</span>. Output language
           and tone live in the Response / System Prompt nodes.
         </p>
       </div>
 
       {/* ── Quick presets ───────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-slate-800/40/40 p-3">
         <header className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Quick presets
           </p>
           {config.preset === 'custom' && (
-            <span className="rounded-full border border-fuchsia-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fuchsia-700">
+            <span className="rounded-full border border-fuchsia-200 bg-[#0d1117] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fuchsia-700">
               custom
             </span>
           )}
@@ -266,31 +263,31 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
                 key={preset.id}
                 type="button"
                 onClick={() => applyPreset(preset.id)}
-                className={`group flex flex-col gap-1 rounded-xl border bg-white p-2 text-left transition ${
+                className={`group flex flex-col gap-1 rounded-xl border bg-[#0d1117] p-2 text-left transition ${
                   active
-                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-200/50'
-                    : 'border-slate-200 hover:border-fuchsia-200'
+                    ? 'border-fuchsia-300 ring-2 ring-fuchsia-600/50'
+                    : 'border-slate-700/50 hover:border-fuchsia-200'
                 }`}
               >
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-md transition ${
                       active
-                        ? 'bg-fuchsia-100 text-fuchsia-600'
-                        : 'bg-slate-100 text-slate-500 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
+                        ? 'bg-fuchsia-900/40 text-fuchsia-300'
+                        : 'bg-slate-800/60 text-slate-400 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-500'
                     }`}
                   >
                     <Icon size={11} />
                   </span>
                   <span
                     className={`text-[11px] font-bold ${
-                      active ? 'text-fuchsia-800' : 'text-slate-700'
+                      active ? 'text-fuchsia-800' : 'text-slate-200'
                     }`}
                   >
                     {preset.label}
                   </span>
                 </div>
-                <span className="text-[9.5px] leading-snug text-slate-500">
+                <span className="text-[9.5px] leading-snug text-slate-400">
                   {preset.description}
                 </span>
               </button>
@@ -300,10 +297,10 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
       </section>
 
       {/* ── Identity ────────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <KeyRound size={12} className="text-fuchsia-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
             Identity
           </h4>
         </header>
@@ -364,7 +361,7 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
             className={`mt-[18px] inline-flex items-center justify-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
               config.requireAuth
                 ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800'
-                : 'border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+                : 'border-slate-700/50 bg-[#0d1117] text-slate-400 hover:border-fuchsia-200 hover:text-fuchsia-700'
             }`}
           >
             <ShieldCheck
@@ -377,19 +374,19 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
       </section>
 
       {/* ── Allowed tools ───────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck size={12} className="text-fuchsia-500" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               Allowed tools
             </h4>
           </div>
-          <span className="font-mono text-[10px] text-slate-500">
+          <span className="font-mono text-[10px] text-slate-400">
             {toolCount} / {ALL_TOOLS.length}
           </span>
         </header>
-        <p className="text-[10px] leading-snug text-slate-500">
+        <p className="text-[10px] leading-snug text-slate-400">
           The Router and LLM nodes only call tools that are checked here.
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -406,36 +403,28 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
       </section>
 
       {/* ── Rate limit ──────────────────────────────────────────────────── */}
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Gauge size={12} className="text-fuchsia-500" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               Rate limit
             </h4>
           </div>
-          <span className="font-mono text-[11px] font-bold text-fuchsia-700">
-            {config.rateLimitRpm === 0 ? '∞' : `${config.rateLimitRpm} rpm`}
-          </span>
         </header>
-        <input
-          type="range"
+        <SliderRow
+          label="Rate limit (rpm)"
+          value={config.rateLimitRpm}
           min={0}
           max={600}
           step={5}
-          value={config.rateLimitRpm}
-          onChange={(event) =>
-            setField('rateLimitRpm', Math.max(0, Number(event.target.value) || 0))
-          }
-          className="w-full accent-fuchsia-400"
+          onChange={(v) => setField('rateLimitRpm', Math.max(0, v))}
+          format={(v) => (v === 0 ? '∞' : `${v}`)}
+          accentColor="#e879f9"
+          minLabel="off"
+          maxLabel="600 rpm"
         />
-        <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-          <span>off</span>
-          <span>60</span>
-          <span>240</span>
-          <span>600</span>
-        </div>
-        <p className="text-[10px] text-slate-500">
+        <p className="text-[10px] text-slate-400">
           Per-user sliding window. <span className="font-mono">0</span> = unlimited
           (recommended only for service / admin roles).
         </p>
@@ -447,7 +436,7 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
           {warnings.map((warning) => (
             <li
               key={warning}
-              className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800"
+              className="flex items-start gap-1.5 rounded-lg border border-amber-700/40 bg-amber-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-300"
             >
               <AlertTriangle size={11} className="mt-0.5 shrink-0" />
               <span>{warning}</span>
@@ -455,15 +444,15 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
           ))}
         </ul>
       ) : (
-        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-300">
           <CheckCircle2 size={11} />
           Configuration valid — all checks passed.
         </div>
       )}
 
       {/* ── Output payload preview ──────────────────────────────────────── */}
-      <details className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
-        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+      <details className="rounded-2xl border border-slate-700/50 bg-slate-800/40/40 p-3">
+        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-300">
           Output payload (read-only)
         </summary>
         <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-fuchsia-200">
@@ -472,7 +461,7 @@ export default function UserSettingsPanel({ value = {}, onChange }) {
       </details>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
         <Zap size={11} className="text-fuchsia-400" />
         Output: <span className="font-mono text-fuchsia-700">user_context</span> → Guardrails, Router, LLM
       </div>

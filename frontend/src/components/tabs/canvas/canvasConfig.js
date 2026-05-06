@@ -113,7 +113,7 @@ export const NODE_LIBRARY = [
       strategy: 'recursive',
       chunkSize: 750,
       overlap: 250,
-      separators: '\\n\\n,\\n,. , ,',
+      separators: '\\n\\n,\\n,. ,',
       keepSeparator: true,
       lengthFunction: 'characters',
       tokenModel: 'cl100k_base',
@@ -204,6 +204,7 @@ export const NODE_LIBRARY = [
     icon: Search,
     colorClass: 'bg-cyan-50 border-cyan-200 text-cyan-700',
     config: {
+      retrieverProvider: 'vector-store',
       strategy: 'similarity',
       topK: 8,
       similarityThreshold: 0.72,
@@ -213,6 +214,7 @@ export const NODE_LIBRARY = [
       includeMetadata: true,
       includeScores: true,
       metadataFilter: '',
+      providerCredentialEnvVars: [],
       // Snapshot of the upstream Vector DB / Embedding profile, populated by
       // the panel so the canvas runtime can preview without traversing edges.
       embeddingProfile: null,
@@ -291,8 +293,8 @@ export const NODE_LIBRARY = [
   {
     key: 'storage-vector',
     category: 'Storage',
-    label: 'Vector Database',
-    description: 'Pinecone / Chroma / Qdrant / Weaviate / Milvus / pgvector / FAISS',
+    label: 'Vector Store',
+    description: 'Pinecone · Chroma · Qdrant · Weaviate · Milvus · MongoDB · Redis · Supabase + more',
     icon: Database,
     colorClass: 'bg-emerald-50 border-emerald-200 text-emerald-700',
     config: {
@@ -474,15 +476,6 @@ export const NODE_LIBRARY = [
     },
   },
   {
-    key: 'output-chat',
-    category: 'Interaction',
-    label: 'Chat Tester',
-    description: 'Interactive output preview',
-    icon: MessageSquare,
-    colorClass: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
-    config: { mode: 'preview' },
-  },
-  {
     key: 'input-image',
     category: 'Sources',
     label: 'Image Upload',
@@ -561,8 +554,7 @@ export const RAG_BLUEPRINTS = [
       'process-embedding',
       'storage-vector',
       'brain-llm',
-      'output-response',
-      'output-chat',
+      'output-response'
     ],
   },
   {
@@ -573,7 +565,7 @@ export const RAG_BLUEPRINTS = [
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-cleaning',
       'process-chunking', 'process-embedding', 'storage-vector',
-      'process-retriever', 'process-reranker', 'brain-llm', 'output-response', 'output-chat',
+      'process-retriever', 'process-reranker', 'brain-llm', 'output-response'
     ],
   },
   {
@@ -584,7 +576,7 @@ export const RAG_BLUEPRINTS = [
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
       'process-embedding', 'storage-vector', 'brain-hyde-gen',
-      'process-retriever', 'process-reranker', 'brain-llm', 'output-response', 'output-chat',
+      'process-retriever', 'process-reranker', 'brain-llm', 'output-response'
     ],
   },
   {
@@ -596,7 +588,7 @@ export const RAG_BLUEPRINTS = [
       'user-actor', 'input-question', 'input-upload', 'process-cleaning',
       'process-chunking', 'process-embedding', 'storage-vector',
       'process-reranker', 'brain-llm', 'process-reflection-loop',
-      'process-hallucination-guard', 'output-response', 'output-chat',
+      'process-hallucination-guard', 'output-response'
     ],
   },
   {
@@ -609,7 +601,7 @@ export const RAG_BLUEPRINTS = [
       'process-embedding', 'storage-vector', 'process-query-rewriter',
       'process-retriever', 'process-hybrid-merge', 'process-context-compression',
       'brain-router', 'brain-llm', 'process-reflection-loop',
-      'process-hallucination-guard', 'output-response', 'output-chat',
+      'process-hallucination-guard', 'output-response'
     ],
   },
   {
@@ -620,7 +612,7 @@ export const RAG_BLUEPRINTS = [
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
       'process-embedding', 'storage-vector', 'process-retriever',
-      'brain-llm', 'output-response', 'output-chat',
+      'brain-llm', 'output-response'
     ],
   },
   {
@@ -632,7 +624,7 @@ export const RAG_BLUEPRINTS = [
       'user-actor', 'input-question', 'input-upload', 'process-cleaning',
       'process-chunking', 'process-embedding', 'storage-vector',
       'storage-graph', 'process-hybrid-merge', 'brain-router',
-      'brain-llm', 'output-response', 'output-chat',
+      'brain-llm', 'output-response'
     ],
   },
   {
@@ -644,7 +636,7 @@ export const RAG_BLUEPRINTS = [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
       'process-embedding', 'storage-vector', 'brain-router',
       'process-retriever', 'process-hybrid-merge', 'process-reranker',
-      'brain-llm', 'output-response', 'output-chat',
+      'brain-llm', 'output-response'
     ],
   },
   {
@@ -655,7 +647,7 @@ export const RAG_BLUEPRINTS = [
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
       'process-embedding', 'storage-vector', 'process-context-compression',
-      'brain-llm', 'output-response', 'output-chat',
+      'brain-llm', 'output-response'
     ],
   },
   {
@@ -667,7 +659,7 @@ export const RAG_BLUEPRINTS = [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
       'process-embedding', 'storage-vector', 'process-retriever',
       'process-query-rewriter', 'brain-llm', 'process-hallucination-guard',
-      'output-response', 'output-chat',
+      'output-response'
     ],
   },
   {
@@ -678,7 +670,7 @@ export const RAG_BLUEPRINTS = [
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
       'process-embedding', 'storage-vector', 'process-retriever',
-      'brain-llm', 'output-response', 'output-chat',
+      'brain-llm', 'output-response'
     ],
   },
   {
@@ -691,7 +683,7 @@ export const RAG_BLUEPRINTS = [
       'process-chunking', 'process-embedding', 'storage-vector',
       'process-retriever', 'process-reranker', 'process-pii-redaction',
       'brain-guardrails', 'brain-llm', 'process-hallucination-guard',
-      'output-response', 'output-chat',
+      'output-response'
     ],
   },
 ];

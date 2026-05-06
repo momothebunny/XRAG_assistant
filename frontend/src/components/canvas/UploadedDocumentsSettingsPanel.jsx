@@ -73,15 +73,15 @@ export const DEFAULT_UPLOADED_DOCUMENTS_CONFIG = {
 // UI primitives
 // ─────────────────────────────────────────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-fuchsia-400';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2 py-1.5 text-xs text-slate-200 outline-none focus:ring-2 focus:ring-fuchsia-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
+    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
       {title}
     </label>
     {help && (
-      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
+      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-200">
         <CircleHelp size={11} />
       </button>
     )}
@@ -94,15 +94,15 @@ const ScopeChip = ({ active, onClick, icon: Icon, label, hint }) => (
     onClick={onClick}
     className={`flex flex-col items-start gap-0.5 rounded-lg border px-2 py-1.5 text-left transition ${
       active
-        ? 'border-fuchsia-500 bg-fuchsia-50 ring-2 ring-fuchsia-300'
-        : 'border-slate-200 bg-white hover:border-fuchsia-300'
+        ? 'border-fuchsia-500/70 bg-fuchsia-900/20 ring-1 ring-fuchsia-600/40'
+        : 'border-slate-700/50 bg-[#0d1117] hover:border-fuchsia-700/50'
     }`}
   >
     <div className="flex w-full items-center gap-1">
-      <Icon size={12} className={active ? 'text-fuchsia-600' : 'text-slate-400'} />
-      <span className="text-[11px] font-bold text-slate-800">{label}</span>
+      <Icon size={12} className={active ? 'text-fuchsia-400' : 'text-slate-400'} />
+      <span className="text-[11px] font-bold text-slate-100">{label}</span>
     </div>
-    <span className="text-[9.5px] leading-snug text-slate-500">{hint}</span>
+    <span className="text-[9.5px] leading-snug text-slate-400">{hint}</span>
   </button>
 );
 
@@ -217,8 +217,8 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
   return (
     <div>
       <div
-        className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-[11px] hover:bg-fuchsia-50/60 ${
-          checked ? 'bg-fuchsia-50/40' : ''
+        className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-[11px] hover:bg-fuchsia-900/25 ${
+          checked ? 'bg-fuchsia-900/20' : ''
         }`}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
       >
@@ -226,7 +226,7 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
           <button
             type="button"
             onClick={() => toggleExpanded(node.path)}
-            className="text-slate-400 hover:text-slate-700"
+            className="text-slate-400 hover:text-slate-200"
             title={isOpen ? 'Collapse' : 'Expand'}
           >
             {isOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
@@ -246,7 +246,7 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
         ) : (
           <Folder size={12} className="text-slate-400" />
         )}
-        <span className="truncate font-semibold text-slate-700">
+        <span className="truncate font-semibold text-slate-200">
           {node.path === '' ? '/ (root)' : node.name}
         </span>
         <span className="ml-auto text-[9.5px] font-mono text-slate-400">
@@ -269,7 +269,7 @@ const FolderTreeNode = ({ node, depth, expanded, toggleExpanded, isFolderSelecte
           {node.docs.map((doc) => (
             <div
               key={doc.id}
-              className="flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10.5px] text-slate-500"
+              className="flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10.5px] text-slate-400"
               style={{ paddingLeft: `${(depth + 1) * 12 + 16}px` }}
               title={`${doc.name} · ${formatBytes(doc.size_bytes)}`}
             >
@@ -421,16 +421,16 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
   return (
     <div className="space-y-3">
       {/* ── Knowledge base banner ──────────────────────────────────────── */}
-      <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50 p-3">
+      <div className="rounded-xl border border-fuchsia-700/40 bg-fuchsia-900/15 p-3">
         <div className="flex items-start gap-2">
-          <Layers size={14} className="mt-0.5 text-fuchsia-700" />
+          <Layers size={14} className="mt-0.5 text-fuchsia-400" />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-wider text-fuchsia-800">
+            <p className="text-[11px] font-black uppercase tracking-wider text-fuchsia-300">
               Knowledge base · {documents.length} documents
             </p>
-            <p className="mt-0.5 text-[11px] text-fuchsia-900">
+            <p className="mt-0.5 text-[11px] text-slate-400">
               This node references files uploaded on the{' '}
-              <span className="font-bold">Documents</span> page. Here you only
+              <span className="font-semibold text-slate-200">Documents</span> page. Here you only
               pick which documents / folders enter the pipeline — uploading
               still happens on the Documents page.
             </p>
@@ -438,7 +438,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
           <button
             type="button"
             onClick={reload}
-            className="shrink-0 rounded-lg border border-fuchsia-300 bg-white p-1.5 text-fuchsia-600 transition hover:bg-fuchsia-100"
+            className="shrink-0 rounded-lg border border-fuchsia-700/50 bg-[#0d1117] p-1.5 text-fuchsia-300 transition hover:bg-fuchsia-900/30"
             title="Refresh list"
             disabled={loading}
           >
@@ -448,7 +448,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
       </div>
 
       {loadError && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-rose-700">
+        <div className="rounded-lg border border-rose-700/40 bg-rose-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-rose-400">
           Load error: {loadError}
         </div>
       )}
@@ -483,9 +483,9 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
 
       {/* ── Folder tree (when scope=folders) ───────────────────────────── */}
       {config.scope === 'folders' && (
-        <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
+        <div className="space-y-1.5 rounded-xl border border-slate-700/50 bg-[#0d1117] p-2">
           <div className="flex items-center justify-between gap-1">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
               Folder tree
             </p>
             <span className="font-mono text-[9.5px] text-slate-400">
@@ -493,11 +493,11 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
             </span>
           </div>
           {documents.length === 0 ? (
-            <p className="rounded bg-slate-50 px-2 py-3 text-center text-[10.5px] text-slate-400">
+            <p className="rounded bg-slate-800/40 px-2 py-3 text-center text-[10.5px] text-slate-400">
               {loading ? 'Loading…' : 'No uploaded documents.'}
             </p>
           ) : (
-            <div className="max-h-64 overflow-auto rounded border border-slate-100 bg-slate-50/40 py-1">
+            <div className="max-h-64 overflow-auto rounded border border-slate-700/50 bg-slate-900/60 py-1">
               <FolderTreeNode
                 node={tree}
                 depth={0}
@@ -515,7 +515,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                   key={path}
                   type="button"
                   onClick={() => toggleFolder(path)}
-                  className="flex items-center gap-1 rounded-md border border-fuchsia-200 bg-fuchsia-50 px-1.5 py-0.5 text-[10px] font-mono text-fuchsia-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+                  className="flex items-center gap-1 rounded-md border border-fuchsia-700/50 bg-fuchsia-900/20 px-1.5 py-0.5 text-[10px] font-mono text-fuchsia-300 hover:border-rose-700/50 hover:bg-rose-900/20 hover:text-rose-400"
                   title="Remove"
                 >
                   <Folder size={9} />
@@ -530,7 +530,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
 
       {/* ── Document picker (when scope=documents) ─────────────────────── */}
       {config.scope === 'documents' && (
-        <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
+        <div className="space-y-1.5 rounded-xl border border-slate-700/50 bg-[#0d1117] p-2">
           <div className="relative">
             <Search
               size={11}
@@ -545,19 +545,19 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
             />
           </div>
           {visibleDocuments.length === 0 ? (
-            <p className="rounded bg-slate-50 px-2 py-3 text-center text-[10.5px] text-slate-400">
+            <p className="rounded bg-slate-800/40 px-2 py-3 text-center text-[10.5px] text-slate-400">
               {loading ? 'Loading…' : 'No results.'}
             </p>
           ) : (
-            <div className="max-h-64 overflow-auto rounded border border-slate-100 bg-slate-50/40">
+            <div className="max-h-64 overflow-auto rounded border border-slate-700/50 bg-slate-900/60">
               {visibleDocuments.map((doc) => {
                 const checked = isDocSelected(doc.id);
                 const folder = folderOf(doc.relative_path, doc.name);
                 return (
                   <label
                     key={doc.id}
-                    className={`flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-[10.5px] hover:bg-fuchsia-50/60 ${
-                      checked ? 'bg-fuchsia-50/40' : ''
+                    className={`flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-[10.5px] hover:bg-fuchsia-900/25 ${
+                      checked ? 'bg-fuchsia-900/20' : ''
                     }`}
                   >
                     <input
@@ -568,7 +568,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
                     />
                     <FileText size={10} className="text-slate-400" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold text-slate-700">{doc.name}</div>
+                      <div className="truncate font-semibold text-slate-200">{doc.name}</div>
                       {folder && (
                         <div className="truncate font-mono text-[9px] text-slate-400">{folder}/</div>
                       )}
@@ -582,7 +582,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
             </div>
           )}
           {(config.selectedDocumentIds || []).length > 0 && (
-            <p className="text-[10px] font-bold text-fuchsia-700">
+            <p className="text-[10px] font-bold text-fuchsia-400">
               {config.selectedDocumentIds.length} documents selected
             </p>
           )}
@@ -590,10 +590,10 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
       )}
 
       {/* ── Filters ────────────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+      <div className="space-y-2 rounded-xl border border-slate-700/50 bg-[#0d1117] p-3">
         <div className="flex items-center gap-1.5">
-          <Filter size={12} className="text-slate-500" />
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+          <Filter size={12} className="text-slate-400" />
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
             Filters
           </p>
         </div>
@@ -630,34 +630,34 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
       </div>
 
       {/* ── Resolved selection summary ─────────────────────────────────── */}
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
+      <div className="rounded-xl border border-emerald-700/40 bg-emerald-900/20 p-3">
+        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
           Resolved selection
         </p>
         <div className="mt-1.5 grid grid-cols-2 @[280px]:grid-cols-3 gap-1.5 text-[11px]">
-          <div className="rounded-lg bg-white/80 px-2 py-1.5">
+          <div className="rounded-lg bg-slate-900/70 px-2 py-1.5">
             <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Docs</p>
-            <p className="font-mono text-[12px] font-bold text-slate-800">{resolved.length}</p>
+            <p className="font-mono text-[12px] font-bold text-slate-100">{resolved.length}</p>
           </div>
-          <div className="rounded-lg bg-white/80 px-2 py-1.5">
+          <div className="rounded-lg bg-slate-900/70 px-2 py-1.5">
             <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Size</p>
-            <p className="font-mono text-[12px] font-bold text-slate-800">{formatBytes(totalBytes)}</p>
+            <p className="font-mono text-[12px] font-bold text-slate-100">{formatBytes(totalBytes)}</p>
           </div>
-          <div className="rounded-lg bg-white/80 px-2 py-1.5">
+          <div className="rounded-lg bg-slate-900/70 px-2 py-1.5">
             <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Chunks</p>
-            <p className="font-mono text-[12px] font-bold text-slate-800">{totalChunks}</p>
+            <p className="font-mono text-[12px] font-bold text-slate-100">{totalChunks}</p>
           </div>
         </div>
       </div>
 
       {/* ── Pre-processing (compact) ───────────────────────────────────── */}
-      <details className="rounded-xl border border-slate-200 bg-white p-3" open>
-        <summary className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-slate-500">
+      <details className="rounded-xl border border-slate-700/50 bg-[#0d1117] p-3" open>
+        <summary className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-slate-400">
           Pre-processing & metadata
         </summary>
         <div className="mt-2 space-y-2">
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+            <label className="flex items-center gap-1.5 rounded border border-slate-700/50 px-2 py-1 text-[10.5px]">
               <input
                 type="checkbox"
                 checked={Boolean(config.remove_headers_footers)}
@@ -666,7 +666,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
               />
               remove_headers_footers
             </label>
-            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+            <label className="flex items-center gap-1.5 rounded border border-slate-700/50 px-2 py-1 text-[10.5px]">
               <input
                 type="checkbox"
                 checked={Boolean(config.normalize_whitespace)}
@@ -675,7 +675,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
               />
               normalize_whitespace
             </label>
-            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+            <label className="flex items-center gap-1.5 rounded border border-slate-700/50 px-2 py-1 text-[10.5px]">
               <input
                 type="checkbox"
                 checked={Boolean(config.ocr_enabled)}
@@ -684,7 +684,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
               />
               ocr_enabled
             </label>
-            <label className="flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1 text-[10.5px]">
+            <label className="flex items-center gap-1.5 rounded border border-slate-700/50 px-2 py-1 text-[10.5px]">
               <input
                 type="checkbox"
                 checked={Boolean(config.auto_tagging)}
@@ -749,7 +749,7 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
           {warnings.map((warning) => (
             <li
               key={warning}
-              className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800"
+              className="flex items-start gap-1.5 rounded-lg border border-amber-700/40 bg-amber-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-300"
             >
               <AlertTriangle size={11} className="mt-0.5 shrink-0" />
               <span>{warning}</span>
@@ -757,14 +757,14 @@ export default function UploadedDocumentsSettingsPanel({ value = {}, onChange })
           ))}
         </ul>
       ) : (
-        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-800">
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-emerald-300">
           <CheckCircle2 size={11} />
           {resolved.length} documents will be forwarded to the Chunking node.
         </div>
       )}
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <div className="flex items-center gap-1.5 rounded-lg bg-slate-800/60 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
         <Zap size={11} className="text-fuchsia-500" />
         Output: <span className="font-mono">documents</span> → Chunking, Cleaning, Graph DB
       </div>

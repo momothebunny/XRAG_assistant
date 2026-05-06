@@ -1,5 +1,5 @@
 /**
- * TTSSettingsPanel — amber-themed Text-to-Speech inspector.
+ * TTSSettingsPanel  amber-themed Text-to-Speech inspector.
  *
  * Backend contract (`output-tts` in `nodes.py::_exec_tts`):
  *   { provider, voice, format, speed, streamOutput }
@@ -29,11 +29,11 @@ const OPENAI_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
 const FORMATS = ['mp3', 'opus', 'aac', 'flac', 'wav'];
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-200/50';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-600/60 focus:ring-2 focus:ring-amber-200/50';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">{title}</label>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">{title}</label>
     {help && (
       <span title={help} className="cursor-help text-slate-300 hover:text-amber-500">
         <CircleHelp size={11} />
@@ -50,8 +50,8 @@ const ToggleChip = ({ checked, onChange, label, help }) => (
     onClick={() => onChange?.(!checked)}
     className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
       checked
-        ? 'border-amber-300 bg-amber-50 text-amber-800 shadow-sm shadow-amber-200/40'
-        : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200 hover:text-amber-700'
+        ? 'border-amber-600/60 bg-amber-900/20 text-amber-300 shadow-sm shadow-amber-200/40'
+        : 'border-slate-700/50 bg-[#0d1117] text-slate-400 hover:border-amber-700/40 hover:text-amber-400'
     }`}
   >
     <span aria-hidden className={`inline-block h-2 w-2 rounded-full transition ${checked ? 'bg-amber-500' : 'bg-slate-300'}`} />
@@ -61,7 +61,7 @@ const ToggleChip = ({ checked, onChange, label, help }) => (
 
 function StatPill({ label, hint, ok = true, Icon }) {
   return (
-    <div className={`rounded-lg border px-2 py-1.5 text-[10px] ${ok ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-500'}`}>
+    <div className={`rounded-lg border px-2 py-1.5 text-[10px] ${ok ? 'border-amber-700/40 bg-amber-900/20 text-amber-300' : 'border-slate-700/50 bg-[#0d1117] text-slate-400'}`}>
       <div className="flex items-center gap-1">
         <Icon size={10} />
         <p className="font-bold">{label}</p>
@@ -92,34 +92,33 @@ export default function TTSSettingsPanel({ value = {}, onChange }) {
 
   return (
     <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-300 via-amber-400 to-orange-300" />
+      <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3.5 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600 ring-1 ring-amber-200/60">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-800/50 to-amber-900/70 text-amber-200 ring-1 ring-amber-600/30">
             <Volume2 size={20} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold text-slate-800">Text-to-Speech</p>
-            <p className="truncate font-mono text-[10.5px] text-slate-500">
-              <span className="text-amber-700">{activeProvider.label}</span> · {payload.voice}
+            <p className="truncate text-[13px] font-bold text-slate-100">Text-to-Speech</p>
+            <p className="truncate font-mono text-[10.5px] text-slate-400">
+              <span className="text-amber-400">{activeProvider.label}</span>  {payload.voice}
             </p>
           </div>
           <div className="hidden @[280px]:flex shrink-0 flex-col items-end gap-0.5 text-right">
-            <span className="text-[10.5px] font-bold text-amber-700">{payload.format.toUpperCase()}</span>
-            <span className="font-mono text-[10px] text-slate-500">{payload.speed.toFixed(2)}×</span>
+            <span className="text-[10.5px] font-bold text-amber-400">{payload.format.toUpperCase()}</span>
+            <span className="font-mono text-[10px] text-slate-400">{payload.speed.toFixed(2)}</span>
           </div>
         </div>
-        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-500">
+        <p className="mt-2.5 text-[10.5px] leading-snug text-slate-400">
           Synthesises spoken audio from the LLM answer. Streaming sends partial audio
           as soon as a sentence is ready.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-3">
+      <div className="rounded-2xl border border-amber-700/40 bg-amber-900/20 p-3">
         <div className="flex items-start gap-2">
-          <Sliders size={14} className="text-amber-700" />
+          <Sliders size={14} className="text-amber-400" />
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-800">Synthesis summary</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">Synthesis summary</p>
             <div className="mt-2 grid grid-cols-2 @[280px]:grid-cols-3 gap-1.5">
               <StatPill label="Provider" ok hint={activeProvider.label.split(' ')[0]} Icon={Volume2} />
               <StatPill label="Voice"    ok hint={payload.voice}                       Icon={Mic} />
@@ -129,20 +128,20 @@ export default function TTSSettingsPanel({ value = {}, onChange }) {
         </div>
       </div>
 
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <Volume2 size={12} className="text-amber-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Provider</h4>
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">Provider</h4>
         </header>
         <select value={payload.provider} onChange={(e) => setField('provider', e.target.value)} className={inputClass}>
           {PROVIDERS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
         </select>
       </section>
 
-      <section className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <section className="space-y-2 rounded-2xl border border-slate-700/50 bg-[#0d1117] p-3">
         <header className="flex items-center gap-2">
           <Mic size={12} className="text-amber-500" />
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Voice &amp; quality</h4>
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">Voice &amp; quality</h4>
         </header>
         <div>
           <FieldLabel title="Voice" help="Voice ID or preset for the selected provider." />
@@ -168,7 +167,7 @@ export default function TTSSettingsPanel({ value = {}, onChange }) {
             </select>
           </div>
           <div>
-            <FieldLabel title="Speed" help="Playback speed multiplier (0.25–4.0)." />
+            <FieldLabel title="Speed" help="Playback speed multiplier (0.254.0)." />
             <input
               type="number"
               min={0.25}
@@ -193,20 +192,20 @@ export default function TTSSettingsPanel({ value = {}, onChange }) {
       {warnings.length > 0 ? (
         <ul className="space-y-1">
           {warnings.map((w) => (
-            <li key={w} className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800">
+            <li key={w} className="flex items-start gap-1.5 rounded-lg border border-amber-700/40 bg-amber-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-300">
               <AlertTriangle size={11} className="mt-0.5 shrink-0" />
               <span>{w}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <div className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-800">
+        <div className="flex items-center gap-1.5 rounded-lg border border-amber-700/40 bg-amber-900/20 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-300">
           <CheckCircle2 size={11} /> Synthesis configured.
         </div>
       )}
 
-      <details className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
-        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+      <details className="rounded-2xl border border-slate-700/50 bg-slate-800/40/40 p-3">
+        <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-300">
           Output payload (read-only)
         </summary>
         <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[10px] leading-relaxed text-amber-200">
@@ -214,9 +213,9 @@ export default function TTSSettingsPanel({ value = {}, onChange }) {
         </pre>
       </details>
 
-      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-700/50 bg-[#0d1117] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
         <Zap size={11} className="text-amber-400" />
-        Output: <span className="font-mono text-amber-700">audio_url · spoken</span>
+        Output: <span className="font-mono text-amber-400">audio_url  spoken</span>
       </div>
     </div>
   );

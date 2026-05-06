@@ -25,6 +25,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import SliderRow from './SliderRow';
 import {
   Award,
   CircleHelp,
@@ -86,20 +87,20 @@ export function buildRerankerPayload(config = {}) {
 // UI primitives
 // ─────────────────────────────────────────────────────────────────────────
 const inputClass =
-  'w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-cyan-400';
+  'w-full rounded-lg border border-slate-700/50 bg-[#0d1117] px-2 py-1.5 text-xs text-slate-200 outline-none focus:ring-2 focus:ring-cyan-400';
 
 const FieldLabel = ({ title, help }) => (
   <div className="mb-1 flex items-center gap-1">
-    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{title}</label>
+    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">{title}</label>
     {help && (
-      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-700">
+      <button type="button" title={help} className="shrink-0 text-slate-400 hover:text-slate-200">
         <CircleHelp size={11} />
       </button>
     )}
   </div>
 );
 
-const SectionHeading = ({ children, color = 'text-slate-600' }) => (
+const SectionHeading = ({ children, color = 'text-slate-300' }) => (
   <h4 className={`text-[10px] font-black uppercase tracking-wider ${color}`}>{children}</h4>
 );
 
@@ -171,16 +172,16 @@ export default function RerankerSettingsPanel({
   // ─── SLEEPING STATE ─────────────────────────────────────────────────────
   if (!isAwake) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-4">
+      <div className="rounded-xl border-2 border-dashed border-slate-600/60 bg-slate-800/40 p-4">
         <div className="flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm">
-            <Lock size={16} className="text-slate-500" />
+            <Lock size={16} className="text-slate-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
               Reranker · idle / sleeping
             </p>
-            <p className="text-xs font-semibold text-slate-700">
+            <p className="text-xs font-semibold text-slate-200">
               Connect a <span className="font-mono">chunks</span> AND query source.
             </p>
           </div>
@@ -190,8 +191,8 @@ export default function RerankerSettingsPanel({
           <div
             className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] ${
               hasChunksUpstream
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                : 'border-slate-200 bg-white text-slate-500'
+                ? 'border-emerald-700/40 bg-emerald-900/20 text-emerald-300'
+                : 'border-slate-700/50 bg-[#0d1117] text-slate-400'
             }`}
           >
             <Filter size={12} />
@@ -203,8 +204,8 @@ export default function RerankerSettingsPanel({
           <div
             className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] ${
               hasQuerySource
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                : 'border-slate-200 bg-white text-slate-500'
+                ? 'border-emerald-700/40 bg-emerald-900/20 text-emerald-300'
+                : 'border-slate-700/50 bg-[#0d1117] text-slate-400'
             }`}
           >
             <Search size={12} />
@@ -215,7 +216,7 @@ export default function RerankerSettingsPanel({
           </div>
         </div>
 
-        <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
+        <p className="mt-3 text-[11px] leading-relaxed text-slate-300">
           The reranker pairwise-scores <strong>(query, chunk)</strong> pairs. Both inputs are required.
         </p>
       </div>
@@ -226,39 +227,39 @@ export default function RerankerSettingsPanel({
   return (
     <div className="space-y-3">
       {/* ── Context-aware banner ────────────────────────────────────────── */}
-      <div className="rounded-xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-3">
+      <div className="rounded-xl border border-cyan-700/40 bg-cyan-900/15 p-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={14} className="text-cyan-700" />
-          <p className="text-[11px] font-black uppercase tracking-wider text-cyan-800">
+          <ShieldCheck size={14} className="text-cyan-400" />
+          <p className="text-[11px] font-black uppercase tracking-wider text-cyan-300">
             Context-aware
           </p>
         </div>
-        <p className="mt-1.5 text-[11px] leading-relaxed text-slate-700">
+        <p className="mt-1.5 text-[11px] leading-relaxed text-slate-200">
           Bemenet:{' '}
-          <span className="font-mono font-bold text-cyan-700">
+          <span className="font-mono font-bold text-cyan-400">
             {upstreamChunkCount ?? '?'} chunk
           </span>{' '}
           ➔ Output:{' '}
-          <span className="font-mono font-bold text-cyan-700">{topN} most relevant chunks</span>
+          <span className="font-mono font-bold text-cyan-400">{topN} most relevant chunks</span>
         </p>
       </div>
 
       {/* ── Backend proxy badge ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-bold text-emerald-800">
+      <div className="flex items-center gap-2 rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-2.5 py-1.5 text-[10px] font-bold text-emerald-300">
         <Cloud size={12} />
         <span>OpenRouter via backend proxy</span>
         <span className="ml-auto font-mono text-[9px] text-emerald-600">no client API key</span>
       </div>
 
       {/* ── Model picker ────────────────────────────────────────────────── */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+      <div className="space-y-2 rounded-xl border border-slate-700/50 bg-[#0d1117] p-3">
         <div className="flex items-center justify-between">
-          <SectionHeading color="text-cyan-700">Reranker model</SectionHeading>
+          <SectionHeading color="text-cyan-400">Reranker model</SectionHeading>
           <button
             type="button"
             onClick={() => refreshModels(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded border border-slate-700/50 bg-[#0d1117] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 hover:bg-slate-800/50 disabled:opacity-50"
           >
             <RefreshCw size={10} className={refreshing ? 'animate-spin' : ''} />
             Refresh
@@ -266,7 +267,7 @@ export default function RerankerSettingsPanel({
         </div>
 
         {loadError && (
-          <p className="rounded border border-cyan-200 bg-cyan-50 px-2 py-1 text-[10px] text-cyan-800">
+          <p className="rounded border border-cyan-700/40 bg-cyan-900/15 px-2 py-1 text-[10px] text-cyan-300">
             {loadError}
           </p>
         )}
@@ -288,10 +289,10 @@ export default function RerankerSettingsPanel({
         </select>
 
         {selectedModel && (
-          <div className="flex flex-wrap gap-1 text-[9px] font-mono text-slate-500">
-            <span className="rounded bg-slate-100 px-1.5 py-0.5">id: {selectedModel.id}</span>
+          <div className="flex flex-wrap gap-1 text-[9px] font-mono text-slate-400">
+            <span className="rounded bg-slate-800/60 px-1.5 py-0.5">id: {selectedModel.id}</span>
             {selectedModel.context_length && (
-              <span className="rounded bg-slate-100 px-1.5 py-0.5">
+              <span className="rounded bg-slate-800/60 px-1.5 py-0.5">
                 ctx: {selectedModel.context_length}
               </span>
             )}
@@ -300,72 +301,37 @@ export default function RerankerSettingsPanel({
       </div>
 
       {/* ── Reranker parameters ─────────────────────────────────────────── */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-3">
+      <div className="space-y-3 rounded-xl border border-slate-700/50 bg-[#0d1117] p-3">
         <SectionHeading>
           <span className="inline-flex items-center gap-1">
             <Award size={11} /> Advanced settings
           </span>
         </SectionHeading>
 
-        <div>
-          <FieldLabel
-            title="Top N (output chunks)"
-            help="This many documents are forwarded to the LLM."
-          />
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min={1}
-              max={20}
-              step={1}
-              value={topN}
-              onChange={(event) => setMeta('top_n', Number(event.target.value))}
-              className="flex-1 accent-cyan-600"
-            />
-            <input
-              type="number"
-              min={1}
-              max={50}
-              value={topN}
-              onChange={(event) => setMeta('top_n', Number(event.target.value))}
-              className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center font-mono text-xs"
-            />
-          </div>
-          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
-            This many documents are forwarded to the LLM.
-          </p>
-        </div>
+        <SliderRow
+          label="Top N (output chunks)"
+          help="This many documents are forwarded to the LLM."
+          value={topN}
+          min={1}
+          max={20}
+          step={1}
+          onChange={(v) => setMeta('top_n', v)}
+          accentColor="#22d3ee"
+        />
 
-        <div>
-          <FieldLabel
-            title="Relevance threshold (Score Threshold)"
-            help="Hits below this score are dropped to avoid hallucinations."
-          />
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={scoreThreshold}
-              onChange={(event) => setMeta('score_threshold', Number(event.target.value))}
-              className="flex-1 accent-cyan-600"
-            />
-            <input
-              type="number"
-              min={0}
-              max={1}
-              step={0.01}
-              value={scoreThreshold}
-              onChange={(event) => setMeta('score_threshold', Number(event.target.value))}
-              className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center font-mono text-xs"
-            />
-          </div>
-          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
-            Hits below this score are dropped to avoid
-            hallucinations. {scoreThreshold === 0 && '(0 = disabled)'}
-          </p>
-        </div>
+        <SliderRow
+          label="Relevance threshold"
+          help="Hits below this score are dropped to avoid hallucinations."
+          value={scoreThreshold}
+          min={0}
+          max={1}
+          step={0.01}
+          onChange={(v) => setMeta('score_threshold', v)}
+          format={(v) => v.toFixed(2)}
+          accentColor="#22d3ee"
+          minLabel={scoreThreshold === 0 ? 'disabled (0)' : '0'}
+          maxLabel="1"
+        />
       </div>
 
       {/* ── Read-only output payload ────────────────────────────────────── */}
@@ -377,7 +343,7 @@ export default function RerankerSettingsPanel({
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <div className="flex items-center gap-1.5 rounded-lg bg-slate-800/60 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
         <Zap size={11} className="text-cyan-500" />
         Allowed inputs: <span className="font-mono">chunks</span> + <span className="font-mono">text</span>
       </div>

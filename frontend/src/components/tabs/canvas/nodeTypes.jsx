@@ -1,6 +1,124 @@
 import { Handle, Position } from '@xyflow/react';
 import { templateByKey } from './canvasConfig';
 
+// ── Config summary — one-line description shown under the node title ───
+// Extracts the most meaningful value from the node's config so the user
+// can scan the canvas without opening every inspector panel.
+const getConfigSummary = (templateKey, config) => {
+  if (!config) return null;
+  switch (templateKey) {
+    case 'brain-llm':
+    case 'brain-vision-llm':
+    case 'brain-hyde-gen': {
+      const mid = config.metadata?.model_id || config.model_id || '';
+      const temp = config.metadata?.temperature ?? config.temperature;
+      const parts = [];
+      if (mid) parts.push(mid.split('/').pop());
+      if (temp != null) parts.push(`${temp}°`);
+      return parts.join(' · ') || null;
+    }
+    case 'process-embedding': {
+      const mid = config.model_id || '';
+      const dims = config.output_dimensions;
+      const prov = config.embeddingProvider || config.gateway || '';
+      const parts = [];
+      if (mid) parts.push(mid.split('/').pop());
+      else if (prov) parts.push(prov);
+      if (dims) parts.push(`${dims}d`);
+      return parts.join(' · ') || null;
+    }
+    case 'storage-vector': {
+      const prov = config.provider || '';
+      const idx = config.indexName || config.collection || '';
+      const ns = config.namespace;
+      const parts = [];
+      if (prov) parts.push(prov);
+      if (idx) parts.push(idx);
+      if (ns) parts.push(`ns:${ns}`);
+      return parts.join(' · ') || null;
+    }
+    case 'process-retriever': {
+      const strat = config.strategy || '';
+      const k = config.topK;
+      const prov = config.retrieverProvider || '';
+      const parts = [];
+      if (prov && prov !== 'vector-store') parts.push(prov);
+      if (strat) parts.push(strat);
+      if (k != null) parts.push(`k=${k}`);
+      return parts.join(' · ') || null;
+    }
+    case 'process-reranker': {
+      const mid = config.metadata?.model_id || '';
+      const topN = config.metadata?.top_n;
+      const parts = [];
+      if (mid) parts.push(mid.split('/').pop());
+      if (topN != null) parts.push(`top${topN}`);
+      return parts.join(' · ') || null;
+    }
+    case 'process-chunking': {
+      const strat = config.strategy || '';
+      const size = config.chunkSize;
+      const overlap = config.overlap;
+      const parts = [];
+      if (strat) parts.push(strat);
+      if (size != null) parts.push(`${size}c`);
+      if (overlap != null) parts.push(`+${overlap}`);
+      return parts.join(' · ') || null;
+    }
+    case 'input-upload': {
+      const scope = config.scope || 'all';
+      if (scope === 'folders' && Array.isArray(config.selectedFolders) && config.selectedFolders.length)
+        return `${config.selectedFolders.length} folder${config.selectedFolders.length !== 1 ? 's' : ''}`;
+      if (scope === 'documents' && Array.isArray(config.selectedDocumentIds) && config.selectedDocumentIds.length)
+        return `${config.selectedDocumentIds.length} doc${config.selectedDocumentIds.length !== 1 ? 's' : ''}`;
+      return scope === 'all' ? 'all docs' : null;
+    }
+    case 'input-url': {
+      const urls = config.urls || config.url || '';
+      const first = Array.isArray(urls) ? urls[0] : String(urls);
+      if (!first) return null;
+      try { return new URL(first).hostname; } catch { return first.slice(0, 24); }
+    }
+    case 'storage-graph': {
+      const prov = config.provider || '';
+      const db = config.database || '';
+      const parts = [prov, db].filter(Boolean);
+      return parts.join(' · ') || null;
+    }
+    case 'brain-router':
+    case 'process-query-rewriter': {
+      const model = config.model || config.metadata?.model_id || '';
+      return model ? model.split('/').pop() : null;
+    }
+    case 'input-system-prompt': {
+      const preset = config.preset || '';
+      return preset || null;
+    }
+    case 'user-actor': {
+      const uid = config.userId || config.tenantId || '';
+      return uid || null;
+    }
+    case 'process-pii-redaction': {
+      const active = [];
+      if (config.redactEmails) active.push('email');
+      if (config.redactPhones) active.push('phone');
+      if (config.redactCreditCards) active.push('CC');
+      if (active.length === 0) return 'off';
+      return active.join(', ');
+    }
+    case 'storage-keyvalue': {
+      const prov = config.provider || '';
+      const ttl = config.ttlSeconds;
+      const parts = [];
+      if (prov) parts.push(prov);
+      if (ttl != null) parts.push(`TTL ${ttl}s`);
+      return parts.join(' · ') || null;
+    }
+    default:
+      return null;
+  }
+};
+
 export const isPreviewElementId = (id) => String(id || '').startsWith('preview-');
 
 // ── Category palette ───────────────────────────────────────────────────
@@ -63,6 +181,7 @@ const RagNode = ({ id, data, selected }) => {
   const runStatus = data.runStatus;
   const runStyle = runStatus ? RUN_STATUS_STYLES[runStatus] : null;
   const palette = paletteFromColorClass(data.colorClass);
+  const configSummary = getConfigSummary(data.templateKey, data.config);
 
   const emitNodeClick = (event) => {
     if (isPreviewNode) {
@@ -85,14 +204,45 @@ const RagNode = ({ id, data, selected }) => {
     );
   };
 
-  const baseShadow = `0 2px 12px rgba(0,0,0,0.10), 0 0 0 1px ${palette.accent}50`;
-  const hoverShadow = `0 6px 20px rgba(0,0,0,0.15), 0 0 0 2px ${palette.accent}90`;
-  const selectedShadow = `0 8px 28px rgba(0,0,0,0.18), 0 0 0 2.5px ${palette.accent}`;
+  const emitNodeDoubleClick = (event) => {
+    if (isPreviewNode) {
+      window.dispatchEvent(new CustomEvent('xrag-preview-interaction'));
+    }
+
+    if (event.target instanceof Element && event.target.closest('.react-flow__handle')) {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('xrag-node-double-click', {
+        detail: {
+          nodeId: id,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+          shiftKey: event.shiftKey,
+        },
+      })
+    );
+  };
+
+  // LangFlow-style horizontal card on dark surface: icon panel on the left,
+  // title + category on the right. Accent colour drives the left stripe,
+  // icon panel tint, icon gradient and category label.
+  const baseShadow = `0 2px 10px rgba(0,0,0,0.60), 0 0 0 1.5px ${palette.accent}88, 0 0 16px ${palette.accent}30`;
+  const hoverShadow = `0 4px 18px rgba(0,0,0,0.65), 0 0 0 1.5px ${palette.accent}, 0 0 22px ${palette.accent}35`;
+  const selectedShadow = `0 6px 24px rgba(0,0,0,0.70), 0 0 0 2px ${palette.accent}, 0 0 32px ${palette.accent}50`;
+
+  const handleStyle = {
+    background: palette.accent,
+    border: `2px solid ${palette.accent}90`,
+    boxShadow: `0 0 0 1px ${palette.accent}`,
+  };
 
   return (
     <div
       onMouseDown={isPreviewNode ? undefined : emitNodeClick}
       onClick={isPreviewNode ? emitNodeClick : undefined}
+      onDoubleClick={emitNodeDoubleClick}
       title={
         runStatus === 'error' && data.runError
           ? data.runError
@@ -101,16 +251,14 @@ const RagNode = ({ id, data, selected }) => {
           : undefined
       }
       style={{
-        width: 128,
-        height: 128,
-        background: `linear-gradient(145deg, ${palette.accent}14 0%, #f8fafc 55%)`,
-        borderTop: `3px solid ${palette.accent}`,
-        borderLeft: `1px solid ${palette.accent}60`,
-        borderRight: `1px solid ${palette.accent}60`,
-        borderBottom: `1px solid ${palette.accent}60`,
+        width: 240,
+        minHeight: 72,
+        background: `linear-gradient(140deg, ${palette.accent}45 0%, ${palette.accent}18 50%, #0f172a 100%)`,
+        borderRadius: 12,
         boxShadow: selected ? selectedShadow : baseShadow,
+        overflow: 'hidden',
       }}
-      className={`group relative flex flex-col items-center justify-center text-center rounded-xl transition-all duration-200 hover:-translate-y-0.5 ${
+      className={`group relative flex items-stretch transition-all duration-150 hover:-translate-y-0.5 ${
         isPreviewNode ? 'opacity-80' : ''
       } ${runStyle ? runStyle.ring : ''}`}
       onMouseEnter={(e) => {
@@ -120,65 +268,92 @@ const RagNode = ({ id, data, selected }) => {
         if (!selected) e.currentTarget.style.boxShadow = baseShadow;
       }}
     >
-      {/* category label chip — bottom */}
-      <span
+      {/* Left accent stripe — carries the category color */}
+      <div
         aria-hidden
-        className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-md whitespace-nowrap"
         style={{
-          color: palette.accent2,
-          background: `${palette.accent}18`,
-          border: `1px solid ${palette.accent}35`,
+          width: 4,
+          background: `linear-gradient(180deg, ${palette.accent} 0%, ${palette.accent2} 100%)`,
+          flexShrink: 0,
+        }}
+      />
+
+      {/* Icon panel */}
+      <div
+        className="flex items-center justify-center"
+        style={{
+          width: 56,
+          flexShrink: 0,
+          background: `linear-gradient(140deg, ${palette.accent}55 0%, ${palette.accent}28 100%)`,
         }}
       >
-        {data.category}
-      </span>
+        <div
+          className="flex items-center justify-center"
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 10,
+            background: `linear-gradient(140deg, ${palette.accent2} 0%, ${palette.accent} 100%)`,
+            boxShadow: `0 2px 6px ${palette.accent}40`,
+            color: '#0f172a',
+          }}
+        >
+          {NodeIcon ? <NodeIcon size={20} strokeWidth={2.4} /> : null}
+        </div>
+      </div>
+
+      {/* Title + category + config summary */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center px-3 py-2">
+        <h4
+          className="text-[12px] font-semibold leading-tight line-clamp-2"
+          style={{ color: '#f1f5f9' }}
+          title={data.label}
+        >
+          {data.label}
+        </h4>
+        {configSummary ? (
+          <p
+            className="mt-0.5 truncate font-mono text-[9px] leading-snug opacity-75"
+            style={{ color: palette.accent }}
+            title={configSummary}
+          >
+            {configSummary}
+          </p>
+        ) : (
+          <span
+            className="mt-1 text-[9px] font-bold uppercase tracking-[0.14em] truncate"
+            style={{ color: palette.accent }}
+          >
+            {data.category}
+          </span>
+        )}
+      </div>
 
       {runStyle && (
         <span
-          className={`absolute -top-2.5 -right-2.5 z-10 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm ${runStyle.badge}`}
+          className={`absolute -top-2 -right-2 z-10 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border shadow-sm ${runStyle.badge}`}
           title={data.runError || (data.runDurationMs != null ? `${runStyle.label} • ${data.runDurationMs} ms` : runStyle.label)}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${runStyle.dot}`} />
           {runStyle.label}
           {data.runDurationMs != null && runStatus !== 'running' && runStatus !== 'pending' && (
-            <span className="text-[9px] font-medium opacity-70">{data.runDurationMs}ms</span>
+            <span className="text-[8px] font-medium opacity-70">{data.runDurationMs}ms</span>
           )}
         </span>
       )}
 
-      <Handle type="source" id="source-left" position={Position.Left} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
-      <Handle type="source" id="source-right" position={Position.Right} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
-      <Handle type="source" id="source-top" position={Position.Top} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
-      <Handle type="source" id="source-bottom" position={Position.Bottom} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
+      {/* Connection handles — kept on all 4 sides so the existing routing
+          logic (getDirectionalHandles / re-routing) still picks the best
+          orientation, but visually only highlighted when selected. */}
+      <Handle type="source" id="source-left" position={Position.Left} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
+      <Handle type="source" id="source-right" position={Position.Right} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
+      <Handle type="source" id="source-top" position={Position.Top} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
+      <Handle type="source" id="source-bottom" position={Position.Bottom} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
 
-      <Handle type="target" id="target-left" position={Position.Left} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
-      <Handle type="target" id="target-right" position={Position.Right} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
-      <Handle type="target" id="target-top" position={Position.Top} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
-      <Handle type="target" id="target-bottom" position={Position.Bottom} style={{ background: palette.accent, border: `2px solid white`, boxShadow: `0 0 0 1px ${palette.accent}` }} className={`!w-2.5 !h-2.5 ${handleVisibilityClass}`} />
-
-      {/* icon core */}
-      <div
-        className="relative flex items-center justify-center"
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 14,
-          background: `linear-gradient(140deg, ${palette.accent2} 0%, ${palette.accent} 100%)`,
-          boxShadow: `0 2px 8px ${palette.accent}50, 0 0 0 3px ${palette.accent}20`,
-        }}
-      >
-        <span className="relative" style={{ color: '#ffffff' }}>
-          {NodeIcon ? <NodeIcon size={24} strokeWidth={2.2} /> : null}
-        </span>
-      </div>
-
-      <h4
-        className="relative mt-2 px-2 text-[10px] font-bold uppercase tracking-[0.10em] line-clamp-2 leading-tight"
-        style={{ color: '#1e293b' }}
-        title={data.label}
-      >
-        {data.label}
-      </h4>
+      <Handle type="target" id="target-left" position={Position.Left} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
+      <Handle type="target" id="target-right" position={Position.Right} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
+      <Handle type="target" id="target-top" position={Position.Top} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
+      <Handle type="target" id="target-bottom" position={Position.Bottom} style={handleStyle} className={`!w-2 !h-2 ${handleVisibilityClass}`} />
     </div>
   );
 };
