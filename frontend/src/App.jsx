@@ -260,7 +260,7 @@ const App = () => {
               chatEndRef={chatEndRef}
               inputValue={inputValue}
               setInputValue={setInputValue}
-              onSendMessage={(msg, flowId) => handleSendMessage(msg, flowId)}
+              onSendMessage={(msg, attachments, flowId) => handleSendMessage(msg, attachments, flowId)}
               onSaveAnswer={handleSaveAnswer}
             />,
             'xrag-chat-theme bg-slate-950'

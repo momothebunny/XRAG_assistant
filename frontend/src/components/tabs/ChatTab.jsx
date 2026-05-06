@@ -1,4 +1,4 @@
-import { BookmarkPlus, CheckCircle2, ChevronDown, FileSearch, ImagePlus, Link2, Mic, Paperclip, Send, ThumbsDown, ThumbsUp, User, Workflow, X, Zap } from 'lucide-react';
+import { BookmarkPlus, CheckCircle2, ChevronDown, FileSearch, ImagePlus, Link2, Mic, Paperclip, Send, ThumbsDown, ThumbsUp, User, Workflow, X, Zap, AlertCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { xragApi } from '../../services/xragApi';
 
@@ -391,6 +391,30 @@ const ChatTab = ({
                   }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
+
+                  {/* ── Canvas flow trace ── */}
+                  {message.flowTrace?.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-800">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Flow trace</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {message.flowTrace.map((step, si) => (
+                          <span
+                            key={si}
+                            title={step.error || ''}
+                            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${
+                              step.status === 'error'
+                                ? 'border-rose-500/40 bg-rose-500/10 text-rose-400'
+                                : 'border-amber-500/30 bg-slate-800 text-amber-300'
+                            }`}
+                          >
+                            {step.status === 'error' ? <AlertCircle size={10} /> : <Zap size={10} />}
+                            {step.label}
+                            <span className="text-slate-500 font-normal">{step.duration_ms}ms</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {message.promptReference && (
                     <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-slate-950 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300">
                       <Link2 size={11} /> Prompt ref: {message.promptReference}
