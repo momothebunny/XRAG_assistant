@@ -99,6 +99,89 @@ const BLUEPRINT_FLOW_ID_SET = new Set(
   RAG_BLUEPRINTS.map((item) => item.backendFlowId).filter(Boolean)
 );
 
+const URL_SCRAPER_DEFAULT_CONFIG = {
+  url: '',
+  depth: 2,
+  maxPages: 20,
+  contentSelector: '',
+  includePattern: '',
+  excludePattern: '',
+  followExternalLinks: false,
+  renderJs: false,
+  ignoreRobotsTxt: false,
+};
+
+const ensureBlueprintUrlScraperWiring = (flow) => {
+  if (!flow || !Array.isArray(flow.nodes) || !Array.isArray(flow.edges)) {
+    return flow;
+  }
+
+  const nodes = flow.nodes.map((node) => ({ ...node, config: { ...(node.config || {}) } }));
+  const edges = flow.edges.map((edge) => ({ ...edge }));
+
+  const ingestNode = nodes.find((node) => node.templateKey === 'process-cleaning')
+    || nodes.find((node) => node.templateKey === 'process-chunking');
+  if (!ingestNode) {
+    return { ...flow, nodes, edges };
+  }
+
+  let urlNode = nodes.find((node) => node.templateKey === 'input-url');
+  if (!urlNode) {
+    const nodeIds = new Set(nodes.map((node) => node.id));
+    let candidateId = 'blueprint-node-url-scraper';
+    let suffix = 1;
+    while (nodeIds.has(candidateId)) {
+      candidateId = `blueprint-node-url-scraper-${suffix}`;
+      suffix += 1;
+    }
+
+    const uploadNode = nodes.find((node) => node.templateKey === 'input-upload');
+    const uploadPosition = uploadNode?.position || { x: ingestNode.position?.x ?? 0, y: ingestNode.position?.y ?? 0 };
+    const position = {
+      x: Number(uploadPosition.x ?? 0),
+      y: Number(uploadPosition.y ?? 0) - 220,
+    };
+
+    urlNode = {
+      id: candidateId,
+      templateKey: 'input-url',
+      label: 'URL Scraper',
+      config: { ...URL_SCRAPER_DEFAULT_CONFIG },
+      position,
+    };
+    nodes.push(urlNode);
+  } else {
+    urlNode = {
+      ...urlNode,
+      config: { ...URL_SCRAPER_DEFAULT_CONFIG, ...(urlNode.config || {}) },
+    };
+    const idx = nodes.findIndex((node) => node.id === urlNode.id);
+    if (idx >= 0) nodes[idx] = urlNode;
+  }
+
+  const hasWiring = edges.some(
+    (edge) => edge.source === urlNode.id && edge.target === ingestNode.id
+  );
+  if (!hasWiring) {
+    const edgeIds = new Set(edges.map((edge) => edge.id).filter(Boolean));
+    let edgeId = `edge-${urlNode.id}-to-${ingestNode.id}`;
+    let seq = 1;
+    while (edgeIds.has(edgeId)) {
+      edgeId = `edge-${urlNode.id}-to-${ingestNode.id}-${seq}`;
+      seq += 1;
+    }
+    edges.push({
+      id: edgeId,
+      source: urlNode.id,
+      target: ingestNode.id,
+      sourceHandle: 'source-bottom',
+      targetHandle: 'target-top',
+    });
+  }
+
+  return { ...flow, nodes, edges };
+};
+
 const createPairLink = (sourceNode, targetNode) => {
   if (!sourceNode || !targetNode) {
     return [sourceNode, targetNode];
@@ -999,11 +1082,25 @@ const moveBlueprintNodesOffEdges = (blueprintNodes, blueprintEdges, existingNode
 };
 
 const buildBlueprintGraph = (blueprint, startX, startY, existingNodes = [], existingEdges = []) => {
+  const blueprintTemplateKeys = Array.isArray(blueprint.templateKeys)
+    ? [...blueprint.templateKeys]
+    : [];
+
+  // Keep legacy fallback blueprints in sync with backend flow wiring:
+  // if a blueprint ingests uploaded docs, also expose URL ingestion.
+  if (
+    blueprintTemplateKeys.includes('input-upload')
+    && !blueprintTemplateKeys.includes('input-url')
+  ) {
+    const uploadIndex = blueprintTemplateKeys.indexOf('input-upload');
+    blueprintTemplateKeys.splice(uploadIndex + 1, 0, 'input-url');
+  }
+
   const prefix = `${blueprint.id}-${Date.now()}-${Math.round(Math.random() * 10000)}`;
   const placedNodes = [];
   const laneCounters = new Map();
 
-  const blueprintNodesRaw = blueprint.templateKeys.map((templateKey, index) => {
+  const blueprintNodesRaw = blueprintTemplateKeys.map((templateKey, index) => {
     const laneIndex = getBlueprintLaneIndex(templateKey);
     const phaseIndex = getBlueprintPhaseIndex(templateKey);
     const laneCount = laneCounters.get(laneIndex) || 0;
@@ -1029,7 +1126,7 @@ const buildBlueprintGraph = (blueprint, startX, startY, existingNodes = [], exis
     placedNodes.push(node);
     return node;
   });
-  const blueprintNodes = attachUserQuestionPairMetadata(blueprintNodesRaw, blueprint.templateKeys);
+  const blueprintNodes = attachUserQuestionPairMetadata(blueprintNodesRaw, blueprintTemplateKeys);
   let adjustedBlueprintNodes = blueprintNodes;
   let blueprintEdges = [];
 
@@ -1710,7 +1807,10 @@ const CanvasBoard = () => {
 
   const applyFlowData = useCallback(
     (flow, options = {}) => {
-      const incomingNodes = (flow.nodes || []).map((node) => ({
+      const normalizedFlow = options.autoArrange
+        ? ensureBlueprintUrlScraperWiring(flow)
+        : flow;
+      const incomingNodes = (normalizedFlow.nodes || []).map((node) => ({
         id: node.id,
         type: 'ragNode',
         position: node.position || { x: 0, y: 0 },
@@ -1721,7 +1821,7 @@ const CanvasBoard = () => {
           templateKey: node.templateKey,
         },
       }));
-      const incomingEdges = (flow.edges || []).map((edge, index) => ({
+      const incomingEdges = (normalizedFlow.edges || []).map((edge, index) => ({
         id: edge.id || `edge-loaded-${index}-${Date.now()}`,
         source: edge.source,
         target: edge.target,
