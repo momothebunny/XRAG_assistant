@@ -918,7 +918,73 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
   --tw-ring-color: rgb(245 158 11 / 0.35) !important;
 }
 
+/* Buttons: keep high contrast black/amber everywhere in audit */
+.xrag-audit-theme button[class*="bg-"] {
+  border-color: rgb(245 158 11 / 0.45) !important;
+}
+
+.xrag-audit-theme button[class*="bg-white"],
+.xrag-audit-theme button[class*="bg-slate-"] {
+  background-color: rgb(15 23 42) !important;
+  color: rgb(252 211 77) !important;
+}
+
+.xrag-audit-theme button[class*="bg-indigo-"],
+.xrag-audit-theme button[class*="bg-sky-"] {
+  background-color: rgb(245 158 11) !important;
+  color: rgb(15 23 42) !important;
+}
+
+.xrag-audit-theme .xrag-audit-mode-switch {
+  background-color: rgb(15 23 42) !important;
+  border-color: rgb(245 158 11 / 0.45) !important;
+}
+
+.xrag-audit-theme .xrag-audit-mode-switch button {
+  color: rgb(148 163 184) !important;
+}
+
+.xrag-audit-theme .xrag-audit-mode-switch button[class*="border-amber-300"] {
+  background-color: rgb(2 6 23) !important;
+  border-color: rgb(252 211 77) !important;
+  color: rgb(252 211 77) !important;
+}
+
+.xrag-audit-theme .xrag-audit-new-btn {
+  color: rgb(2 6 23) !important;
+}
+
+.xrag-audit-theme .xrag-benchmark-validation {
+  background-color: rgb(15 23 42) !important;
+  border-color: rgb(245 158 11 / 0.6) !important;
+}
+
+.xrag-audit-theme .xrag-benchmark-validation p[class*="text-amber-700"],
+.xrag-audit-theme .xrag-benchmark-validation p[class*="text-amber-600"] {
+  color: rgb(253 230 138) !important;
+}
+
+.xrag-audit-theme .xrag-benchmark-newrun input,
+.xrag-audit-theme .xrag-benchmark-newrun select,
+.xrag-audit-theme .xrag-benchmark-newrun textarea {
+  background-color: rgb(15 23 42) !important;
+  border-color: rgb(245 158 11 / 0.45) !important;
+  color: rgb(252 211 77) !important;
+}
+
+.xrag-audit-theme .xrag-benchmark-newrun input::placeholder,
+.xrag-audit-theme .xrag-benchmark-newrun textarea::placeholder {
+  color: rgb(148 163 184) !important;
+}
+
+/* Status chips / badges */
+.xrag-audit-theme [class*="rounded-full"][class*="border"] {
+  background-color: rgb(15 23 42) !important;
+  border-color: rgb(245 158 11 / 0.45) !important;
+  color: rgb(252 211 77) !important;
+}
+
 /* Keep audit typography aligned with other main tabs under zoom */
-.xrag-audit-theme [class*="text-[9px]"] { font-size: 0.72rem; }
-.xrag-audit-theme [class*="text-[10px]"] { font-size: 0.78rem; }
-.xrag-audit-theme [class*="text-[11px]"] { font-size: 0.82rem; }
+.xrag-audit-theme [class*="text-[9px]"] { font-size: 0.73rem; }
+.xrag-audit-theme [class*="text-[10px]"] { font-size: 0.79rem; }
+.xrag-audit-theme [class*="text-[11px]"] { font-size: 0.83rem; }
