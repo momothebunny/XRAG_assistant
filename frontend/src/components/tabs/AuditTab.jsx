@@ -103,7 +103,6 @@ const METRIC_INFO = {
 const MetricHeader = ({ label, info }) => (
   <span title={info} className="inline-flex items-center gap-0.5 cursor-help">
     <span className="underline decoration-dotted decoration-slate-400 underline-offset-2">{label}</span>
-    <Info size={9} className="text-slate-400" />
   </span>
 );
 

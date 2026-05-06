@@ -1,4 +1,4 @@
-import { Activity, ChevronUp, FileText, Globe, Info, Menu, MessageSquare, Search, Settings, Workflow, X, LogOut } from 'lucide-react';
+import { Activity, ChevronUp, FileText, Globe, Menu, MessageSquare, Search, Settings, Workflow, X, LogOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import NavItem from './components/NavItem';
 import CanvasTab from './components/tabs/CanvasTab';
@@ -8,7 +8,7 @@ import HealthTab from './components/tabs/HealthTab';
 import SettingsTab from './components/tabs/SettingsTab';
 import SharedSpaceTab from './components/tabs/SharedSpaceTab';
 import AuthScreen from './components/auth/AuthScreen';
-import { INITIAL_DOCS, VECTOR_PROVIDERS } from './data/constants';
+import { VECTOR_PROVIDERS } from './data/constants';
 import { useChat } from './hooks/useChat';
 import { xragApi, setAuthToken, getAuthToken } from './services/xragApi';
 
@@ -92,7 +92,6 @@ const App = () => {
     setBrandSwapKey((k) => k + 1);
   }, [isMainNavCollapsed]);
   const [isMainNavOpen, setIsMainNavOpen] = useState(false);
-  const [documents] = useState(INITIAL_DOCS);
   const [aiConfig, setAiConfig] = useState(() => ({ ...DEFAULT_AI_CONFIG, ...readStoredJson(AI_CONFIG_STORAGE_KEY, {}) }));
   const [retrievalConfig, setRetrievalConfig] = useState(() => ({
     ...DEFAULT_RETRIEVAL_CONFIG,
@@ -223,8 +222,8 @@ const App = () => {
         <CanvasTab />
       </div>
     );
-    const overlayPane = (children) => (
-      <div className="relative z-10 h-full w-full bg-slate-50">{children}</div>
+    const overlayPane = (children, themeClassName = 'bg-slate-50') => (
+      <div className={`relative z-10 h-full w-full ${themeClassName}`}>{children}</div>
     );
 
     if (activeTab === 'chat') {
@@ -240,7 +239,8 @@ const App = () => {
               setInputValue={setInputValue}
               onSendMessage={handleSendMessage}
               onSaveAnswer={handleSaveAnswer}
-            />
+            />,
+            'xrag-chat-theme bg-slate-950'
           )}
         </>
       );
@@ -250,7 +250,7 @@ const App = () => {
       return (
         <>
           {canvasPane}
-          {overlayPane(<DocumentsTab />)}
+          {overlayPane(<DocumentsTab />, 'xrag-kb-theme bg-slate-950')}
         </>
       );
     }
@@ -263,7 +263,7 @@ const App = () => {
       return (
         <>
           {canvasPane}
-          {overlayPane(<SharedSpaceTab />)}
+          {overlayPane(<SharedSpaceTab />, 'xrag-shared-theme bg-slate-950')}
         </>
       );
     }
@@ -272,7 +272,7 @@ const App = () => {
       return (
         <>
           {canvasPane}
-          {overlayPane(<HealthTab />)}
+          {overlayPane(<HealthTab />, 'bg-slate-50')}
         </>
       );
     }
@@ -289,7 +289,8 @@ const App = () => {
               onAiConfigChange={setAiConfig}
               retrievalConfig={retrievalConfig}
               onRetrievalConfigChange={setRetrievalConfig}
-            />
+            />,
+            'bg-slate-50'
           )}
         </>
       );
@@ -435,28 +436,18 @@ const App = () => {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="z-20 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md md:px-8">
+        <header className="z-20 flex h-16 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-950 px-4 backdrop-blur-md md:px-8">
           <div className="flex items-center gap-3 md:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => setIsMainNavOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:text-indigo-600 md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 text-slate-300 shadow-sm transition-all hover:bg-slate-900 hover:text-amber-300 md:hidden"
               aria-label="Open main menu"
             >
               <Menu size={18} />
             </button>
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-            <h1 className="truncate text-sm font-black uppercase tracking-[0.2em] text-slate-800">{TAB_TITLES[activeTab]}</h1>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-1.5 lg:flex">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Engine:</span>
-              <span className="text-xs font-black uppercase italic tracking-tight text-indigo-600">XRAG-GPT-4o</span>
-            </div>
-            <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 shadow-sm transition-all hover:bg-slate-50 hover:text-indigo-600">
-              <Info size={18} />
-            </button>
+            <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.45)]" />
+            <h1 className="truncate text-sm font-black uppercase tracking-[0.2em] text-amber-200">{TAB_TITLES[activeTab]}</h1>
           </div>
         </header>
 

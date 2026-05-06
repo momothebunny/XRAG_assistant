@@ -5,7 +5,7 @@
     "type": "Managed Cloud"
   },
   "retrieval": {
-    "hybrid_alpha": 1.0,
+    "hybrid_alpha": 0.5,
     "top_k": 5,
     "reranker_enabled": true,
     "reranker_model": "cohere-rerank-v3",
@@ -15,7 +15,7 @@
   },
   "llm": {
     "model": "GPT-4o",
-    "temperature": 0.1,
+    "temperature": 0.7,
     "system_prompt": "You are a professional research assistant. Always cite your sources and clearly separate verified context from assumptions.",
     "strict_mode": true,
     "provider": "openai",

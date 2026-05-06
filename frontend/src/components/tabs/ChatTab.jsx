@@ -264,25 +264,25 @@ const ChatTab = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div className="xrag-chat-theme flex h-full flex-col bg-slate-950 text-slate-100">
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
         {messages.map((message, messageIndex) => (
           <div key={messageIndex} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] flex gap-4 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
-                  message.role === 'user' ? 'bg-indigo-600' : 'bg-slate-800'
+                  message.role === 'user' ? 'bg-amber-500' : 'bg-slate-900 border border-slate-700'
                 }`}
               >
                 {message.role === 'user' ? (
-                  <User size={20} className="text-white" />
+                  <User size={20} className="text-slate-950" />
                 ) : (
-                  <Zap size={20} className="text-indigo-400" />
+                  <Zap size={20} className="text-amber-300" />
                 )}
               </div>
               <div className="space-y-2">
                 {message.role === 'assistant' && submittedFeedbackByMessage[messageIndex] && (
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[10px] font-black uppercase tracking-wider text-emerald-700">
+                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-slate-900 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300">
                     <CheckCircle2 size={12} />
                     {submittedFeedbackByMessage[messageIndex].sentiment === 'up' ? 'Helpful feedback saved' : 'Correction feedback saved'}
                   </div>
@@ -290,13 +290,13 @@ const ChatTab = ({
                 <div
                   className={`p-5 rounded-2xl shadow-sm border ${
                     message.role === 'user'
-                      ? 'bg-indigo-600 text-white border-indigo-500 rounded-tr-none'
-                      : 'bg-white text-slate-800 border-slate-200 rounded-tl-none'
+                      ? 'bg-amber-500 text-slate-950 border-amber-400 rounded-tr-none'
+                      : 'bg-slate-900 text-slate-100 border-slate-700 rounded-tl-none'
                   }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
                   {message.promptReference && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-slate-950 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300">
                       <Link2 size={11} /> Prompt ref: {message.promptReference}
                     </div>
                   )}
@@ -307,8 +307,8 @@ const ChatTab = ({
                           key={attachment.id}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${
                             message.role === 'user'
-                              ? 'bg-indigo-500/80 border-indigo-300 text-indigo-50'
-                              : 'bg-slate-50 border-slate-200 text-slate-600'
+                              ? 'bg-slate-950/60 border-amber-300/60 text-slate-100'
+                              : 'bg-slate-950 border-slate-700 text-slate-300'
                           }`}
                         >
                           <Paperclip size={11} /> {attachmentLabel(attachment.kind)} · {attachment.name}
@@ -329,8 +329,8 @@ const ChatTab = ({
                           onClick={() => toggleCitation(messageIndex, sourceIndex)}
                           className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
                             activeCitation?.messageIndex === messageIndex && activeCitation?.sourceIndex === sourceIndex
-                              ? 'bg-indigo-100 text-indigo-800 border-indigo-200'
-                              : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100/70'
+                              ? 'bg-amber-500 text-slate-950 border-amber-400'
+                              : 'bg-slate-950 text-amber-300 border-slate-700 hover:bg-slate-900'
                           }`}
                         >
                           <FileSearch size={12} /> {parseSourceLabel(source)}
@@ -338,46 +338,46 @@ const ChatTab = ({
                       ))}
                     </div>
                       {activeCitation?.messageIndex === messageIndex && activeSource && (
-                        <div className="absolute left-0 right-0 z-20 mt-1 bg-white border border-indigo-100 rounded-2xl shadow-[0_16px_40px_rgba(99,102,241,0.16)] p-4 space-y-2">
+                        <div className="absolute left-0 right-0 z-20 mt-1 rounded-2xl border border-slate-700 bg-slate-950 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)] space-y-2">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-black text-slate-800 tracking-tight">Citation Preview</p>
+                            <p className="text-xs font-black tracking-tight text-amber-200">Citation Preview</p>
                             <button
                               type="button"
                               onClick={() => setActiveCitation(null)}
-                              className="text-[10px] font-black uppercase text-slate-400 hover:text-slate-600"
+                              className="text-[10px] font-black uppercase text-slate-400 hover:text-amber-300"
                             >
                               Close
                             </button>
                           </div>
-                          <p className="text-[11px] font-bold text-slate-500">{activeSource.name}</p>
+                          <p className="text-[11px] font-bold text-slate-400">{activeSource.name}</p>
                           <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
-                            <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600">p. {activeSource.page}</span>
-                            <span className="px-2 py-0.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700">{activeSource.chunkId}</span>
-                            <span className="px-2 py-0.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700">{activeSource.tokenCount} tokens</span>
+                            <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-slate-300">p. {activeSource.page}</span>
+                            <span className="rounded-full border border-amber-500/40 bg-slate-900 px-2 py-0.5 text-amber-300">{activeSource.chunkId}</span>
+                            <span className="rounded-full border border-amber-500/40 bg-slate-900 px-2 py-0.5 text-amber-300">{activeSource.tokenCount} tokens</span>
                           </div>
-                          <p className="text-xs leading-6 text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-3">“{activeSource.snippet}”</p>
+                          <p className="rounded-xl border border-slate-700 bg-slate-900 p-3 text-xs leading-6 text-slate-200">“{activeSource.snippet}”</p>
                         </div>
                       )}
                     </div>
                   )}
 
                   {message.role === 'assistant' && (
-                    <div className="mt-4 pt-3 border-t border-slate-100/90">
+                    <div className="mt-4 border-t border-slate-800 pt-3">
                       <div className="mb-3">
                         <button
                           type="button"
                           onClick={() => {
                             void saveAnswerToDatabase(messageIndex, message);
                           }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-wider hover:bg-indigo-100 transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-slate-950 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-300 transition-colors hover:bg-slate-900"
                         >
                           <BookmarkPlus size={12} /> Save answer to database
                         </button>
                         {savedStateByMessage[messageIndex] === 'saved' && (
-                          <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-emerald-700">Saved</span>
+                          <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-amber-300">Saved</span>
                         )}
                         {savedStateByMessage[messageIndex] === 'exists' && (
-                          <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Already saved</span>
+                          <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Already saved</span>
                         )}
                       </div>
 
@@ -387,14 +387,14 @@ const ChatTab = ({
                           <button
                             type="button"
                             onClick={() => startFeedback(messageIndex, 'up')}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider hover:bg-emerald-100 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-slate-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300 transition-colors hover:bg-slate-900"
                           >
                             <ThumbsUp size={12} /> Helpful
                           </button>
                           <button
                             type="button"
                             onClick={() => startFeedback(messageIndex, 'down')}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-[10px] font-black uppercase tracking-wider hover:bg-rose-100 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-slate-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300 transition-colors hover:bg-slate-900"
                           >
                             <ThumbsDown size={12} /> Needs correction
                           </button>
@@ -402,14 +402,14 @@ const ChatTab = ({
                       )}
 
                       {feedbackDraftByMessage[messageIndex] && (
-                        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                        <div className="mt-3 space-y-2 rounded-xl border border-slate-700 bg-slate-950 p-3">
                           {feedbackDraftByMessage[messageIndex].sentiment === 'down' && (
                             <div>
-                              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Correct source</label>
+                              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">Correct source</label>
                               <select
                                 value={feedbackDraftByMessage[messageIndex].correctionSource}
                                 onChange={(event) => updateFeedback(messageIndex, 'correctionSource', event.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs font-bold text-slate-100 outline-none focus:ring-1 focus:ring-amber-400"
                               >
                                 <option value="">Select a better source...</option>
                                 {(message.sources || []).map((source, sourceIndex) => (
@@ -423,13 +423,13 @@ const ChatTab = ({
                           )}
 
                           <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Short reason</label>
+                            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">Short reason</label>
                             <textarea
                               rows={2}
                               value={feedbackDraftByMessage[messageIndex].reason}
                               onChange={(event) => updateFeedback(messageIndex, 'reason', event.target.value)}
                               placeholder="Why should the answer be improved?"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
+                              className="w-full resize-none rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs font-medium text-slate-100 outline-none focus:ring-1 focus:ring-amber-400"
                             />
                           </div>
 
@@ -443,7 +443,7 @@ const ChatTab = ({
                                   return nextDrafts;
                                 });
                               }}
-                              className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-[10px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-100"
+                              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-300 hover:bg-slate-800"
                             >
                               Cancel
                             </button>
@@ -451,7 +451,7 @@ const ChatTab = ({
                               type="button"
                               onClick={() => submitFeedback(messageIndex)}
                               disabled={!feedbackDraftByMessage[messageIndex].reason?.trim()}
-                              className="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-600 text-[10px] font-black uppercase tracking-wider text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="rounded-lg border border-amber-400 bg-amber-500 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-950 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               Submit feedback
                             </button>
@@ -468,16 +468,16 @@ const ChatTab = ({
         {isTyping && (
           <div className="flex gap-4 items-center pl-14">
             <div className="flex gap-1">
-              <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              <span className="h-2 w-2 rounded-full bg-amber-200 animate-bounce" style={{ animationDelay: '0ms' }}></span>
+              <span className="h-2 w-2 rounded-full bg-amber-300 animate-bounce" style={{ animationDelay: '150ms' }}></span>
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '300ms' }}></span>
             </div>
-            <span className="text-xs text-slate-400 font-medium uppercase tracking-widest">XRAG analysis in progress...</span>
+            <span className="text-xs font-medium uppercase tracking-widest text-slate-400">XRAG analysis in progress...</span>
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
-      <div className="p-4 md:p-6 bg-white border-t border-slate-200">
+      <div className="border-t border-slate-800 bg-slate-950 p-4 md:p-6">
         <form onSubmit={handleMessageSubmit} className="max-w-4xl mx-auto space-y-3">
           <input
             ref={audioInputRef}
@@ -503,18 +503,18 @@ const ChatTab = ({
             onChange={(event) => addAttachments(event.target.files, 'file')}
           />
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 shadow-inner px-3 py-2">
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 shadow-inner px-3 py-2">
             {pendingAttachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 pb-2.5 mb-2.5 border-b border-slate-200/80">
+              <div className="mb-2.5 flex flex-wrap gap-2 border-b border-slate-800 pb-2.5">
                 {pendingAttachments.map((attachment) => (
-                  <span key={attachment.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-600">
+                  <span key={attachment.id} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-[10px] font-bold text-slate-200">
                     <Paperclip size={11} />
                     {attachment.name}
                     <span className="text-slate-400">({formatAttachmentSize(attachment.size)})</span>
                     <button
                       type="button"
                       onClick={() => removePendingAttachment(attachment.id)}
-                      className="text-slate-400 hover:text-rose-600"
+                      className="text-slate-400 hover:text-amber-300"
                     >
                       <X size={11} />
                     </button>
@@ -529,7 +529,7 @@ const ChatTab = ({
                   type="button"
                   onClick={() => openPicker('audio')}
                   title="Hang feltöltése"
-                  className="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors flex items-center justify-center"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-950 text-slate-300 transition-colors hover:border-amber-400 hover:text-amber-300"
                 >
                   <Mic size={14} />
                 </button>
@@ -537,7 +537,7 @@ const ChatTab = ({
                   type="button"
                   onClick={() => openPicker('image')}
                   title="Kép feltöltése"
-                  className="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors flex items-center justify-center"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-950 text-slate-300 transition-colors hover:border-amber-400 hover:text-amber-300"
                 >
                   <ImagePlus size={14} />
                 </button>
@@ -545,31 +545,31 @@ const ChatTab = ({
                   type="button"
                   onClick={() => openPicker('file')}
                   title="Fájl feltöltése"
-                  className="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors flex items-center justify-center"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-950 text-slate-300 transition-colors hover:border-amber-400 hover:text-amber-300"
                 >
                   <Paperclip size={14} />
                 </button>
               </div>
 
-              <div className="w-px h-6 bg-slate-200 shrink-0"></div>
+              <div className="h-6 w-px shrink-0 bg-slate-700"></div>
 
               <input
                 type="text"
                 placeholder="Ask the XRAG assistant..."
-                className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400 px-1 py-2"
+                className="min-w-0 flex-1 border-none bg-transparent px-1 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500"
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}
               />
 
               {pendingAttachments.length > 0 && (
-                <span className="hidden sm:inline-flex text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-100 border border-indigo-200 rounded-full px-2 py-1 shrink-0">
+                <span className="hidden shrink-0 rounded-full border border-amber-500/40 bg-slate-950 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-300 sm:inline-flex">
                   {pendingAttachments.length} selected
                 </span>
               )}
 
               <button
                 type="submit"
-                className="w-10 h-10 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center transition-transform active:scale-95 shrink-0"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 shadow-lg transition-all transition-transform hover:bg-amber-400 active:scale-95"
               >
                 <Send size={18} />
               </button>

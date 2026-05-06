@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 const HallucinationHeatmap = () => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -96,9 +96,9 @@ const HallucinationHeatmap = () => {
         </div>
       </div>
 
-      <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-        <div className="p-2 bg-white rounded-xl shadow-sm mt-0.5">
-          <Info size={14} className="text-indigo-500" />
+      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="mt-0.5 rounded-xl bg-white p-2 shadow-sm">
+          <AlertTriangle size={14} className="text-amber-500" />
         </div>
         <p className="text-[10px] text-slate-500 font-bold leading-relaxed italic uppercase tracking-tight">
           Night-time spikes (02:00-04:00) correlate with scheduled database cleanup processes.

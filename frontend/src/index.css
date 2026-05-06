@@ -402,3 +402,101 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
   color: rgb(226 232 240);
   border-color: rgb(71 85 105);
 }
+
+/* ---------------------------------------------------------------------- */
+/* Canvas + Assistant — shared base black/yellow skin                     */
+/* ---------------------------------------------------------------------- */
+.xrag-canvas-theme,
+.xrag-chat-theme {
+  background: rgb(2 6 23);
+  color: rgb(226 232 240);
+}
+
+.xrag-canvas-theme [class*="bg-white"],
+.xrag-canvas-theme [class*="bg-slate-50"],
+.xrag-canvas-theme [class*="bg-slate-100"],
+.xrag-canvas-theme [class*="bg-indigo-50"],
+.xrag-canvas-theme [class*="bg-indigo-100"],
+.xrag-canvas-theme [class*="bg-amber-50"],
+.xrag-canvas-theme [class*="bg-emerald-50"],
+.xrag-canvas-theme [class*="bg-rose-50"],
+.xrag-chat-theme [class*="bg-white"],
+.xrag-chat-theme [class*="bg-slate-50"],
+.xrag-chat-theme [class*="bg-slate-100"],
+.xrag-chat-theme [class*="bg-indigo-50"],
+.xrag-chat-theme [class*="bg-indigo-100"],
+.xrag-chat-theme [class*="bg-amber-50"],
+.xrag-chat-theme [class*="bg-emerald-50"],
+.xrag-chat-theme [class*="bg-rose-50"] {
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-canvas-theme [class*="border-slate-"],
+.xrag-canvas-theme [class*="border-indigo-"],
+.xrag-canvas-theme [class*="border-amber-"],
+.xrag-canvas-theme [class*="border-emerald-"],
+.xrag-canvas-theme [class*="border-rose-"],
+.xrag-chat-theme [class*="border-slate-"],
+.xrag-chat-theme [class*="border-indigo-"],
+.xrag-chat-theme [class*="border-amber-"],
+.xrag-chat-theme [class*="border-emerald-"],
+.xrag-chat-theme [class*="border-rose-"] {
+  border-color: rgb(51 65 85) !important;
+}
+
+.xrag-canvas-theme [class*="text-indigo-"],
+.xrag-canvas-theme [class*="text-emerald-"],
+.xrag-canvas-theme [class*="text-rose-"],
+.xrag-canvas-theme [class*="text-amber-"],
+.xrag-chat-theme [class*="text-indigo-"],
+.xrag-chat-theme [class*="text-emerald-"],
+.xrag-chat-theme [class*="text-rose-"],
+.xrag-chat-theme [class*="text-amber-"] {
+  color: rgb(252 211 77) !important;
+}
+
+.xrag-canvas-theme [class*="text-slate-"],
+.xrag-canvas-theme [class*="text-white"],
+.xrag-chat-theme [class*="text-slate-"],
+.xrag-chat-theme [class*="text-white"] {
+  color: rgb(226 232 240) !important;
+}
+
+.xrag-canvas-theme .font-black,
+.xrag-chat-theme .font-black {
+  color: rgb(253 230 138);
+}
+
+.xrag-canvas-theme input,
+.xrag-canvas-theme select,
+.xrag-canvas-theme textarea,
+.xrag-canvas-theme option,
+.xrag-chat-theme input,
+.xrag-chat-theme select,
+.xrag-chat-theme textarea,
+.xrag-chat-theme option {
+  background-color: rgb(15 23 42);
+  color: rgb(226 232 240);
+  border-color: rgb(71 85 105);
+}
+
+.xrag-canvas-theme .react-flow__controls {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.xrag-canvas-theme .react-flow__controls-button {
+  background: rgb(15 23 42);
+  border-color: rgb(51 65 85);
+  color: rgb(252 211 77);
+}
+
+.xrag-canvas-theme .react-flow__controls-button:hover {
+  background: rgb(30 41 59);
+}
+
+.xrag-canvas-theme .react-flow__attribution {
+  background: rgba(2, 6, 23, 0.92);
+  color: rgb(226 232 240);
+}

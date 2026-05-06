@@ -4367,8 +4367,8 @@ const CanvasBoard = () => {
   }, [nodes, previewedSubGraphId]);
 
   return (
-    <div className="h-full w-full bg-slate-100 p-4 md:p-6 overflow-visible">
-      <div className="h-full w-full flex gap-2 min-w-0">
+    <div className="xrag-canvas-theme h-full w-full overflow-visible bg-slate-950 p-4 md:p-6">
+      <div className="flex h-full w-full min-w-0 gap-2 bg-slate-950">
         <aside
           className="relative flex-none overflow-visible"
           style={{ width: paletteWidth }}
@@ -5294,7 +5294,7 @@ const CanvasBoard = () => {
             {selectionToolbarRect && shouldShowSelectionToolbar && (
               <div
                 ref={selectionToolbarRef}
-                className="pointer-events-none absolute z-30 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-[0_14px_40px_rgba(15,23,42,0.16)] backdrop-blur-sm"
+                className="pointer-events-none absolute z-30 flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/95 px-2 py-2 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm"
                 style={{ left: selectionToolbarRect.left, top: selectionToolbarRect.top }}
               >
                 {canPackSelection && (
@@ -5302,7 +5302,7 @@ const CanvasBoard = () => {
                     type="button"
                     onClick={packSelectedNodes}
                     title="Pack selected nodes into a Sub-graph"
-                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-700 transition-colors hover:bg-amber-100"
+                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300 transition-colors hover:bg-slate-800"
                   >
                     <Network size={12} /> Pack
                   </button>
@@ -5313,7 +5313,7 @@ const CanvasBoard = () => {
                     type="button"
                     onClick={openSelectedSubGraphPreview}
                     title="Open sub-graph preview"
-                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-indigo-700 transition-colors hover:bg-indigo-100"
+                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300 transition-colors hover:bg-slate-800"
                   >
                     <ChevronsRight size={12} /> Open
                   </button>
@@ -5324,7 +5324,7 @@ const CanvasBoard = () => {
                     type="button"
                     onClick={closeSelectedSubGraphPreview}
                     title="Close sub-graph preview"
-                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-100"
+                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-200 transition-colors hover:bg-slate-800"
                   >
                     <ChevronsLeft size={12} /> Close
                   </button>
@@ -5335,7 +5335,7 @@ const CanvasBoard = () => {
                     type="button"
                     onClick={permanentlyUnpackSelectedSubGraph}
                     title="Permanently unpack this sub-graph"
-                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100"
+                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300 transition-colors hover:bg-slate-800"
                   >
                     <Link2 size={12} /> Unpack
                   </button>
