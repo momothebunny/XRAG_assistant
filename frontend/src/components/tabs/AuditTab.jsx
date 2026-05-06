@@ -12,6 +12,7 @@ import {
   Eye,
   EyeOff,
   FlaskConical,
+  Hourglass,
   Info,
   Loader2,
   Minus,
@@ -1160,10 +1161,12 @@ const BenchmarkPanel = () => {
             {runs.map(run => {
               const isActive = run.status === 'running' || run.status === 'pending';
               const isError = run.status === 'error';
+              const isDone = run.status === 'finished';
               const prog = run.progress || {};
               const total = prog.total || 0;
               const current = prog.current || 0;
               const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+              const finalPct = isDone ? (total > 0 ? pct : 100) : (isError ? (total > 0 ? pct : 100) : pct);
               const startedAt = prog.started_at || run.created_at || Date.now();
               const elapsed = isActive ? Math.max(0, Date.now() - startedAt) : 0;
               const stageLabel = prog.stage === 'scoring'
@@ -1183,7 +1186,7 @@ const BenchmarkPanel = () => {
                   <div className={`absolute inset-x-0 top-0 h-1 ${
                     isActive ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 animate-pulse'
                              : isError ? 'bg-gradient-to-r from-rose-500 to-red-500'
-                                       : 'bg-gradient-to-r from-amber-500 via-amber-500 to-pink-500 opacity-60 group-hover:opacity-100 transition-opacity'
+                                       : 'bg-gradient-to-r from-emerald-500 to-emerald-400 opacity-90'
                   }`} />
                   {/* Hover glow */}
                   <div className="pointer-events-none absolute -right-12 -top-12 w-40 h-40 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-400/0 opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-500" />
@@ -1193,11 +1196,11 @@ const BenchmarkPanel = () => {
                       <div className={`shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-md ${
                         isActive ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/30' :
                         isError ? 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-500/30' :
-                                  'bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/30'
+                                  'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/30'
                       }`}>
-                        {isActive ? <Loader2 size={18} className="animate-spin" /> :
+                        {isActive ? <Hourglass size={18} className="animate-pulse" /> :
                          isError ? <AlertCircle size={18} /> :
-                                   <Target size={18} />}
+                                   <CheckCircle2 size={18} />}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-black text-slate-900 truncate">{run.name}</p>
@@ -1212,10 +1215,10 @@ const BenchmarkPanel = () => {
                         isError ? 'border-rose-200 bg-rose-50 text-rose-700' :
                                   'border-emerald-200 bg-emerald-50 text-emerald-700'
                       }`}>
-                        {isActive ? <Activity size={9} className="animate-pulse" /> :
+                        {isActive ? <Hourglass size={9} className="animate-pulse" /> :
                          isError ? <AlertCircle size={9} /> :
                                    <CheckCircle2 size={9} />}
-                        {run.status}
+                        {isActive ? 'in progress' : isError ? 'error' : 'pass'}
                       </span>
                       <button
                         type="button"
@@ -1262,7 +1265,7 @@ const BenchmarkPanel = () => {
 
                   {!isActive && run.question_count > 0 && (
                     <div className="mt-4 relative">
-                      <div className="flex justify-between text-[10px] font-black text-slate-400 mb-1.5">
+                      <div className={`flex justify-between text-[10px] font-black mb-1.5 ${isError ? 'text-rose-500' : 'text-emerald-500'}`}>
                         <span>{run.question_count} questions · {run.flow_count} flows</span>
                         <span>{isError ? 'failed' : 'complete'}</span>
                       </div>
@@ -1270,9 +1273,9 @@ const BenchmarkPanel = () => {
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${
                             isError ? 'bg-gradient-to-r from-rose-500 to-red-500'
-                                    : 'bg-gradient-to-r from-amber-500 via-amber-500 to-pink-500'
+                                    : 'bg-gradient-to-r from-emerald-500 to-emerald-400'
                           }`}
-                          style={{ width: '100%' }}
+                          style={{ width: `${finalPct}%` }}
                         />
                       </div>
                     </div>
@@ -1452,7 +1455,7 @@ const BenchmarkPanel = () => {
 
       {/* START RUN */}
       {bview === 'start-run' && (
-        <div className="max-w-xl space-y-5">
+        <div className="xrag-benchmark-newrun max-w-xl space-y-5">
           <div>
             <h3 className="text-base font-black text-slate-800 mb-0.5">New benchmark run</h3>
             <p className="text-xs text-slate-500">Each question is sent to every selected flow. Scores are computed automatically.</p>
@@ -1529,7 +1532,7 @@ const BenchmarkPanel = () => {
             </div>
           )}
 
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
+          <div className="xrag-benchmark-validation rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
             <div className="flex items-start gap-3">
               <input
                 id="bm-rag-enable"
@@ -2461,6 +2464,21 @@ const AuditTab = () => {
     if (view === 'create') loadBackendFlows();
   }, [view]);
 
+  useEffect(() => {
+    if (mode !== 'arena') {
+      setView('list');
+      setActiveSession(null);
+      setCurrentRound(null);
+      setReport(null);
+      setQuestionText('');
+      setVoted(false);
+      setRevealed(false);
+      setSessionName('');
+      setSelectedFlowIds([]);
+      setCreateError('');
+    }
+  }, [mode]);
+
   // ── Create session ─────────────────────────────────────────────
   const handleCreate = async () => {
     if (selectedFlowIds.length < 2) { setCreateError('Select at least 2 flows.'); return; }
@@ -2569,7 +2587,7 @@ const AuditTab = () => {
   return (
     <div data-xrag-tab="audit" className="xrag-audit-theme h-full w-full overflow-y-auto bg-slate-950 text-slate-100">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-amber-950 px-6 py-12 md:px-12 md:py-14 border-b border-indigo-900/40">
+      <div className="xrag-audit-header relative overflow-hidden bg-slate-950 px-6 py-12 md:px-12 md:py-14 border-b border-slate-800">
         {/* Grid pattern */}
         <div className="pointer-events-none absolute inset-0 xrag-arena-grid-bg" />
         {/* Floating orbs */}
@@ -2593,8 +2611,8 @@ const AuditTab = () => {
                 <Sparkles size={9} /> v2
               </span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.05]">
-              Audit <span className="bg-gradient-to-r from-indigo-300 via-amber-300 to-amber-300 bg-clip-text text-transparent">Arena</span>
+            <h1 className="text-3xl md:text-5xl font-black text-amber-300 tracking-tight leading-[1.05]">
+              Audit <span className="text-amber-200">Arena</span>
             </h1>
             <p className="mt-3 text-sm md:text-base text-slate-400 leading-relaxed max-w-xl">
               Blind-test your saved RAG flows side-by-side. Ask up to <span className="font-black text-indigo-300">{MAX_Q}</span> questions, pick the best answer each time, and discover which pipeline truly fits you.
@@ -2626,10 +2644,9 @@ const AuditTab = () => {
               <button
                 type="button"
                 onClick={() => { setView('create'); setSelectedFlowIds([]); setSessionName(''); setCreateError(''); }}
-                className="group relative inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-amber-600 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:from-indigo-400 hover:to-amber-500 shadow-xl shadow-indigo-500/40 transition-all hover:scale-105 overflow-hidden"
+                className="xrag-audit-new-btn inline-flex items-center gap-1.5 rounded-2xl border border-amber-400 bg-amber-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:scale-105 hover:bg-amber-400"
               >
-                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                <Plus size={13} className="relative" /> <span className="relative">New audit</span>
+                <Plus size={13} /> New audit
               </button>
             )}
           </div>
@@ -2638,14 +2655,8 @@ const AuditTab = () => {
 
       <div className="px-6 md:px-12 py-8 max-w-5xl mx-auto">
 
-        {/* Mode switcher — segmented sliding pill */}
-        <div className="relative inline-flex items-center p-1 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200/70 border border-slate-200 shadow-inner mb-8">
-          {/* Sliding indicator */}
-          <span
-            aria-hidden
-            className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-white shadow-md shadow-indigo-500/10 ring-1 ring-slate-200 transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(${mode === 'arena' ? '0%' : '100%'})` }}
-          />
+        {/* Mode switcher */}
+        <div className="xrag-audit-mode-switch inline-flex items-center gap-1 p-1 rounded-2xl border border-amber-400/40 bg-slate-900/90 mb-8">
           {[
             { key: 'arena', label: 'Blind Arena', icon: <FlaskConical size={13} /> },
             { key: 'benchmark', label: 'Benchmark', icon: <Target size={13} /> },
@@ -2654,8 +2665,10 @@ const AuditTab = () => {
               key={key}
               type="button"
               onClick={() => setMode(key)}
-              className={`relative z-10 inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
-                mode === key ? 'text-indigo-700' : 'text-slate-500 hover:text-slate-700'
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-5 py-2 text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
+                mode === key
+                  ? 'border-amber-300 bg-slate-950 text-amber-200'
+                  : 'border-transparent bg-transparent text-slate-400 hover:text-amber-200'
               }`}
             >
               {icon} {label}
