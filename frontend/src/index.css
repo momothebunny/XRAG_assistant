@@ -727,3 +727,132 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 .xrag-settings-theme .xrag-settings-dark-btn:hover {
   background-color: rgb(30 41 59) !important;
 }
+/* ──────────────────────────────────────────────────── */
+/* Global typography baseline — unified across all tabs */
+/* ──────────────────────────────────────────────────── */
+:root {
+  --xrag-text-xs:   0.70rem;   /* 11.2 px — labels / badges */
+  --xrag-text-sm:   0.813rem;  /* 13 px   — body copy */
+  --xrag-text-base: 0.875rem;  /* 14 px   — default */
+  --xrag-text-lg:   1rem;      /* 16 px   — headings */
+  --xrag-text-xl:   1.125rem;  /* 18 px   — section titles */
+}
+
+/* Apply consistent base size to all main tab panels */
+:where([data-xrag-tab]) {
+  font-size: var(--xrag-text-base);
+  line-height: 1.55;
+}
+
+/* Headings inside tabs share the same scale, but keep low specificity
+   so Tailwind utilities (text-xs/text-sm/...) can still override. */
+:where([data-xrag-tab]) h2 { font-size: clamp(1rem, 1.5vw, var(--xrag-text-xl)); }
+:where([data-xrag-tab]) h3 { font-size: clamp(0.92rem, 1.25vw, var(--xrag-text-lg)); }
+
+/* ──────────────────────────────────────────────────── */
+/* Global responsive button utility                     */
+/* Use class  xrag-btn  for any action button           */
+/* ──────────────────────────────────────────────────── */
+.xrag-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  font-size: var(--xrag-text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 0.625rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 80ms ease;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.xrag-btn:active { transform: scale(0.96); }
+.xrag-btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+/* Responsive shrink: icon-only on very small screens */
+@media (max-width: 480px) {
+  .xrag-btn span.xrag-btn-label { display: none; }
+  .xrag-btn { padding: 0.375rem 0.5rem; }
+}
+
+/* Amber / primary variant */
+.xrag-btn-primary {
+  background-color: rgb(245 158 11);
+  border-color: rgb(245 158 11);
+  color: rgb(15 23 42);
+}
+.xrag-btn-primary:hover:not(:disabled) {
+  background-color: rgb(252 211 77);
+  border-color: rgb(252 211 77);
+}
+
+/* Ghost / outline variant */
+.xrag-btn-ghost {
+  background-color: rgb(15 23 42);
+  border-color: rgb(71 85 105);
+  color: rgb(252 211 77);
+}
+.xrag-btn-ghost:hover:not(:disabled) {
+  background-color: rgb(30 41 59);
+  border-color: rgb(245 158 11);
+  color: rgb(252 211 77);
+}
+
+/* Danger / destructive variant */
+.xrag-btn-danger {
+  background-color: transparent;
+  border-color: rgb(239 68 68 / 0.4);
+  color: rgb(252 165 165);
+}
+.xrag-btn-danger:hover:not(:disabled) {
+  background-color: rgb(239 68 68 / 0.15);
+  border-color: rgb(239 68 68 / 0.7);
+  color: rgb(254 202 202);
+}
+
+/* Baseline responsiveness for all panel buttons */
+[data-xrag-tab] button {
+  max-width: 100%;
+  touch-action: manipulation;
+}
+
+/* Global overflow safety for zoomed layouts */
+[data-xrag-tab] * {
+  min-width: 0;
+}
+
+[data-xrag-tab] h1,
+[data-xrag-tab] h2,
+[data-xrag-tab] h3,
+[data-xrag-tab] p,
+[data-xrag-tab] span,
+[data-xrag-tab] label,
+[data-xrag-tab] button {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  [data-xrag-tab] button {
+    min-height: 2.1rem;
+  }
+}
+
+/* Knowledge subpages: normalize tiny custom text sizes for readability */
+.xrag-kb-subpage [class*="text-[8px]"] { font-size: 0.69rem !important; }
+.xrag-kb-subpage [class*="text-[9px]"] { font-size: 0.72rem !important; }
+.xrag-kb-subpage [class*="text-[10px]"] { font-size: 0.77rem !important; }
+.xrag-kb-subpage [class*="text-[11px]"] { font-size: 0.81rem !important; }
+
+@media (max-width: 1024px) {
+  .xrag-kb-subpage [class*="text-[8px]"],
+  .xrag-kb-subpage [class*="text-[9px]"],
+  .xrag-kb-subpage [class*="text-[10px]"],
+  .xrag-kb-subpage [class*="text-[11px]"] {
+    letter-spacing: normal;
+  }
+}

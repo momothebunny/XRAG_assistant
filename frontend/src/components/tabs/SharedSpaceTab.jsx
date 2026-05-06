@@ -98,24 +98,24 @@ const TagBadge = ({ tag, small = false, active = false, onClick }) => {
 };
 
 const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(flow.likes || 0);
+  const [likeState, setLikeState] = useState({ liked: false, likeCount: flow.likes || 0 });
+  const { liked, likeCount } = likeState;
   const domainKey = inferFlowDomain(flow);
   const domainLabel = getDomainLabel(domainKey);
 
   const handleLike = (e) => {
     e.stopPropagation();
-    setLiked((prev) => {
-      setLikeCount((c) => (prev ? c - 1 : c + 1));
-      return !prev;
-    });
+    setLikeState((previous) => ({
+      liked: !previous.liked,
+      likeCount: Math.max(0, previous.likeCount + (previous.liked ? -1 : 1)),
+    }));
   };
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
       <div className="h-1.5 w-full shrink-0 bg-amber-500" />
 
-      <div className="flex flex-col flex-1 p-5 gap-3">
+      <div className="flex flex-col flex-1 gap-3 p-4 sm:p-5">
         {/* Header row */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -125,12 +125,12 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-black leading-snug text-amber-200">{flow.name}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                 <div className="flex h-5 w-5 items-center justify-center rounded-lg border border-slate-600 bg-slate-950 text-[9px] font-black text-amber-300">
                   {flow.authorInitials}
                 </div>
-                <span className="text-[10px] font-black text-slate-300">{flow.author}</span>
-                <span className="rounded-full border border-amber-500/40 bg-slate-950 px-1.5 text-[9px] font-black uppercase tracking-wider text-amber-300">{domainLabel}</span>
+                <span className="max-w-[9rem] truncate text-[10px] font-black text-slate-300">{flow.author}</span>
+                <span className="max-w-[8.5rem] truncate rounded-full border border-amber-500/40 bg-slate-950 px-1.5 text-[9px] font-black uppercase tracking-wider text-amber-300">{domainLabel}</span>
                 {flow.isUserShared && (
                   <span className="rounded-full border border-amber-500/40 bg-slate-950 px-1.5 text-[9px] font-black uppercase tracking-wider text-amber-300">You</span>
                 )}
@@ -175,8 +175,8 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
         </div>
 
         {/* Footer stats + action */}
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-800 pt-2">
-          <div className="flex items-center gap-3 text-[10px] font-black text-slate-400">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-black text-slate-400 sm:gap-3">
             <span className="flex items-center gap-1">
               <Eye size={11} />
               {(flow.views || 0).toLocaleString()}
@@ -192,7 +192,7 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
           <button
             type="button"
             onClick={() => onLoadToCanvas(flow)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400 bg-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-950 transition-all hover:scale-105 hover:bg-amber-400 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400 bg-amber-500 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-950 transition-all hover:scale-105 hover:bg-amber-400 active:scale-95 sm:px-3"
           >
             <ArrowUpRight size={11} />
             Load to Canvas
@@ -287,7 +287,7 @@ const SharedSpaceTab = () => {
   };
 
   return (
-    <div className="xrag-shared-theme h-full w-full overflow-y-auto bg-slate-950 text-slate-100">
+    <div data-xrag-tab="shared-space" className="xrag-shared-theme h-full w-full overflow-y-auto bg-slate-950 text-slate-100">
       {/* Hero header */}
       <div className="relative border-b border-slate-800 bg-slate-950 px-6 py-10 md:px-12">
         {/* Clipped blob layer */}
@@ -303,7 +303,7 @@ const SharedSpaceTab = () => {
             </div>
             <span className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-300">Community</span>
           </div>
-          <h1 className="mb-3 text-3xl font-black leading-none tracking-tight text-amber-200 md:text-4xl">
+          <h1 className="mb-3 text-2xl font-black leading-tight tracking-tight text-amber-200 sm:text-3xl md:text-4xl">
             Shared Space
           </h1>
           <p className="max-w-xl text-sm leading-relaxed text-slate-300">

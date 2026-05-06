@@ -14,7 +14,7 @@ import shutil
 from pathlib import Path
 from threading import Lock
 
-from .models import KnowledgeChunk, KnowledgeDocument, KnowledgeDocumentSummary
+from .models import KnowledgeChunk, KnowledgeDocument, KnowledgeDocumentSummary, UrlSource
 
 
 class KnowledgeStore:
@@ -23,6 +23,7 @@ class KnowledgeStore:
         self._uploads_dir = self._root / "uploads"
         self._chunks_dir = self._root / "chunks"
         self._index_path = self._root / "index.json"
+        self._url_sources_path = self._root / "url_sources.json"
         self._lock = Lock()
         for directory in (self._root, self._uploads_dir, self._chunks_dir):
             directory.mkdir(parents=True, exist_ok=True)
@@ -113,3 +114,48 @@ class KnowledgeStore:
             if chunk_path.exists():
                 chunk_path.unlink(missing_ok=True)
             return True
+
+        # ------------------------------------------------------------------
+        # URL Sources
+        # ------------------------------------------------------------------
+
+        def _read_url_sources(self) -> list[dict]:
+            if not self._url_sources_path.exists():
+                return []
+            try:
+                return json.loads(self._url_sources_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                return []
+
+        def _write_url_sources(self, records: list[dict]) -> None:
+            self._url_sources_path.write_text(json.dumps(records, indent=2), encoding="utf-8")
+
+        def list_url_sources(self) -> list[UrlSource]:
+            with self._lock:
+                return [UrlSource.model_validate(item) for item in self._read_url_sources()]
+
+        def add_url_source(self, source: UrlSource) -> UrlSource:
+            with self._lock:
+                records = self._read_url_sources()
+                records.append(source.model_dump())
+                self._write_url_sources(records)
+                return source
+
+        def update_url_source(self, source_id: str, enabled: bool) -> UrlSource | None:
+            with self._lock:
+                records = self._read_url_sources()
+                for record in records:
+                    if record.get("id") == source_id:
+                        record["enabled"] = enabled
+                        self._write_url_sources(records)
+                        return UrlSource.model_validate(record)
+                return None
+
+        def delete_url_source(self, source_id: str) -> bool:
+            with self._lock:
+                records = self._read_url_sources()
+                kept = [r for r in records if r.get("id") != source_id]
+                if len(kept) == len(records):
+                    return False
+                self._write_url_sources(kept)
+                return True

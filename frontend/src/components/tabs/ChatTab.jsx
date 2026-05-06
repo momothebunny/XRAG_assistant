@@ -1,6 +1,5 @@
 import { BookmarkPlus, CheckCircle2, ChevronDown, FileSearch, ImagePlus, Link2, Mic, Paperclip, Send, ThumbsDown, ThumbsUp, User, Workflow, X, Zap } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import ReasoningGraph from '../chat/ReasoningGraph';
 import { xragApi } from '../../services/xragApi';
 
 const SOURCE_PREVIEW_FALLBACKS = {
@@ -288,7 +287,7 @@ const ChatTab = ({
   };
 
   return (
-    <div className="xrag-chat-theme flex h-full flex-col bg-slate-950 text-slate-100">
+    <div data-xrag-tab="chat" className="xrag-chat-theme flex h-full flex-col bg-slate-950 text-slate-100">
 
       {/* ── Flow selector bar ─────────────────────────────────────── */}
       <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 py-2 md:px-6">
@@ -311,7 +310,7 @@ const ChatTab = ({
             </button>
 
             {flowSelectorOpen && (
-              <div className="absolute left-0 top-full z-30 mt-1.5 min-w-[220px] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/70">
+              <div className="absolute left-0 top-full z-30 mt-1.5 min-w-[220px] max-h-48 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/70">
                 <button
                   type="button"
                   onClick={() => { setSelectedFlowId(''); setFlowSelectorOpen(false); }}
@@ -412,9 +411,6 @@ const ChatTab = ({
                         </span>
                       ))}
                     </div>
-                  )}
-                  {message.reasoning && (
-                    <ReasoningGraph steps={message.traceSteps} />
                   )}
                   {message.sources?.length > 0 && (
                     <div className="mt-3 relative space-y-2">

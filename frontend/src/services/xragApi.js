@@ -207,6 +207,21 @@ export const xragApi = {
   // Knowledge base (real document uploads + chunking)
   // ---------------------------------------------------------------------
   listKnowledgeDocuments: () => requestJson('/api/knowledge/documents'),
+    listKnowledgeUrlSources: () => requestJson('/api/knowledge/url-sources'),
+    createKnowledgeUrlSource: (payload) =>
+      requestJson('/api/knowledge/url-sources', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    updateKnowledgeUrlSource: (sourceId, payload) =>
+      requestJson(`/api/knowledge/url-sources/${encodeURIComponent(sourceId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    deleteKnowledgeUrlSource: (sourceId) =>
+      requestJson(`/api/knowledge/url-sources/${encodeURIComponent(sourceId)}`, {
+        method: 'DELETE',
+      }),
   getKnowledgeDocument: (documentId) =>
     requestJson(`/api/knowledge/documents/${encodeURIComponent(documentId)}`),
   deleteKnowledgeDocument: (documentId) =>
@@ -388,4 +403,19 @@ export const xragApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+    // URL Sources
+    listUrlSources: () => requestJson('/api/knowledge/url-sources'),
+    addUrlSource: (payload) =>
+      requestJson('/api/knowledge/url-sources', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    updateUrlSource: (id, payload) =>
+      requestJson(`/api/knowledge/url-sources/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    deleteUrlSource: (id) =>
+      requestJson(`/api/knowledge/url-sources/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };

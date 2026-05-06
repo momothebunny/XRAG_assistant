@@ -4367,7 +4367,7 @@ const CanvasBoard = () => {
   }, [nodes, previewedSubGraphId]);
 
   return (
-    <div className="xrag-canvas-theme h-full w-full overflow-visible bg-slate-950 p-4 md:p-6">
+    <div data-xrag-tab="canvas" className="xrag-canvas-theme h-full w-full overflow-visible bg-slate-950 p-4 md:p-6">
       <div className="flex h-full w-full min-w-0 gap-2 bg-slate-950">
         <aside
           className="relative flex-none overflow-visible"

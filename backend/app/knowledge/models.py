@@ -66,3 +66,13 @@ class UploadResponse(BaseModel):
     documents: list[KnowledgeDocumentSummary]
     flow_id: str | None = None
     chunking_config: dict[str, Any] = Field(default_factory=dict)
+
+
+class UrlSource(BaseModel):
+    """A web URL registered as an AI-searchable knowledge source."""
+
+    id: str
+    url: str
+    label: str = ""
+    enabled: bool = True
+    created_at: int = 0

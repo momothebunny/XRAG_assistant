@@ -5,7 +5,7 @@ import ApiKeyImportPanel from '../settings/ApiKeyImportPanel';
 
 const SettingsTab = ({ selectedDB, onSelectDB, aiConfig, onAiConfigChange, retrievalConfig, onRetrievalConfigChange }) => {
   return (
-    <div className="xrag-settings-theme h-full space-y-8 overflow-y-auto bg-slate-950 p-4 text-slate-100 md:p-8">
+    <div data-xrag-tab="settings" className="xrag-settings-theme h-full space-y-8 overflow-y-auto bg-slate-950 p-4 text-slate-100 md:p-8">
       <header>
         <h2 className="text-2xl font-black tracking-tight text-amber-200">XRAG Infrastructure</h2>
         <p className="text-sm font-medium text-slate-300">Technical configurations and provider management</p>

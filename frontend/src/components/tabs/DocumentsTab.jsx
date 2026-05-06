@@ -1,8 +1,9 @@
 import { ArrowLeft, BookMarked, Database, GitCompareArrows, Image as ImageIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DocumentComparisonView from '../knowledge/DocumentComparisonView';
 import ImageLibraryPanel from '../knowledge/ImageLibraryPanel';
 import KnowledgeBasePanel from '../knowledge/KnowledgeBasePanel';
+import KnowledgeUrlSourcesPanel from '../knowledge/KnowledgeUrlSourcesPanel';
 import PopularDocsRanking from '../knowledge/PopularDocsRanking';
 import SavedPromptsPanel from '../knowledge/SavedPromptsPanel';
 import VectorSpaceCloud from '../VectorSpaceCloud';
@@ -12,52 +13,70 @@ const DocumentsTab = () => {
   const [vectorRefreshKey, setVectorRefreshKey] = useState(0);
   const [showComparatorPage, setShowComparatorPage] = useState(false);
 
+  useEffect(() => {
+    if (activeSection !== 'documents' && showComparatorPage) {
+      setShowComparatorPage(false);
+    }
+  }, [activeSection, showComparatorPage]);
+
   return (
-    <div className="xrag-kb-theme flex flex-col h-full overflow-hidden bg-slate-950 text-slate-100">
+    <div data-xrag-tab="documents" className="xrag-kb-theme flex flex-col h-full overflow-hidden bg-slate-950 text-slate-100">
 
       {/* ── Section tab bar ─────────────────────────────────────────── */}
       <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 md:px-8 flex items-center gap-0 pt-0">
         <button
           type="button"
           onClick={() => setActiveSection('documents')}
-          className={`flex items-center gap-2 px-5 py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+          className={`xrag-btn rounded-none border-b-2 border-x-0 border-t-0 px-4 py-3.5 ${
             activeSection === 'documents'
               ? 'text-amber-300 border-amber-500'
               : 'text-slate-400 border-transparent hover:text-amber-300'
           }`}
         >
           <Database size={13} />
-          Uploaded Documents
+          <span className="xrag-btn-label">Uploaded Documents</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveSection('images')}
-          className={`flex items-center gap-2 px-5 py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+          className={`xrag-btn rounded-none border-b-2 border-x-0 border-t-0 px-4 py-3.5 ${
             activeSection === 'images'
               ? 'text-amber-300 border-amber-500'
               : 'text-slate-400 border-transparent hover:text-amber-300'
           }`}
         >
           <ImageIcon size={13} />
-          Image Library
+          <span className="xrag-btn-label">Image Library</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveSection('prompts')}
-          className={`flex items-center gap-2 px-5 py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+          className={`xrag-btn rounded-none border-b-2 border-x-0 border-t-0 px-4 py-3.5 ${
             activeSection === 'prompts'
               ? 'text-amber-300 border-amber-500'
               : 'text-slate-400 border-transparent hover:text-amber-300'
           }`}
         >
           <BookMarked size={13} />
-          Saved AI Prompts
+          <span className="xrag-btn-label">Saved AI Prompts</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection('url-sources')}
+          className={`xrag-btn rounded-none border-b-2 border-x-0 border-t-0 px-4 py-3.5 ${
+            activeSection === 'url-sources'
+              ? 'text-amber-300 border-amber-500'
+              : 'text-slate-400 border-transparent hover:text-amber-300'
+          }`}
+        >
+          <Database size={13} />
+          <span className="xrag-btn-label">URL Sources</span>
         </button>
       </div>
 
       {/* ── Section 1: Uploaded Documents ───────────────────────────── */}
       {activeSection === 'documents' && (
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="xrag-kb-subpage flex-1 overflow-y-auto p-4 md:p-8">
           {!showComparatorPage ? (
             <div className="space-y-8">
               <KnowledgeBasePanel onAfterClassify={() => setVectorRefreshKey((k) => k + 1)} />
@@ -108,15 +127,22 @@ const DocumentsTab = () => {
 
       {/* ── Section 2: Image Library ──────────────────────────────── */}
       {activeSection === 'images' && (
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="xrag-kb-subpage flex-1 overflow-y-auto p-4 md:p-8">
           <ImageLibraryPanel />
         </div>
       )}
 
       {/* ── Section 3: Saved AI Prompts ──────────────────────────────── */}
       {activeSection === 'prompts' && (
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="xrag-kb-subpage flex-1 overflow-y-auto p-4 md:p-8">
           <SavedPromptsPanel />
+        </div>
+      )}
+
+      {/* ── Section 4: URL Sources ───────────────────────────────────── */}
+      {activeSection === 'url-sources' && (
+        <div className="xrag-kb-subpage flex-1 overflow-y-auto p-4 md:p-8">
+          <KnowledgeUrlSourcesPanel />
         </div>
       )}
     </div>

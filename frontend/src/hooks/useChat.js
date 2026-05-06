@@ -7,13 +7,6 @@ export const useChat = (selectedDBName) => {
       role: 'assistant',
       content:
         'Welcome to the XRAG (Explainable RAG) interface. The system is ready for deep document analysis and reasoning-trace visualization.',
-      reasoning: `System initialized. Active vector store: ${selectedDBName}`,
-      traceSteps: [
-        { label: 'Boot', duration: '52 ms' },
-        { label: 'Health', duration: '41 ms' },
-        { label: 'Index', duration: '88 ms' },
-        { label: 'Ready', duration: '34 ms' },
-      ],
       sources: [],
     },
   ]);

@@ -684,13 +684,13 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
         ].map((stat) => {
           const StatIcon = stat.Icon;
           return (
-            <div key={stat.label} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div key={stat.label} className="min-w-0 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.tint}`}>
                 <StatIcon size={18} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{stat.label}</p>
-                <p className="text-xl font-black text-slate-900 leading-tight truncate">{stat.value}</p>
+                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-500">{stat.label}</p>
+                <p className="text-base sm:text-lg md:text-xl font-black text-slate-900 leading-tight break-words">{stat.value}</p>
               </div>
             </div>
           );
@@ -742,7 +742,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                   type="button"
                   disabled={isUploading}
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400 bg-amber-500 px-3 py-1.5 text-xs font-black text-slate-950 shadow-sm hover:bg-amber-400 disabled:opacity-50"
                 >
                   <FileText size={13} /> Choose files
                 </button>
@@ -750,7 +750,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                   type="button"
                   disabled={isUploading}
                   onClick={() => folderInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-slate-900 px-3 py-1.5 text-xs font-black text-amber-300 shadow-sm hover:bg-slate-800 disabled:opacity-50"
                 >
                   <FolderUp size={13} /> Choose folder
                 </button>
