@@ -487,8 +487,8 @@ const ReportView = ({ report, onClose }) => {
 
 // ── Benchmark Panel ─────────────────────────────────────────────────────
 
-const mColor = (v) => { const p = v * 100; return p >= 80 ? 'text-emerald-700' : p >= 50 ? 'text-amber-700' : 'text-rose-700'; };
-const mBg = (v) => { const p = v * 100; return p >= 80 ? 'bg-emerald-500' : p >= 50 ? 'bg-amber-500' : 'bg-rose-500'; };
+const mColor = (v) => { const p = v * 100; return p >= 80 ? 'text-emerald-400' : p >= 50 ? 'text-amber-400' : 'text-rose-400'; };
+const mBg = (v) => { const p = v * 100; return p >= 80 ? 'bg-emerald-400' : p >= 50 ? 'bg-amber-400' : 'bg-rose-400'; };
 
 const METRIC_GROUPS = [
   {

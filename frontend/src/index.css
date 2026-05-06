@@ -988,3 +988,68 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 .xrag-audit-theme [class*="text-[9px]"] { font-size: 0.73rem; }
 .xrag-audit-theme [class*="text-[10px]"] { font-size: 0.79rem; }
 .xrag-audit-theme [class*="text-[11px]"] { font-size: 0.83rem; }
+
+/* ─── Benchmark report: extended dark-mode colour coverage ─────────────── */
+
+/* Pastel solid backgrounds (50/100 tints + opacity variants) → dark */
+.xrag-audit-theme [class~="bg-amber-50"],
+.xrag-audit-theme [class*="bg-amber-50/"],
+.xrag-audit-theme [class~="bg-amber-100"],
+.xrag-audit-theme [class*="bg-amber-100/"],
+.xrag-audit-theme [class~="bg-orange-50"],
+.xrag-audit-theme [class*="bg-orange-50/"],
+.xrag-audit-theme [class~="bg-indigo-50"],
+.xrag-audit-theme [class*="bg-indigo-50/"],
+.xrag-audit-theme [class~="bg-indigo-100"],
+.xrag-audit-theme [class*="bg-indigo-100/"],
+.xrag-audit-theme [class~="bg-sky-50"],
+.xrag-audit-theme [class*="bg-sky-50/"],
+.xrag-audit-theme [class~="bg-emerald-50"],
+.xrag-audit-theme [class*="bg-emerald-50/"],
+.xrag-audit-theme [class~="bg-rose-50"],
+.xrag-audit-theme [class*="bg-rose-50/"],
+.xrag-audit-theme [class~="bg-teal-50"],
+.xrag-audit-theme [class*="bg-teal-50/"],
+.xrag-audit-theme [class*="bg-white/"] {
+  background-color: rgb(15 23 42) !important;
+}
+
+/* Gradient pastel from-* → dark navy */
+.xrag-audit-theme [class~="from-amber-50"],
+.xrag-audit-theme [class~="from-orange-50"],
+.xrag-audit-theme [class~="from-slate-50"],
+.xrag-audit-theme [class~="from-indigo-50"],
+.xrag-audit-theme [class~="from-sky-50"],
+.xrag-audit-theme [class~="from-emerald-50"],
+.xrag-audit-theme [class~="from-rose-50"] {
+  --tw-gradient-from: rgb(15 23 42) var(--tw-gradient-from-position) !important;
+}
+
+/* Gradient pastel to-* → near-black */
+.xrag-audit-theme [class~="to-orange-50"],
+.xrag-audit-theme [class~="to-amber-50"],
+.xrag-audit-theme [class~="to-emerald-50"],
+.xrag-audit-theme [class~="to-rose-50"],
+.xrag-audit-theme [class~="to-sky-50"] {
+  --tw-gradient-to: rgb(2 6 23) var(--tw-gradient-to-position) !important;
+}
+
+/* Metric bar tracks: give them a slightly-lighter dark so they're visible */
+.xrag-audit-theme [class*="bg-slate-100"][class*="rounded-full"] {
+  background-color: rgb(30 41 59) !important;
+}
+
+/* Dark amber tints that become near-invisible on dark bg → bright accent */
+.xrag-audit-theme [class*="text-amber-7"],
+.xrag-audit-theme [class*="text-amber-8"],
+.xrag-audit-theme [class*="text-amber-9"] {
+  color: var(--xrag-yellow-soft) !important;
+}
+
+/* Metric signal: green and red need extra brightness on dark bg */
+.xrag-audit-theme [class*="text-emerald-"] {
+  color: rgb(74 222 128) !important;   /* emerald-400 */
+}
+.xrag-audit-theme [class*="text-rose-"] {
+  color: rgb(251 113 133) !important;  /* rose-400 */
+}
