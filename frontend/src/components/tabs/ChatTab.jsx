@@ -1,6 +1,7 @@
-import { BookmarkPlus, CheckCircle2, FileSearch, ImagePlus, Link2, Mic, Paperclip, Send, ThumbsDown, ThumbsUp, User, X, Zap } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { BookmarkPlus, CheckCircle2, ChevronDown, FileSearch, ImagePlus, Link2, Mic, Paperclip, Send, ThumbsDown, ThumbsUp, User, Workflow, X, Zap } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReasoningGraph from '../chat/ReasoningGraph';
+import { xragApi } from '../../services/xragApi';
 
 const SOURCE_PREVIEW_FALLBACKS = {
   'BCP_Plan_2024.pdf': {
@@ -61,9 +62,32 @@ const ChatTab = ({
   const [submittedFeedbackByMessage, setSubmittedFeedbackByMessage] = useState({});
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const [savedStateByMessage, setSavedStateByMessage] = useState({});
+  const [canvasFlows, setCanvasFlows] = useState([]);
+  const [selectedFlowId, setSelectedFlowId] = useState('');
+  const [flowSelectorOpen, setFlowSelectorOpen] = useState(false);
   const audioInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const flowSelectorRef = useRef(null);
+
+  useEffect(() => {
+    xragApi.listCanvasFlows()
+      .then((flows) => setCanvasFlows(Array.isArray(flows) ? flows : []))
+      .catch(() => setCanvasFlows([]));
+  }, []);
+
+  useEffect(() => {
+    if (!flowSelectorOpen) return undefined;
+    const handleOutside = (e) => {
+      if (flowSelectorRef.current && !flowSelectorRef.current.contains(e.target)) {
+        setFlowSelectorOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [flowSelectorOpen]);
+
+  const selectedFlow = canvasFlows.find((f) => f.id === selectedFlowId) || null;
   const activeSource = useMemo(() => {
     if (!activeCitation) {
       return null;
@@ -240,7 +264,7 @@ const ChatTab = ({
   };
 
   const handleMessageSubmit = (event) => {
-    const sent = onSendMessage(event, pendingAttachments);
+    const sent = onSendMessage(event, pendingAttachments, selectedFlowId || null);
     if (!sent) {
       return;
     }
@@ -265,6 +289,79 @@ const ChatTab = ({
 
   return (
     <div className="xrag-chat-theme flex h-full flex-col bg-slate-950 text-slate-100">
+
+      {/* ── Flow selector bar ─────────────────────────────────────── */}
+      <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 py-2 md:px-6">
+        <div className="mx-auto flex max-w-4xl items-center gap-2.5">
+          <Workflow size={13} className="shrink-0 text-amber-400/70" />
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Flow</span>
+
+          <div ref={flowSelectorRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setFlowSelectorOpen((o) => !o)}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-black uppercase tracking-wide transition-all ${
+                selectedFlow
+                  ? 'border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                  : 'border-slate-700 bg-slate-900 text-slate-400 hover:border-amber-500/40 hover:text-amber-300'
+              }`}
+            >
+              {selectedFlow ? selectedFlow.name : 'Default RAG'}
+              <ChevronDown size={11} className={`transition-transform ${flowSelectorOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {flowSelectorOpen && (
+              <div className="absolute left-0 top-full z-30 mt-1.5 min-w-[220px] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/70">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedFlowId(''); setFlowSelectorOpen(false); }}
+                  className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-[11px] font-bold transition-colors hover:bg-slate-800 ${
+                    !selectedFlowId ? 'text-amber-300' : 'text-slate-400'
+                  }`}
+                >
+                  <Zap size={12} className="shrink-0" /> Default RAG — no flow
+                </button>
+
+                {canvasFlows.length > 0 && (
+                  <div className="border-t border-slate-800">
+                    {canvasFlows.map((flow) => (
+                      <button
+                        key={flow.id}
+                        type="button"
+                        onClick={() => { setSelectedFlowId(flow.id); setFlowSelectorOpen(false); }}
+                        className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-[11px] font-bold transition-colors hover:bg-slate-800 ${
+                          selectedFlowId === flow.id ? 'text-amber-300' : 'text-slate-300'
+                        }`}
+                      >
+                        <Workflow size={12} className="shrink-0 text-amber-500/60" />
+                        <span className="truncate">{flow.name || flow.id}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {canvasFlows.length === 0 && (
+                  <p className="border-t border-slate-800 px-4 py-3 text-[10px] text-slate-500">
+                    No saved flows yet — build one in Canvas.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {selectedFlow && (
+            <button
+              type="button"
+              onClick={() => setSelectedFlowId('')}
+              title="Clear flow selection"
+              className="flex h-6 w-6 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-slate-500 hover:border-amber-500/40 hover:text-amber-300"
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
         {messages.map((message, messageIndex) => (
           <div key={messageIndex} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -555,7 +652,7 @@ const ChatTab = ({
 
               <input
                 type="text"
-                placeholder="Ask the XRAG assistant..."
+                placeholder={selectedFlow ? `Ask using "${selectedFlow.name}"…` : 'Ask anything…'}
                 className="min-w-0 flex-1 border-none bg-transparent px-1 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500"
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}

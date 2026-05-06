@@ -13,7 +13,7 @@ import { useChat } from './hooks/useChat';
 import { xragApi, setAuthToken, getAuthToken } from './services/xragApi';
 
 const TAB_TITLES = {
-  chat: 'Intelligent Reasoning Interface',
+  chat: 'Chat',
   documents: 'Knowledge Ecosystem',
   canvas: 'No-Code RAG Canvas',
   'shared-space': 'Shared Space',
@@ -258,7 +258,7 @@ const App = () => {
               chatEndRef={chatEndRef}
               inputValue={inputValue}
               setInputValue={setInputValue}
-              onSendMessage={handleSendMessage}
+              onSendMessage={(msg, flowId) => handleSendMessage(msg, flowId)}
               onSaveAnswer={handleSaveAnswer}
             />,
             'xrag-chat-theme bg-slate-950'
@@ -434,7 +434,7 @@ const App = () => {
             </div>
 
             <div className={`space-y-2 ${isMainNavCollapsed ? 'flex flex-col items-center' : ''}`}>
-              <NavItem icon={<MessageSquare size={18} />} label="XRAG Assistant" active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} collapsed={isMainNavCollapsed} />
+              <NavItem icon={<MessageSquare size={18} />} label="Chat" active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<FileText size={18} />} label="Knowledge Base" active={activeTab === 'documents'} onClick={() => setActiveTab('documents')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<Workflow size={18} />} label="Canvas" active={activeTab === 'canvas'} onClick={() => setActiveTab('canvas')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<Globe size={18} />} label="Shared Space" active={activeTab === 'shared-space'} onClick={() => setActiveTab('shared-space')} collapsed={isMainNavCollapsed} />
