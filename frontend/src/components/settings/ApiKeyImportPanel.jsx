@@ -172,7 +172,7 @@ const ApiKeyImportPanel = () => {
                     setProvider(e.target.value);
                     setEnvVar('');
                   }}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-400"
                 >
                   {providers.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -191,7 +191,7 @@ const ApiKeyImportPanel = () => {
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder={`${providerOption?.label || ''} – production`}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
 
@@ -204,7 +204,7 @@ const ApiKeyImportPanel = () => {
                   value={envVar}
                   onChange={(e) => setEnvVar(e.target.value)}
                   placeholder={defaultEnvVar || 'XRAG_CUSTOM_…'}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-amber-400"
                 />
                 <p className="text-[10px] text-slate-400 font-medium">
                   Defaults to <span className="font-mono">{defaultEnvVar || '—'}</span>. The active key is exported to
@@ -220,7 +220,7 @@ const ApiKeyImportPanel = () => {
                   value={keyValue}
                   onChange={(e) => setKeyValue(e.target.value)}
                   placeholder="sk-…"
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-amber-400"
                   autoComplete="off"
                 />
               </div>
@@ -239,7 +239,7 @@ const ApiKeyImportPanel = () => {
               <button
                 type="submit"
                 disabled={busy || !keyValue.trim()}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:bg-slate-300 disabled:shadow-none"
+                className="xrag-settings-amber-btn flex items-center gap-2 px-6 py-2.5 bg-amber-300 text-slate-900 rounded-xl text-xs font-black shadow-lg shadow-amber-900/20 border border-amber-400 hover:bg-amber-200 transition-all active:scale-95 disabled:bg-slate-300 disabled:shadow-none"
               >
                 <Plus size={14} /> Save key
               </button>
@@ -288,7 +288,7 @@ const ApiKeyImportPanel = () => {
                               type="button"
                               onClick={() => handleActivate(entry.id)}
                               disabled={busy}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50"
+                              className="xrag-settings-amber-btn flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-300 border border-amber-400 text-slate-900 text-[10px] font-black uppercase tracking-widest hover:bg-amber-200 disabled:opacity-50"
                             >
                               <Star size={12} /> Activate
                             </button>
@@ -297,7 +297,7 @@ const ApiKeyImportPanel = () => {
                             type="button"
                             onClick={() => handleDelete(entry.id)}
                             disabled={busy}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-amber-100 hover:text-amber-700 disabled:opacity-50"
                             aria-label="Delete key"
                           >
                             <Trash2 size={14} />
@@ -324,7 +324,7 @@ const ApiKeyImportPanel = () => {
               onChange={(e) => setImportText(e.target.value)}
               placeholder={'OPENAI_API_KEY=sk-…\nOPENROUTER_API_KEY=sk-or-…\nPINECONE_API_KEY=…'}
               rows={6}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-amber-400"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <label className="flex items-center gap-2 text-xs font-bold text-slate-600">
@@ -339,7 +339,7 @@ const ApiKeyImportPanel = () => {
               <button
                 type="submit"
                 disabled={busy || !importText.trim()}
-                className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 disabled:bg-slate-300 disabled:shadow-none"
+                className="xrag-settings-amber-btn flex items-center gap-2 px-6 py-2.5 bg-amber-300 text-slate-900 rounded-xl text-xs font-black shadow-lg shadow-amber-900/20 border border-amber-400 hover:bg-amber-200 transition-all active:scale-95 disabled:bg-slate-300 disabled:shadow-none"
               >
                 <Upload size={14} /> Import
               </button>

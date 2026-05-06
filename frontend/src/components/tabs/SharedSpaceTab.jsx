@@ -1,8 +1,8 @@
 import {
   ArrowUpRight,
-  Check,
   ChevronDown,
   Eye,
+  Filter,
   Globe,
   Heart,
   Network,
@@ -19,55 +19,67 @@ import { useRef, useState, useEffect, useMemo } from 'react';
 import { SHARED_FLOWS, loadUserSharedFlows } from '../../data/sharedFlows';
 
 const SORT_OPTIONS = [
-  { key: 'likes',   label: 'Most Liked',  Icon: Heart,      accent: 'rose'   },
-  { key: 'views',   label: 'Most Viewed', Icon: Eye,        accent: 'sky'    },
-  { key: 'newest',  label: 'Newest',      Icon: TrendingUp, accent: 'amber' },
+  { key: 'likes', label: 'Most liked', Icon: Heart },
+  { key: 'views', label: 'Most viewed', Icon: Eye },
+  { key: 'newest', label: 'Newest', Icon: TrendingUp },
 ];
 
-const SORT_ACCENTS = {
-  rose:   { ring: 'border-rose-300 bg-rose-50 text-rose-800',       dot: 'bg-rose-500',    soft: 'text-rose-600'    },
-  sky:    { ring: 'border-sky-300 bg-sky-50 text-sky-800',          dot: 'bg-sky-500',     soft: 'text-sky-600'     },
-  violet: { ring: 'border-amber-300 bg-amber-50 text-amber-800', dot: 'bg-amber-500',  soft: 'text-amber-600'  },
+const DOMAIN_RULES = [
+  { key: 'enterprise', label: 'Enterprise', tags: ['enterprise', 'compliance'] },
+  { key: 'support', label: 'Customer Support', tags: ['support', 'helpdesk', 'saas'] },
+  { key: 'legal', label: 'Legal', tags: ['legal', 'contracts'] },
+  { key: 'medical', label: 'Medical', tags: ['medical'] },
+  { key: 'finance', label: 'Finance', tags: ['finance', 'reports'] },
+  { key: 'engineering', label: 'Engineering', tags: ['code', 'devops', 'review'] },
+  { key: 'research', label: 'Research', tags: ['research', 'arxiv', 'academic'] },
+];
+
+const DOMAIN_LOOKUP = Object.fromEntries(DOMAIN_RULES.map((item) => [item.key, item.label]));
+
+const inferFlowDomain = (flow) => {
+  const flowTags = new Set(flow.tags || []);
+  const matchingDomain = DOMAIN_RULES.find((domain) => domain.tags.some((tag) => flowTags.has(tag)));
+  return matchingDomain?.key || 'general';
 };
 
-const ALL_TAGS = [...new Set(SHARED_FLOWS.flatMap((f) => f.tags))].sort();
+const getDomainLabel = (domainKey) => DOMAIN_LOOKUP[domainKey] || 'General';
 
 const TAG_COLORS = {
-  enterprise: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  compliance: 'bg-amber-50 text-amber-700 border-amber-200',
-  reranker: 'bg-amber-50 text-amber-700 border-amber-200',
-  pinecone: 'bg-sky-50 text-sky-700 border-sky-200',
-  multilingual: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-  hyde: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  support: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  helpdesk: 'bg-teal-50 text-teal-700 border-teal-200',
-  legal: 'bg-amber-50 text-amber-700 border-amber-200',
-  contracts: 'bg-orange-50 text-orange-700 border-orange-200',
-  pii: 'bg-rose-50 text-rose-700 border-rose-200',
-  'context-compression': 'bg-pink-50 text-pink-700 border-pink-200',
-  medical: 'bg-green-50 text-green-700 border-green-200',
-  graphrag: 'bg-lime-50 text-lime-700 border-lime-200',
-  neo4j: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'hallucination-guard': 'bg-red-50 text-red-700 border-red-200',
-  finance: 'bg-blue-50 text-blue-700 border-blue-200',
-  reports: 'bg-sky-50 text-sky-700 border-sky-200',
-  'query-rewriter': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  citations: 'bg-amber-50 text-amber-700 border-amber-200',
-  code: 'bg-slate-100 text-slate-700 border-slate-300',
-  review: 'bg-zinc-50 text-zinc-700 border-zinc-200',
-  'reflection-loop': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  devops: 'bg-orange-50 text-orange-700 border-orange-200',
-  agentic: 'bg-amber-50 text-amber-700 border-amber-200',
-  router: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  guardrails: 'bg-red-50 text-red-700 border-red-200',
-  saas: 'bg-sky-50 text-sky-700 border-sky-200',
-  research: 'bg-teal-50 text-teal-700 border-teal-200',
-  arxiv: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-  reflection: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  academic: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  enterprise: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  compliance: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  reranker: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  pinecone: 'bg-slate-900 text-slate-200 border-slate-600',
+  multilingual: 'bg-slate-900 text-slate-200 border-slate-600',
+  hyde: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  support: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  helpdesk: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  legal: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  contracts: 'bg-slate-900 text-slate-200 border-slate-600',
+  pii: 'bg-slate-900 text-slate-200 border-slate-600',
+  'context-compression': 'bg-slate-900 text-slate-200 border-slate-600',
+  medical: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  graphrag: 'bg-slate-900 text-slate-200 border-slate-600',
+  neo4j: 'bg-slate-900 text-slate-200 border-slate-600',
+  'hallucination-guard': 'bg-slate-900 text-amber-300 border-amber-500/40',
+  finance: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  reports: 'bg-slate-900 text-slate-200 border-slate-600',
+  'query-rewriter': 'bg-slate-900 text-slate-200 border-slate-600',
+  citations: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  code: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  review: 'bg-slate-900 text-slate-200 border-slate-600',
+  'reflection-loop': 'bg-slate-900 text-slate-200 border-slate-600',
+  devops: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  agentic: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  router: 'bg-slate-900 text-slate-200 border-slate-600',
+  guardrails: 'bg-slate-900 text-slate-200 border-slate-600',
+  saas: 'bg-slate-900 text-slate-200 border-slate-600',
+  research: 'bg-slate-900 text-amber-300 border-amber-500/40',
+  arxiv: 'bg-slate-900 text-slate-200 border-slate-600',
+  reflection: 'bg-slate-900 text-slate-200 border-slate-600',
+  academic: 'bg-slate-900 text-slate-200 border-slate-600',
 };
 
-const TAG_DEFAULT = 'bg-slate-100 text-slate-600 border-slate-200';
+const TAG_DEFAULT = 'bg-slate-900 text-slate-200 border-slate-600';
 
 const TagBadge = ({ tag, small = false, active = false, onClick }) => {
   const colorClass = TAG_COLORS[tag] || TAG_DEFAULT;
@@ -77,7 +89,7 @@ const TagBadge = ({ tag, small = false, active = false, onClick }) => {
       onClick={onClick}
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-black uppercase tracking-wider transition-all ${
         small ? 'text-[9px]' : 'text-[10px]'
-      } ${active ? `${colorClass} ring-2 ring-offset-1 ring-indigo-400 scale-105` : `${colorClass} hover:scale-105`}`}
+      } ${active ? `${colorClass} ring-2 ring-offset-1 ring-offset-slate-950 ring-amber-400 scale-105` : `${colorClass} hover:scale-105`}`}
     >
       {!small && <Tag size={9} />}
       {tag}
@@ -88,6 +100,8 @@ const TagBadge = ({ tag, small = false, active = false, onClick }) => {
 const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(flow.likes || 0);
+  const domainKey = inferFlowDomain(flow);
+  const domainLabel = getDomainLabel(domainKey);
 
   const handleLike = (e) => {
     e.stopPropagation();
@@ -98,39 +112,27 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
   };
 
   return (
-    <div className="group relative flex flex-col rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 overflow-hidden">
-      {/* Accent top bar */}
-      <div
-        className="h-1.5 w-full shrink-0"
-        style={{ background: `linear-gradient(90deg, ${flow.accentFrom}, ${flow.accentTo})` }}
-      />
+    <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+      <div className="h-1.5 w-full shrink-0 bg-amber-500" />
 
       <div className="flex flex-col flex-1 p-5 gap-3">
         {/* Header row */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Icon */}
-            <div
-              className="shrink-0 flex items-center justify-center rounded-2xl"
-              style={{
-                width: 40, height: 40,
-                background: `linear-gradient(135deg, ${flow.accentFrom}30 0%, ${flow.accentTo}50 100%)`,
-                border: `1.5px solid ${flow.accentFrom}40`,
-              }}
-            >
-              <Network size={18} style={{ color: flow.accentFrom }} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-500/40 bg-slate-950">
+              <Network size={18} className="text-amber-300" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-black text-slate-900 truncate leading-snug">{flow.name}</p>
+              <p className="truncate text-sm font-black leading-snug text-amber-200">{flow.name}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <div
-                  className={`w-5 h-5 rounded-lg flex items-center justify-center text-[9px] font-black text-white ${flow.authorColor}`}
-                >
+                <div className="flex h-5 w-5 items-center justify-center rounded-lg border border-slate-600 bg-slate-950 text-[9px] font-black text-amber-300">
                   {flow.authorInitials}
                 </div>
-                <span className="text-[10px] font-black text-slate-500">{flow.author}</span>
+                <span className="text-[10px] font-black text-slate-300">{flow.author}</span>
+                <span className="rounded-full border border-amber-500/40 bg-slate-950 px-1.5 text-[9px] font-black uppercase tracking-wider text-amber-300">{domainLabel}</span>
                 {flow.isUserShared && (
-                  <span className="text-[9px] font-black uppercase tracking-wider text-indigo-500 bg-indigo-50 border border-indigo-200 px-1.5 rounded-full">You</span>
+                  <span className="rounded-full border border-amber-500/40 bg-slate-950 px-1.5 text-[9px] font-black uppercase tracking-wider text-amber-300">You</span>
                 )}
               </div>
             </div>
@@ -141,7 +143,7 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onDelete(flow.id); }}
-                className="h-7 w-7 flex items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-600 text-slate-400 transition-colors hover:border-amber-500/40 hover:bg-slate-800 hover:text-amber-300"
                 title="Remove from Shared Space"
               >
                 <Trash2 size={12} />
@@ -152,18 +154,18 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
               onClick={handleLike}
               className={`flex items-center gap-1 h-7 px-2 rounded-full border text-[10px] font-black transition-all ${
                 liked
-                  ? 'border-rose-300 bg-rose-50 text-rose-600'
-                  : 'border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:text-rose-500'
+                  ? 'border-amber-400 bg-amber-500 text-slate-950'
+                  : 'border-slate-600 bg-slate-950 text-slate-300 hover:border-amber-500/40 hover:text-amber-300'
               }`}
             >
-              <Heart size={11} className={liked ? 'fill-rose-500' : ''} />
+              <Heart size={11} className={liked ? 'fill-slate-950' : ''} />
               {likeCount}
             </button>
           </div>
         </div>
 
         {/* Description */}
-        <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">{flow.description}</p>
+        <p className="line-clamp-3 text-[11px] leading-relaxed text-slate-300">{flow.description}</p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5">
@@ -173,8 +175,8 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
         </div>
 
         {/* Footer stats + action */}
-        <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-slate-100">
-          <div className="flex items-center gap-3 text-[10px] text-slate-400 font-black">
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-800 pt-2">
+          <div className="flex items-center gap-3 text-[10px] font-black text-slate-400">
             <span className="flex items-center gap-1">
               <Eye size={11} />
               {(flow.views || 0).toLocaleString()}
@@ -183,18 +185,14 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
               <Network size={11} />
               {(flow.nodes || []).length} nodes
             </span>
-            <span className="text-slate-300">·</span>
+            <span className="text-slate-500">·</span>
             <span>{flow.createdAt}</span>
           </div>
 
           <button
             type="button"
             onClick={() => onLoadToCanvas(flow)}
-            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:scale-105 active:scale-95"
-            style={{
-              background: `linear-gradient(135deg, ${flow.accentFrom}, ${flow.accentTo})`,
-              boxShadow: `0 4px 12px ${flow.accentFrom}50`,
-            }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400 bg-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-950 transition-all hover:scale-105 hover:bg-amber-400 active:scale-95"
           >
             <ArrowUpRight size={11} />
             Load to Canvas
@@ -208,16 +206,17 @@ const FlowCard = ({ flow, onLoadToCanvas, onDelete, userOwned = false }) => {
 const SharedSpaceTab = () => {
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState(null);
+  const [activeDomain, setActiveDomain] = useState('all');
   const [sortBy, setSortBy] = useState('likes');
-  const [sortOpen, setSortOpen] = useState(false);
-  const sortMenuRef = useRef(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterMenuRef = useRef(null);
   const [userFlows, setUserFlows] = useState(() => loadUserSharedFlows());
 
-  // Close sort dropdown on outside click
+  // Close filter dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target)) {
-        setSortOpen(false);
+      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target)) {
+        setFilterOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -231,6 +230,8 @@ const SharedSpaceTab = () => {
     ];
   }, [userFlows]);
 
+  const allTags = useMemo(() => [...new Set(allFlows.flatMap((flow) => flow.tags || []))].sort(), [allFlows]);
+
   const filtered = useMemo(() => {
     let list = allFlows;
     if (search.trim()) {
@@ -243,6 +244,9 @@ const SharedSpaceTab = () => {
           f.tags.some((t) => t.includes(q))
       );
     }
+    if (activeDomain !== 'all') {
+      list = list.filter((flow) => inferFlowDomain(flow) === activeDomain);
+    }
     if (activeTag) {
       list = list.filter((f) => f.tags.includes(activeTag));
     }
@@ -250,7 +254,22 @@ const SharedSpaceTab = () => {
     if (sortBy === 'views') list = [...list].sort((a, b) => (b.views || 0) - (a.views || 0));
     if (sortBy === 'newest') list = [...list].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     return list;
-  }, [allFlows, search, activeTag, sortBy]);
+  }, [allFlows, search, activeDomain, activeTag, sortBy]);
+
+  const groupedByDomain = useMemo(() => {
+    const groups = new Map();
+    filtered.forEach((flow) => {
+      const domain = inferFlowDomain(flow);
+      if (!groups.has(domain)) {
+        groups.set(domain, []);
+      }
+      groups.get(domain).push(flow);
+    });
+
+    return [...groups.entries()]
+      .sort((left, right) => getDomainLabel(left[0]).localeCompare(getDomainLabel(right[0])))
+      .map(([domain, flows]) => ({ domain, label: getDomainLabel(domain), flows }));
+  }, [filtered]);
 
   const handleLoadToCanvas = (flow) => {
     window.dispatchEvent(new CustomEvent('xrag-load-canvas-flow', { detail: { flow } }));
@@ -268,147 +287,154 @@ const SharedSpaceTab = () => {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50">
+    <div className="xrag-shared-theme h-full w-full overflow-y-auto bg-slate-950 text-slate-100">
       {/* Hero header */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 px-6 py-10 md:px-12">
+      <div className="relative border-b border-slate-800 bg-slate-950 px-6 py-10 md:px-12">
         {/* Clipped blob layer */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-16 -left-16 h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl" />
-          <div className="absolute -bottom-16 right-0 h-80 w-80 rounded-full bg-amber-600/15 blur-3xl" />
-          <div className="absolute top-10 right-1/3 h-40 w-40 rounded-full bg-cyan-500/10 blur-2xl" />
+          <div className="absolute -top-16 -left-16 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl" />
+          <div className="absolute -bottom-16 right-0 h-80 w-80 rounded-full bg-amber-500/5 blur-3xl" />
         </div>
 
         <div className="relative max-w-4xl">
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500/20 border border-indigo-400/30 backdrop-blur-sm">
-              <Globe size={20} className="text-indigo-300" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-500/40 bg-slate-900 backdrop-blur-sm">
+              <Globe size={20} className="text-amber-300" />
             </div>
-            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-300">Community</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-300">Community</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none mb-3">
+          <h1 className="mb-3 text-3xl font-black leading-none tracking-tight text-amber-200 md:text-4xl">
             Shared Space
           </h1>
-          <p className="text-sm text-slate-400 max-w-xl leading-relaxed">
-            Browse community-shared RAG architectures. Click <span className="text-indigo-300 font-black">Load to Canvas</span> to instantly load any pipeline into the canvas.
+          <p className="max-w-xl text-sm leading-relaxed text-slate-300">
+            Browse community-shared RAG architectures. Click <span className="font-black text-amber-300">Load to Canvas</span> to instantly load any pipeline into the canvas.
           </p>
 
           {/* Search bar */}
-          <div className="mt-6 flex items-center gap-3 max-w-xl">
-            <div className="flex-1 relative">
+          <div className="mt-6 flex max-w-3xl items-center gap-3">
+            <div className="relative flex-1">
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search flows, authors, tags…"
-                className="w-full rounded-2xl border border-slate-700/60 bg-slate-800/60 pl-9 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 backdrop-blur-sm transition"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-900 pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-500/25"
               />
               {search && (
                 <button
                   type="button"
                   onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-300"
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
 
-            {/* Sort dropdown */}
-            <div ref={sortMenuRef} className="relative shrink-0">
-              {(() => {
-                const active = SORT_OPTIONS.find((o) => o.key === sortBy) || SORT_OPTIONS[0];
-                const accent = SORT_ACCENTS[active.accent];
-                const ActiveIcon = active.Icon;
-                return (
-                  <>
+            <div ref={filterMenuRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setFilterOpen((previous) => !previous)}
+                aria-haspopup="menu"
+                aria-expanded={filterOpen}
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-amber-500/40 bg-slate-900 px-3 py-2.5 text-[11px] font-black text-amber-300 transition hover:bg-slate-800"
+              >
+                <Filter size={12} /> Filters
+                <ChevronDown size={12} className={`transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {filterOpen && (
+                <div className="absolute right-0 z-30 mt-1.5 w-72 rounded-2xl border border-slate-700 bg-slate-900 p-3 shadow-xl">
+                  <p className="mb-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Filter criteria</p>
+
+                  <div className="space-y-2.5">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Domain
+                      <select
+                        value={activeDomain}
+                        onChange={(event) => setActiveDomain(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-500/25"
+                      >
+                        <option value="all">All domains</option>
+                        {DOMAIN_RULES.map((domain) => (
+                          <option key={domain.key} value={domain.key}>{domain.label}</option>
+                        ))}
+                        <option value="general">General</option>
+                      </select>
+                    </label>
+
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Tag
+                      <select
+                        value={activeTag || 'all'}
+                        onChange={(event) => setActiveTag(event.target.value === 'all' ? null : event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-500/25"
+                      >
+                        <option value="all">All tags</option>
+                        {allTags.map((tag) => (
+                          <option key={tag} value={tag}>{tag}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Sort
+                      <select
+                        value={sortBy}
+                        onChange={(event) => setSortBy(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs font-bold text-slate-100 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-500/25"
+                      >
+                        {SORT_OPTIONS.map((option) => (
+                          <option key={option.key} value={option.key}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+
                     <button
                       type="button"
-                      onClick={() => setSortOpen((o) => !o)}
-                      aria-haspopup="listbox"
-                      aria-expanded={sortOpen}
-                      className={`group inline-flex items-center gap-1.5 rounded-2xl border px-3 py-2.5 text-[11px] font-black shadow-sm transition ${accent.ring} hover:shadow-md`}
+                      onClick={() => {
+                        setActiveDomain('all');
+                        setActiveTag(null);
+                        setSortBy('likes');
+                      }}
+                      className="w-full rounded-xl border border-amber-500/40 bg-slate-950 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300 transition hover:bg-slate-800"
                     >
-                      <ActiveIcon
-                        size={12}
-                        className={active.accent === 'rose' ? 'fill-rose-500 text-rose-500' : ''}
-                      />
-                      <span>{active.label}</span>
-                      <ChevronDown
-                        size={12}
-                        className={`transition-transform ${sortOpen ? 'rotate-180' : ''} opacity-70 group-hover:opacity-100`}
-                      />
+                      Reset criteria
                     </button>
-
-                    {sortOpen && (
-                      <div
-                        role="listbox"
-                        className="absolute right-0 z-30 mt-1.5 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur"
-                      >
-                        <div className="border-b border-slate-100 bg-slate-50/80 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500">
-                          Sort by
-                        </div>
-                        <ul className="py-1">
-                          {SORT_OPTIONS.map((opt) => {
-                            const isActive = opt.key === sortBy;
-                            const optAccent = SORT_ACCENTS[opt.accent];
-                            const OptIcon = opt.Icon;
-                            return (
-                              <li key={opt.key}>
-                                <button
-                                  type="button"
-                                  role="option"
-                                  aria-selected={isActive}
-                                  onClick={() => { setSortBy(opt.key); setSortOpen(false); }}
-                                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition ${
-                                    isActive
-                                      ? `${optAccent.ring} font-black`
-                                      : 'text-slate-700 hover:bg-slate-50'
-                                  }`}
-                                >
-                                  <span className={`inline-flex h-5 w-5 items-center justify-center rounded-lg ${
-                                    isActive ? optAccent.dot + ' text-white' : 'bg-slate-100 ' + optAccent.soft
-                                  }`}>
-                                    <OptIcon
-                                      size={11}
-                                      className={
-                                        opt.accent === 'rose' && isActive
-                                          ? 'fill-white text-white'
-                                          : opt.accent === 'rose'
-                                            ? 'fill-rose-500 text-rose-500'
-                                            : ''
-                                      }
-                                    />
-                                  </span>
-                                  <span className="flex-1">{opt.label}</span>
-                                  {isActive && <Check size={12} className={optAccent.soft} />}
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Active:</span>
+            <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-200">
+              Domain · {activeDomain === 'all' ? 'All' : getDomainLabel(activeDomain)}
+            </span>
+            <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-200">
+              Tag · {activeTag || 'All'}
+            </span>
+            <span className="rounded-full border border-amber-500/40 bg-slate-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
+              Sort · {(SORT_OPTIONS.find((option) => option.key === sortBy)?.label || 'Most liked')}
+            </span>
           </div>
 
           {/* Stats row */}
           <div className="mt-5 flex items-center gap-6 text-[11px] font-black uppercase tracking-wider">
             <span className="text-slate-400">
-              <span className="text-white text-lg font-black mr-1">{allFlows.length}</span>
+              <span className="mr-1 text-lg font-black text-amber-200">{allFlows.length}</span>
               flows
             </span>
             <span className="text-slate-400">
-              <span className="text-white text-lg font-black mr-1">
+              <span className="mr-1 text-lg font-black text-amber-200">
                 {allFlows.reduce((s, f) => s + (f.likes || 0), 0).toLocaleString()}
               </span>
               likes
             </span>
             <span className="text-slate-400">
-              <span className="text-white text-lg font-black mr-1">
+              <span className="mr-1 text-lg font-black text-amber-200">
                 {new Set(allFlows.map((f) => f.author)).size}
               </span>
               authors
@@ -417,45 +443,23 @@ const SharedSpaceTab = () => {
         </div>
       </div>
 
-      {/* Tag filter strip */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 md:px-12 py-3">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <Tag size={12} className="text-slate-400 shrink-0" />
-          <button
-            type="button"
-            onClick={() => setActiveTag(null)}
-            className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all ${
-              activeTag === null
-                ? 'border-indigo-400 bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
-            }`}
-          >
-            All
-          </button>
-          {ALL_TAGS.map((tag) => (
-            <TagBadge
-              key={tag}
-              tag={tag}
-              active={activeTag === tag}
-              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-            />
-          ))}
-        </div>
-      </div>
-
       {/* Flow grid */}
       <div className="px-6 md:px-12 py-8">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-slate-700 bg-slate-900 text-slate-400">
               <Sparkles size={28} />
             </div>
-            <p className="text-sm font-black text-slate-600">No results found</p>
+            <p className="text-sm font-black text-amber-200">No results found</p>
             <p className="mt-1 text-xs text-slate-400">Try a different keyword, author, or tag.</p>
             <button
               type="button"
-              onClick={() => { setSearch(''); setActiveTag(null); }}
-              className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-black uppercase tracking-wider text-indigo-700 hover:bg-indigo-100"
+              onClick={() => {
+                setSearch('');
+                setActiveTag(null);
+                setActiveDomain('all');
+              }}
+              className="mt-4 rounded-xl border border-amber-500/40 bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wider text-amber-300 hover:bg-slate-800"
             >
               Reset filters
             </button>
@@ -463,9 +467,9 @@ const SharedSpaceTab = () => {
         ) : (
           <>
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
                 {filtered.length} architecture{filtered.length !== 1 ? 's' : ''}
-                {activeTag && <span className="ml-2 text-indigo-600">· #{activeTag}</span>}
+                {activeTag && <span className="ml-2 text-amber-300">· #{activeTag}</span>}
               </p>
               <div className="flex items-center gap-1.5">
                 <Share2 size={11} className="text-slate-400" />
@@ -475,15 +479,28 @@ const SharedSpaceTab = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filtered.map((flow) => (
-                <FlowCard
-                  key={flow.id}
-                  flow={flow}
-                  onLoadToCanvas={handleLoadToCanvas}
-                  onDelete={handleDeleteUserFlow}
-                  userOwned={flow.isUserShared === true}
-                />
+            <div className="space-y-8">
+              {groupedByDomain.map((domainGroup) => (
+                <section key={domainGroup.domain} className="space-y-3">
+                  <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+                    <Tag size={12} className="text-amber-300" />
+                    <h2 className="text-xs font-black uppercase tracking-[0.16em] text-amber-300">{domainGroup.label}</h2>
+                    <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-300">
+                      {domainGroup.flows.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    {domainGroup.flows.map((flow) => (
+                      <FlowCard
+                        key={flow.id}
+                        flow={flow}
+                        onLoadToCanvas={handleLoadToCanvas}
+                        onDelete={handleDeleteUserFlow}
+                        userOwned={flow.isUserShared === true}
+                      />
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           </>

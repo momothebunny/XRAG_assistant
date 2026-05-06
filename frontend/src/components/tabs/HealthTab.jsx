@@ -7,12 +7,10 @@ import {
   ChevronRight,
   Cloud,
   Flame,
-  Gauge,
   Hourglass,
   Loader2,
   Plus,
   RefreshCw,
-  ShieldCheck,
   Trash2,
   XCircle,
   Zap,
@@ -63,42 +61,64 @@ const CHART_PALETTE = ['#6366f1', '#eab308', '#10b981', '#f59e0b', '#ec4899', '#
 // can hide HF model ids that probed as `unsupported` (no Inference Provider).
 const UNSUPPORTED_KEY = 'xrag.health.unsupported';
 const POLL_INTERVAL_MS = 30_000;
+const RELEVANT_OPENROUTER_FAMILIES = [
+  'openai/',
+  'anthropic/',
+  'google/',
+  'meta-llama/',
+  'mistralai/',
+  'deepseek/',
+  'qwen/',
+];
+const RELEVANT_OPENROUTER_PRIORITY = [
+  'openai/gpt-4o',
+  'openai/gpt-4o-mini',
+  'openai/gpt-4.1',
+  'anthropic/claude-sonnet-4',
+  'anthropic/claude-opus-4',
+  'google/gemini-2.5-pro',
+  'google/gemini-2.5-flash',
+  'meta-llama/llama-3.3-70b-instruct',
+  'mistralai/mistral-large-2',
+  'deepseek/deepseek-r1',
+  'qwen/qwen-2.5-72b-instruct',
+];
 
 const STATUS_META = {
   online: {
     label: 'Online',
-    dot: 'bg-emerald-500',
-    pill: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    dot: 'bg-amber-400',
+    pill: 'bg-slate-900 text-amber-300 border-amber-500/40',
     icon: CheckCircle2,
-    iconClass: 'text-emerald-500',
+    iconClass: 'text-amber-300',
   },
   waking_up: {
     label: 'Waking Up',
     dot: 'bg-amber-400 animate-pulse',
-    pill: 'bg-amber-50 text-amber-800 border-amber-200',
+    pill: 'bg-slate-900 text-amber-300 border-amber-500/40',
     icon: Hourglass,
-    iconClass: 'text-amber-500',
+    iconClass: 'text-amber-300',
   },
   offline: {
     label: 'Offline',
-    dot: 'bg-rose-500',
-    pill: 'bg-rose-50 text-rose-700 border-rose-200',
+    dot: 'bg-slate-400',
+    pill: 'bg-slate-900 text-slate-300 border-slate-600',
     icon: XCircle,
-    iconClass: 'text-rose-500',
+    iconClass: 'text-slate-300',
   },
   rate_limited: {
     label: 'Rate Limited',
-    dot: 'bg-orange-500',
-    pill: 'bg-orange-50 text-orange-700 border-orange-200',
+    dot: 'bg-amber-300',
+    pill: 'bg-slate-900 text-amber-300 border-amber-500/40',
     icon: AlertTriangle,
-    iconClass: 'text-orange-500',
+    iconClass: 'text-amber-300',
   },
   unsupported: {
     label: 'Unsupported',
     dot: 'bg-slate-400',
-    pill: 'bg-slate-100 text-slate-600 border-slate-300',
+    pill: 'bg-slate-900 text-slate-300 border-slate-600',
     icon: Ban,
-    iconClass: 'text-slate-500',
+    iconClass: 'text-slate-300',
   },
 };
 
@@ -106,14 +126,14 @@ const PROVIDER_META = {
   openrouter: {
     label: 'OpenRouter',
     icon: Cloud,
-    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    iconClass: 'text-indigo-600',
+    badge: 'bg-slate-900 text-amber-300 border-amber-500/40',
+    iconClass: 'text-amber-300',
   },
   huggingface: {
     label: 'Hugging Face',
     icon: Flame,
-    badge: 'bg-amber-50 text-amber-800 border-amber-200',
-    iconClass: 'text-amber-600',
+    badge: 'bg-slate-900 text-amber-300 border-amber-500/40',
+    iconClass: 'text-amber-300',
   },
 };
 
@@ -218,9 +238,9 @@ const HealthTab = () => {
   const [formError, setFormError] = useState(null);
   const [refreshingIds, setRefreshingIds] = useState(() => new Set());
   const [bulkRefreshing, setBulkRefreshing] = useState(false);
-  const [topHf, setTopHf] = useState([]);
-  const [topHfLoading, setTopHfLoading] = useState(false);
-  const [topHfError, setTopHfError] = useState(null);
+  const [topChatModels, setTopChatModels] = useState([]);
+  const [topModelsLoading, setTopModelsLoading] = useState(false);
+  const [topModelsError, setTopModelsError] = useState(null);
   // Per-model rolling history of probe samples used by the Latency Trends
   // chart and the Uptime History strip. Shape: `{ [entry.id]: [{t, latency_ms, status}] }`.
   // Persisted to localStorage so a tab refresh doesn't wipe the timeline.
@@ -311,24 +331,31 @@ const HealthTab = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pull the top-10 HF chat models once on mount so the Quick Add panel can
-  // render without further user interaction. Cached server-side for an hour.
+  // Pull relevant chat models from both HF trending and OpenRouter catalogue,
+  // then build a single top-10 list for quick add.
   useEffect(() => {
     let cancelled = false;
-    setTopHfLoading(true);
-    xragApi
-      .listTopHfChatModels(10)
-      .then((rows) => {
+    setTopModelsLoading(true);
+    Promise.allSettled([
+      xragApi.listTopHfChatModels(10),
+      xragApi.listChatModels(),
+    ])
+      .then(([hfResult, openRouterResult]) => {
+        const hfRows = hfResult.status === 'fulfilled' && Array.isArray(hfResult.value)
+          ? hfResult.value
+          : [];
+        const openRouterRows = openRouterResult.status === 'fulfilled' && Array.isArray(openRouterResult.value)
+          ? openRouterResult.value
+          : [];
+
+        const nextList = buildRelevantTopChatModels(hfRows, openRouterRows, 10);
         if (!cancelled) {
-          setTopHf(Array.isArray(rows) ? rows : []);
-          setTopHfError(null);
+          setTopChatModels(nextList);
+          setTopModelsError(nextList.length === 0 ? 'No relevant chat models available right now.' : null);
         }
       })
-      .catch((err) => {
-        if (!cancelled) setTopHfError(err?.message || 'Failed to load top HF models.');
-      })
       .finally(() => {
-        if (!cancelled) setTopHfLoading(false);
+        if (!cancelled) setTopModelsLoading(false);
       });
     return () => {
       cancelled = true;
@@ -421,17 +448,15 @@ const HealthTab = () => {
     setEntries((rows) => rows.filter((r) => r.id !== id));
   };
 
-  // Quick-add a single HF model id from the top-10 panel. Skips silently
-  // if the user already tracks it. The freshly added entry kicks off its
-  // own probe so the dashboard is hot-loaded with real data.
-  const quickAddHf = (modelId) => {
-    const entryId = `huggingface-${slugify(modelId)}`;
+  // Quick-add a single model from the mixed top-list panel.
+  const quickAddModel = (providerName, modelId) => {
+    const entryId = `${providerName}-${slugify(modelId)}`;
     // Same global rule as addEntry: a model_id can only appear once.
     if (entries.some((e) => e.model_id === modelId)) return;
     /** @type {HealthEntry} */
     const fresh = {
       id: entryId,
-      provider: 'huggingface',
+      provider: providerName,
       model_id: modelId,
       status: 'waking_up',
       latency_ms: null,
@@ -442,123 +467,50 @@ const HealthTab = () => {
     refreshOne(fresh);
   };
 
-  const quickAddAllTopHf = () => {
-    topHf.forEach((m) => m?.id && quickAddHf(m.id));
+  const quickAddAllTop = () => {
+    topChatModels.forEach((model) => {
+      if (model?.id && model?.provider) {
+        quickAddModel(model.provider, model.id);
+      }
+    });
   };
 
   const trackedIds = useMemo(
-    () => new Set(entries.filter((e) => e.provider === 'huggingface').map((e) => e.model_id)),
+    () => new Set(entries.map((e) => e.model_id)),
     [entries],
   );
 
   return (
-    <div className="flex h-full w-full flex-col gap-4 overflow-y-auto bg-slate-50 p-4 md:p-6">
-      {/* ── Hero / System Status banner ───────────────────────────────── */}
-      <section
-        className={`relative overflow-hidden rounded-3xl border p-5 shadow-sm transition-colors md:p-6 ${
-          stats.allGreen
-            ? 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50/60'
-            : stats.failing > 0
-              ? 'border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50/50'
-              : 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-yellow-50/50'
-        }`}
-      >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-4">
-            <div
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-md ${
-                stats.allGreen
-                  ? 'bg-emerald-500 text-white shadow-emerald-300/40'
-                  : stats.failing > 0
-                    ? 'bg-rose-500 text-white shadow-rose-300/40'
-                    : 'bg-amber-500 text-white shadow-amber-300/40'
-              }`}
-            >
-              {stats.allGreen ? (
-                <ShieldCheck size={28} />
-              ) : stats.failing > 0 ? (
-                <AlertTriangle size={28} />
-              ) : (
-                <Activity size={28} />
-              )}
-            </div>
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-500">
-                System Status
-              </p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-                {stats.total === 0
-                  ? 'No Models Monitored Yet'
-                  : stats.allGreen
-                    ? 'All Monitored Systems Operational'
-                    : stats.failing > 0
-                      ? `${stats.failing} Model${stats.failing === 1 ? '' : 's'} Reporting Issues`
-                      : `${stats.degraded} Model${stats.degraded === 1 ? '' : 's'} Warming Up`}
-              </h1>
-              <p className="mt-1 max-w-xl text-[12.5px] text-slate-600">
-                Folyamatosan figyeljük az OpenRouter és Hugging Face modellek elérhetőségét.
-                Az automatikus pinger {Math.round(POLL_INTERVAL_MS / 1000)} másodpercenként frissít.
-              </p>
-            </div>
+    <div className="xrag-health-theme flex h-full w-full flex-col gap-4 overflow-y-auto bg-slate-950 p-4 text-slate-100 md:p-6">
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-sm md:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-slate-300">
+              Monitored · {stats.total}
+            </span>
+            <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-amber-300">
+              Online · {stats.online}
+            </span>
+            <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-slate-300">
+              Avg latency · {stats.avgLatency != null ? `${stats.avgLatency} ms` : '—'}
+            </span>
           </div>
-
           <button
             type="button"
             onClick={refreshAll}
             disabled={bulkRefreshing || entries.length === 0}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-md transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-400 bg-amber-500 px-4 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {bulkRefreshing ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <RefreshCw size={16} />
-            )}
+            {bulkRefreshing ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
             Refresh All
           </button>
         </div>
-
-        {/* Metric strip */}
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MetricCard
-            icon={<Gauge size={16} />}
-            label="Aktívan figyelt"
-            value={String(stats.total)}
-            tone="indigo"
-          />
-          <MetricCard
-            icon={<CheckCircle2 size={16} />}
-            label="Online"
-            value={String(stats.online)}
-            tone="emerald"
-          />
-          <MetricCard
-            icon={<Hourglass size={16} />}
-            label="Cold start / hiba"
-            value={String(stats.degraded + stats.failing)}
-            tone={stats.failing > 0 ? 'rose' : stats.degraded > 0 ? 'amber' : 'slate'}
-          />
-          <MetricCard
-            icon={<Zap size={16} />}
-            label="Átlag válaszidő"
-            value={stats.avgLatency != null ? `${stats.avgLatency} ms` : '—'}
-            tone={
-              stats.avgLatency == null
-                ? 'slate'
-                : stats.avgLatency < 500
-                  ? 'emerald'
-                  : stats.avgLatency < 1000
-                    ? 'amber'
-                    : 'rose'
-            }
-          />
-        </div>
       </section>
 
-      {/* ── Add model form ─────────────────────────────────────────────── */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-sm md:p-5">
         <div className="mb-3 flex items-center gap-2">
-          <Plus size={16} className="text-indigo-600" />
-          <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-700">
+          <Plus size={16} className="text-amber-300" />
+          <h2 className="text-sm font-extrabold uppercase tracking-wide text-amber-200">
             Add Model to Watchlist
           </h2>
         </div>
@@ -566,7 +518,7 @@ const HealthTab = () => {
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-100 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-500/25"
           >
             <option value="openrouter">OpenRouter</option>
             <option value="huggingface">Hugging Face</option>
@@ -589,103 +541,101 @@ const HealthTab = () => {
                 ? 'openai/gpt-4o · anthropic/claude-3-haiku · meta-llama/llama-3.1-70b-instruct'
                 : 'BAAI/bge-m3 · meta-llama/Llama-3.1-8B-Instruct'
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-[12.5px] text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-[12.5px] text-slate-100 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-500/25"
           />
           <button
             type="button"
             onClick={addEntry}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-amber-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:from-indigo-600 hover:to-amber-700"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-400 bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400"
           >
             <Plus size={14} />
             Add to Dashboard
           </button>
         </div>
         {formError && (
-          <p className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700">
+          <p className="mt-2 rounded-md border border-rose-500/40 bg-slate-950 px-3 py-1 text-[11px] font-semibold text-rose-300">
             {formError}
           </p>
         )}
       </section>
 
-      {/* ── Quick Add — Top 10 trending HF chat models ─────────────── */}
-      <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/60 via-white to-orange-50/40 p-4 shadow-sm md:p-5">
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-sm md:p-5">
         <div className="mb-3 flex items-center gap-2">
-          <Flame size={16} className="text-amber-600" />
-          <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-700">
-            Top 10 Trending Hugging Face Chat Models
+          <Flame size={16} className="text-amber-300" />
+          <h2 className="text-sm font-extrabold uppercase tracking-wide text-amber-200">
+            Top 10 Relevant Chat Models
           </h2>
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-            this week · callable only
+          <span className="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[10px] font-bold text-slate-300">
+            OpenRouter + Hugging Face
           </span>
           <button
             type="button"
-            onClick={quickAddAllTopHf}
-            disabled={topHfLoading || topHf.length === 0}
-            className="ml-auto inline-flex items-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={quickAddAllTop}
+            disabled={topModelsLoading || topChatModels.length === 0}
+            className="ml-auto inline-flex items-center gap-1 rounded-lg border border-amber-400 bg-amber-500 px-3 py-1.5 text-[11px] font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus size={12} />
             Add all to watchlist
           </button>
         </div>
-        {topHfLoading ? (
-          <div className="flex items-center gap-2 px-1 py-2 text-[12px] text-slate-500">
+        {topModelsLoading ? (
+          <div className="flex items-center gap-2 px-1 py-2 text-[12px] text-slate-400">
             <Loader2 size={14} className="animate-spin text-amber-500" />
-            Loading the most popular HF models…
+            Loading relevant chat models…
           </div>
-        ) : topHfError ? (
-          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11.5px] font-semibold text-rose-700">
-            {topHfError}
+        ) : topModelsError ? (
+          <p className="rounded-md border border-rose-500/40 bg-slate-950 px-3 py-1.5 text-[11.5px] font-semibold text-rose-300">
+            {topModelsError}
           </p>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {topHf.map((m, idx) => {
+          <ol className="divide-y divide-slate-800 overflow-hidden rounded-xl border border-slate-700 bg-slate-950">
+            {topChatModels.map((m, idx) => {
               const tracked = trackedIds.has(m.id);
               return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => quickAddHf(m.id)}
-                  disabled={tracked}
-                  title={
-                    tracked
-                      ? 'Already on the watchlist'
-                      : `Trending #${idx + 1} · Downloads: ${(m.downloads ?? 0).toLocaleString()} · Likes: ${m.likes ?? 0}`
-                  }
-                  className={`group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                    tracked
-                      ? 'cursor-default border-emerald-200 bg-emerald-50 text-emerald-700'
-                      : 'border-amber-200 bg-white text-slate-700 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-800'
-                  }`}
-                >
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[9px] font-black text-amber-700">
+                <li key={`${m.provider}:${m.id}`} className="flex items-center gap-3 px-3 py-2.5">
+                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[10px] font-black text-amber-300">
                     {idx + 1}
                   </span>
-                  <span className="max-w-[220px] truncate font-mono text-[11px]">{m.id}</span>
-                  {tracked ? (
-                    <CheckCircle2 size={11} className="text-emerald-500" />
-                  ) : (
-                    <Plus size={11} className="text-amber-500 opacity-0 transition group-hover:opacity-100" />
-                  )}
-                </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-mono text-[12px] font-semibold text-slate-100">{m.id}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      {m.provider === 'openrouter' ? 'OpenRouter' : 'Hugging Face'}
+                      {typeof m.downloads === 'number' ? ` · downloads: ${m.downloads.toLocaleString()}` : ''}
+                      {typeof m.likes === 'number' ? ` · likes: ${m.likes.toLocaleString()}` : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => quickAddModel(m.provider, m.id)}
+                    disabled={tracked}
+                    className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+                      tracked
+                        ? 'cursor-default border-slate-700 bg-slate-900 text-slate-400'
+                        : 'border-amber-400 bg-amber-500 text-slate-950 hover:bg-amber-400'
+                    }`}
+                  >
+                    {tracked ? <CheckCircle2 size={11} /> : <Plus size={11} />}
+                    {tracked ? 'Tracked' : 'Add'}
+                  </button>
+                </li>
               );
             })}
-          </div>
+          </ol>
         )}
       </section>
 
-      {/* ── Health grid ────────────────────────────────────────────────── */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3 md:px-5">
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 shadow-sm">
+        <header className="flex items-center justify-between border-b border-slate-800 px-4 py-3 md:px-5">
           <div className="flex items-center gap-2">
-            <Activity size={15} className="text-slate-500" />
-            <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-700">
+            <Activity size={15} className="text-amber-300" />
+            <h2 className="text-sm font-extrabold uppercase tracking-wide text-amber-200">
               Health Grid
             </h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+            <span className="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[10px] font-bold text-slate-300">
               {entries.length}
             </span>
           </div>
-          <span className="text-[10.5px] font-medium text-slate-500">
+          <span className="text-[10.5px] font-medium text-slate-400">
             Auto-poll · {Math.round(POLL_INTERVAL_MS / 1000)}s
           </span>
         </header>
@@ -708,32 +658,11 @@ const HealthTab = () => {
         )}
       </section>
 
-      {/* ── Latency Trends (Line chart) ────────────────────────────────── */}
       <LatencyTrendsCard entries={entries} history={history} />
-
-      {/* ── Uptime History (Status strip) ──────────────────────────────── */}
       <UptimeHistoryCard entries={entries} history={history} />
     </div>
   );
 };
-
-const TONE_BG = {
-  indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  amber: 'bg-amber-50 text-amber-700 border-amber-200',
-  rose: 'bg-rose-50 text-rose-700 border-rose-200',
-  slate: 'bg-slate-50 text-slate-600 border-slate-200',
-};
-
-const MetricCard = ({ icon, label, value, tone = 'slate' }) => (
-  <div className={`rounded-2xl border px-3 py-2.5 ${TONE_BG[tone] || TONE_BG.slate}`}>
-    <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest opacity-80">
-      {icon}
-      {label}
-    </div>
-    <div className="mt-1 text-2xl font-black tracking-tight">{value}</div>
-  </div>
-);
 
 const HealthCard = ({ entry, samples = [], refreshing, onRefresh, onRemove }) => {
   const status = STATUS_META[entry.status] || STATUS_META.offline;
@@ -743,7 +672,7 @@ const HealthCard = ({ entry, samples = [], refreshing, onRefresh, onRemove }) =>
   const isHfWaking = entry.provider === 'huggingface' && entry.status === 'waking_up';
 
   return (
-    <article className="group relative flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+    <article className="group relative flex flex-col gap-3 rounded-2xl border border-slate-700 bg-slate-950 p-4 shadow-sm transition hover:border-amber-500/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <span
           className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${provider.badge}`}
@@ -762,19 +691,19 @@ const HealthCard = ({ entry, samples = [], refreshing, onRefresh, onRemove }) =>
       </div>
 
       <div>
-        <p className="break-all font-mono text-[13px] font-bold text-slate-800">
+        <p className="break-all font-mono text-[13px] font-bold text-slate-100">
           {entry.model_id}
         </p>
         {entry.message && (
-          <p className="mt-1 text-[11px] italic text-slate-500">{entry.message}</p>
+          <p className="mt-1 text-[11px] italic text-slate-400">{entry.message}</p>
         )}
       </div>
 
       <MiniSparkline samples={samples} />
 
-      <div className="mt-auto flex items-end justify-between gap-2 border-t border-slate-100 pt-3">
+      <div className="mt-auto flex items-end justify-between gap-2 border-t border-slate-800 pt-3">
         <div>
-          <p className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-400">
+          <p className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-500">
             Latency
           </p>
           <p className={`text-lg font-black tabular-nums ${latencyTone(entry.latency_ms)}`}>
@@ -782,10 +711,10 @@ const HealthCard = ({ entry, samples = [], refreshing, onRefresh, onRemove }) =>
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-400">
+          <p className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-500">
             Last checked
           </p>
-          <p className="text-[11px] font-semibold text-slate-600">
+          <p className="text-[11px] font-semibold text-slate-300">
             {formatRelative(entry.last_checked)}
           </p>
         </div>
@@ -798,7 +727,7 @@ const HealthCard = ({ entry, samples = [], refreshing, onRefresh, onRemove }) =>
           disabled={refreshing}
           aria-label="Manual refresh"
           title="Ping now"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow ring-1 ring-slate-200 transition hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-slate-300 shadow ring-1 ring-slate-700 transition hover:bg-slate-800 hover:text-amber-300 disabled:opacity-50"
         >
           {refreshing ? (
             <Loader2 size={12} className="animate-spin" />
@@ -811,7 +740,7 @@ const HealthCard = ({ entry, samples = [], refreshing, onRefresh, onRemove }) =>
           onClick={onRemove}
           aria-label="Remove from watchlist"
           title="Remove"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow ring-1 ring-slate-200 transition hover:bg-rose-50 hover:text-rose-600"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-slate-300 shadow ring-1 ring-slate-700 transition hover:bg-slate-800 hover:text-amber-300"
         >
           <Trash2 size={12} />
         </button>
@@ -822,12 +751,12 @@ const HealthCard = ({ entry, samples = [], refreshing, onRefresh, onRemove }) =>
 
 const EmptyState = () => (
   <div className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950 text-slate-400">
       <Activity size={26} />
     </div>
     <div>
-      <p className="text-sm font-bold text-slate-700">A watchlista üres.</p>
-      <p className="mt-1 max-w-md text-[12px] text-slate-500">
+      <p className="text-sm font-bold text-amber-200">A watchlista üres.</p>
+      <p className="mt-1 max-w-md text-[12px] text-slate-400">
         Adj hozzá legalább egy modellt a fenti űrlap segítségével ahhoz, hogy a dashboard valós
         időben követni tudja az állapotát.
       </p>
@@ -1209,6 +1138,64 @@ function formatHHMM(epochMs) {
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
+}
+
+function buildRelevantTopChatModels(hfRows, openRouterRows, limit = 10) {
+  const hfList = (hfRows || [])
+    .filter((row) => row && typeof row.id === 'string' && row.id.includes('/'))
+    .slice(0, 12)
+    .map((row, index) => ({
+      id: row.id,
+      provider: 'huggingface',
+      likes: Number(row.likes || 0),
+      downloads: Number(row.downloads || 0),
+      rankScore: 100 - index,
+    }));
+
+  const priorityRank = new Map(RELEVANT_OPENROUTER_PRIORITY.map((modelId, index) => [modelId, index]));
+  const openRouterRelevant = (openRouterRows || [])
+    .filter((row) => row && typeof row.id === 'string' && row.id.includes('/'))
+    .filter((row) => RELEVANT_OPENROUTER_FAMILIES.some((prefix) => row.id.startsWith(prefix)))
+    .sort((left, right) => {
+      const leftRank = priorityRank.has(left.id) ? priorityRank.get(left.id) : 999;
+      const rightRank = priorityRank.has(right.id) ? priorityRank.get(right.id) : 999;
+      if (leftRank !== rightRank) return leftRank - rightRank;
+      return String(left.id).localeCompare(String(right.id));
+    })
+    .slice(0, 12)
+    .map((row, index) => ({
+      id: row.id,
+      provider: 'openrouter',
+      likes: null,
+      downloads: null,
+      rankScore: 100 - index,
+    }));
+
+  const merged = [];
+  const used = new Set();
+  let cursor = 0;
+  while (merged.length < limit && (cursor < hfList.length || cursor < openRouterRelevant.length)) {
+    if (cursor < openRouterRelevant.length) {
+      const row = openRouterRelevant[cursor];
+      const key = `${row.provider}:${row.id}`;
+      if (!used.has(key)) {
+        used.add(key);
+        merged.push(row);
+      }
+    }
+    if (merged.length >= limit) break;
+    if (cursor < hfList.length) {
+      const row = hfList[cursor];
+      const key = `${row.provider}:${row.id}`;
+      if (!used.has(key)) {
+        used.add(key);
+        merged.push(row);
+      }
+    }
+    cursor += 1;
+  }
+
+  return merged.slice(0, limit);
 }
 
 export default HealthTab;
