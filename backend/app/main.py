@@ -1166,10 +1166,16 @@ if _FRONTEND_DIST:
                 # Defence in depth against path traversal (`../etc/passwd`).
                 if dist_resolved in candidate_resolved.parents or candidate_resolved == dist_resolved:
                     if candidate_resolved.is_file():
-                        return FileResponse(candidate_resolved)
+                        # Hashed assets (JS/CSS in /assets/) can be cached
+                        # indefinitely — their filenames change on every build.
+                        # Everything else (index.html, images, etc.) must not
+                        # be cached so browsers always fetch the latest version.
+                        is_hashed_asset = str(candidate_resolved).replace("\\", "/").split("/dist/")[-1].startswith("assets/")
+                        cache_header = "public, max-age=31536000, immutable" if is_hashed_asset else "no-cache, no-store, must-revalidate"
+                        return FileResponse(candidate_resolved, headers={"Cache-Control": cache_header})
             except (OSError, RuntimeError):
                 pass
-            return FileResponse(_index_html)
+            return FileResponse(_index_html, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     else:
         logger.warning("XRAG_FRONTEND_DIST set to %s but index.html not found; SPA serving disabled.", _FRONTEND_DIST)
 
