@@ -5469,7 +5469,10 @@ const CanvasBoard = () => {
               className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/10 blur-2xl"
             />
             <div className="relative flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-black shadow-md shadow-amber-500/40">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md"
+                style={{ background: 'rgb(245 158 11)', boxShadow: '0 4px 6px rgba(245,158,11,0.40)', color: '#000' }}
+              >
                 <Layers size={16} />
               </div>
               <div className="min-w-0 flex-1">
@@ -5553,7 +5556,7 @@ const CanvasBoard = () => {
                     width: 36, height: 36,
                     background: `linear-gradient(140deg, ${inspPal.accent2} 0%, ${inspPal.accent} 100%)`,
                     boxShadow: `0 2px 8px ${inspPal.accent}55`,
-                    color: '#0f172a',
+                    color: '#ffffff',
                   }}
                 >
                   {InspNodeIcon ? <InspNodeIcon size={16} strokeWidth={2.4} /> : null}
