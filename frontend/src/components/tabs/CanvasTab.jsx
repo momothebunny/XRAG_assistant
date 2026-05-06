@@ -95,6 +95,10 @@ import CustomNodeEditorModal from './canvas/CustomNodeEditorModal';
 import CustomNodeSettingsPanel from './canvas/CustomNodeSettingsPanel';
 import { xragApi } from '../../services/xragApi';
 
+const BLUEPRINT_FLOW_ID_SET = new Set(
+  RAG_BLUEPRINTS.map((item) => item.backendFlowId).filter(Boolean)
+);
+
 const createPairLink = (sourceNode, targetNode) => {
   if (!sourceNode || !targetNode) {
     return [sourceNode, targetNode];
@@ -272,11 +276,11 @@ const EDGE_SELECTED_STYLE = {
   strokeWidth: 3,
 };
 
-const NODE_WIDTH = 240;
-const NODE_HEIGHT = 80;
-const MIN_INSERT_SPACING_X = 285;
+const NODE_WIDTH = 188;
+const NODE_HEIGHT = 74;
+const MIN_INSERT_SPACING_X = 232;
 const MIN_INSERT_SPACING_Y = 175;
-const BLUEPRINT_BASE_SPACING_X = 240;
+const BLUEPRINT_BASE_SPACING_X = 202;
 const BLUEPRINT_ROW_SPACING_Y = 180;
 const BLUEPRINT_LANE_OFFSET_Y = 80;
 const EDGE_PATH_BUFFER = 18;
@@ -1061,6 +1065,96 @@ const buildInitialCanvasState = () => {
   return buildBlueprintGraph(basicBlueprint, 80, 140, [], []);
 };
 
+const autoArrangeLoadedFlowNodes = (nodes, edges) => {
+  if (!Array.isArray(nodes) || nodes.length === 0) {
+    return nodes;
+  }
+
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const outgoing = new Map();
+  const indegree = new Map();
+
+  nodes.forEach((node) => {
+    outgoing.set(node.id, []);
+    indegree.set(node.id, 0);
+  });
+
+  (edges || []).forEach((edge) => {
+    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
+      return;
+    }
+    outgoing.get(edge.source).push(edge.target);
+    indegree.set(edge.target, (indegree.get(edge.target) || 0) + 1);
+  });
+
+  const depth = new Map();
+  const queue = nodes
+    .filter((node) => (indegree.get(node.id) || 0) === 0)
+    .sort((left, right) => (left.position?.x || 0) - (right.position?.x || 0));
+
+  queue.forEach((node) => depth.set(node.id, 0));
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    const currentDepth = depth.get(current.id) || 0;
+    const nextNodes = outgoing.get(current.id) || [];
+
+    nextNodes.forEach((targetId) => {
+      const bestKnown = depth.get(targetId);
+      if (bestKnown == null || currentDepth + 1 > bestKnown) {
+        depth.set(targetId, currentDepth + 1);
+      }
+
+      indegree.set(targetId, (indegree.get(targetId) || 0) - 1);
+      if ((indegree.get(targetId) || 0) === 0) {
+        const targetNode = nodes.find((node) => node.id === targetId);
+        if (targetNode) {
+          queue.push(targetNode);
+        }
+      }
+    });
+  }
+
+  const fallbackDepth = nodes.reduce((maxDepth, node) => {
+    const known = depth.get(node.id);
+    return known == null ? maxDepth : Math.max(maxDepth, known);
+  }, 0);
+
+  const columnLaneCounters = new Map();
+  const sortedNodes = [...nodes].sort((left, right) => {
+    const depthLeft = depth.get(left.id) ?? fallbackDepth + 1;
+    const depthRight = depth.get(right.id) ?? fallbackDepth + 1;
+    if (depthLeft !== depthRight) {
+      return depthLeft - depthRight;
+    }
+    const laneLeft = getBlueprintLaneIndex(left.data?.templateKey || '');
+    const laneRight = getBlueprintLaneIndex(right.data?.templateKey || '');
+    if (laneLeft !== laneRight) {
+      return laneLeft - laneRight;
+    }
+    return (left.position?.y || 0) - (right.position?.y || 0);
+  });
+
+  const arrangedPositions = new Map();
+  sortedNodes.forEach((node) => {
+    const column = depth.get(node.id) ?? fallbackDepth + 1;
+    const lane = getBlueprintLaneIndex(node.data?.templateKey || '');
+    const counterKey = `${column}:${lane}`;
+    const laneOffset = columnLaneCounters.get(counterKey) || 0;
+    columnLaneCounters.set(counterKey, laneOffset + 1);
+
+    arrangedPositions.set(node.id, {
+      x: 80 + column * BLUEPRINT_BASE_SPACING_X,
+      y: 120 + lane * BLUEPRINT_ROW_SPACING_Y + laneOffset * (NODE_HEIGHT + 40),
+    });
+  });
+
+  return nodes.map((node) => ({
+    ...node,
+    position: arrangedPositions.get(node.id) || node.position || { x: 0, y: 0 },
+  }));
+};
+
 const INITIAL_CANVAS_STATE = buildInitialCanvasState();
 const initialNodes = INITIAL_CANVAS_STATE.nodes;
 const initialEdges = INITIAL_CANVAS_STATE.edges;
@@ -1615,7 +1709,7 @@ const CanvasBoard = () => {
   }, [buildBackendFlowPayload, draftName, refreshBackendFlows]);
 
   const applyFlowData = useCallback(
-    (flow) => {
+    (flow, options = {}) => {
       const incomingNodes = (flow.nodes || []).map((node) => ({
         id: node.id,
         type: 'ragNode',
@@ -1636,11 +1730,15 @@ const CanvasBoard = () => {
         type: 'step',
         animated: true,
       }));
-      setNodes(incomingNodes);
+      const resolvedNodes = options.autoArrange
+        ? autoArrangeLoadedFlowNodes(incomingNodes, incomingEdges)
+        : incomingNodes;
+
+      setNodes(resolvedNodes);
       setEdges(incomingEdges);
       setActiveBackendFlowId(flow.id || null);
-      setSelectedNodeId(incomingNodes[0]?.id || null);
-      setSelectedNodeIds(incomingNodes[0]?.id ? [incomingNodes[0].id] : []);
+      setSelectedNodeId(resolvedNodes[0]?.id || null);
+      setSelectedNodeIds(resolvedNodes[0]?.id ? [resolvedNodes[0].id] : []);
       setSelectedEdgeId(null);
       window.requestAnimationFrame(() => {
         try { fitView({ padding: 0.15 }); } catch { /* ignore */ }
@@ -1654,7 +1752,7 @@ const CanvasBoard = () => {
       setRunError('');
       try {
         const flow = await xragApi.getCanvasFlow(flowId);
-        applyFlowData(flow);
+        applyFlowData(flow, { autoArrange: BLUEPRINT_FLOW_ID_SET.has(flowId) });
       } catch (error) {
         setRunError(`Backend load failed: ${error.message}`);
       }

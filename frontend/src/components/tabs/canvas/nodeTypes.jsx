@@ -251,8 +251,8 @@ const RagNode = ({ id, data, selected }) => {
           : undefined
       }
       style={{
-        width: 240,
-        minHeight: 72,
+        width: 188,
+        minHeight: 66,
         background: `linear-gradient(140deg, ${palette.accent}45 0%, ${palette.accent}18 50%, #0f172a 100%)`,
         borderRadius: 12,
         boxShadow: selected ? selectedShadow : baseShadow,
@@ -282,7 +282,7 @@ const RagNode = ({ id, data, selected }) => {
       <div
         className="flex items-center justify-center"
         style={{
-          width: 56,
+          width: 46,
           flexShrink: 0,
           background: `linear-gradient(140deg, ${palette.accent}55 0%, ${palette.accent}28 100%)`,
         }}
@@ -290,22 +290,22 @@ const RagNode = ({ id, data, selected }) => {
         <div
           className="flex items-center justify-center"
           style={{
-            width: 38,
-            height: 38,
+            width: 30,
+            height: 30,
             borderRadius: 10,
             background: `linear-gradient(140deg, ${palette.accent2} 0%, ${palette.accent} 100%)`,
             boxShadow: `0 2px 6px ${palette.accent}40`,
             color: '#0f172a',
           }}
         >
-          {NodeIcon ? <NodeIcon size={20} strokeWidth={2.4} /> : null}
+          {NodeIcon ? <NodeIcon size={16} strokeWidth={2.4} /> : null}
         </div>
       </div>
 
       {/* Title + category + config summary */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center px-3 py-2">
+      <div className="flex-1 min-w-0 flex flex-col justify-center px-2 py-1.5">
         <h4
-          className="text-[12px] font-semibold leading-tight line-clamp-2"
+          className="text-[11px] font-semibold leading-tight line-clamp-2"
           style={{ color: '#f1f5f9' }}
           title={data.label}
         >
@@ -313,7 +313,7 @@ const RagNode = ({ id, data, selected }) => {
         </h4>
         {configSummary ? (
           <p
-            className="mt-0.5 truncate font-mono text-[9px] leading-snug opacity-75"
+            className="mt-0.5 truncate font-mono text-[8px] leading-snug opacity-75"
             style={{ color: palette.accent }}
             title={configSummary}
           >
@@ -321,7 +321,7 @@ const RagNode = ({ id, data, selected }) => {
           </p>
         ) : (
           <span
-            className="mt-1 text-[9px] font-bold uppercase tracking-[0.14em] truncate"
+            className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] truncate"
             style={{ color: palette.accent }}
           >
             {data.category}

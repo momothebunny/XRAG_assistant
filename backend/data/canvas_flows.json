@@ -5315,5 +5315,1532 @@
     ],
     "createdAt": null,
     "updatedAt": null
+  },
+  {
+    "id": "flow-naive-rag-pinecone-001",
+    "name": "Naive RAG - Pinecone Preset",
+    "description": "System preset flow with Pinecone vector backend.",
+    "nodes": [
+      {
+        "id": "pinecone-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "pinecone-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "pinecone-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 80.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "pinecone-node-cleaning",
+        "templateKey": "process-cleaning",
+        "label": "Text Cleaning",
+        "config": {
+          "removeHeaders": true,
+          "removeFooters": true,
+          "normalizeUnicode": true,
+          "collapseWhitespace": true,
+          "preserveParagraphBreaks": true
+        },
+        "position": {
+          "x": 300.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "pinecone-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 150,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 520.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "pinecone-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "max_token_capacity": 512,
+            "output_dimensions": 1024,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 740.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "pinecone-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Pinecone",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "xrag-knowledge",
+          "namespace": "knowledge",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "hybridSearch": false
+        },
+        "position": {
+          "x": 960.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "pinecone-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 6,
+          "similarityThreshold": 0.7,
+          "includeMetadata": true,
+          "includeScores": true,
+          "retrieverProvider": "pinecone",
+          "vectorStore": {
+            "provider": "pinecone",
+            "indexName": "xrag-knowledge",
+            "namespace": "knowledge",
+            "metric": "cosine"
+          },
+          "metadataFilter": ""
+        },
+        "position": {
+          "x": 960.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "pinecone-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.2,
+          "max_tokens": 900,
+          "systemPrompt": "You are a helpful RAG assistant. Answer only from retrieved context. If evidence is missing, say so explicitly.",
+          "citationMode": true
+        },
+        "position": {
+          "x": 740.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "pinecone-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 740.0,
+          "y": 480.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "pinecone-e1",
+        "source": "pinecone-node-user",
+        "target": "pinecone-node-question",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "pinecone-e2",
+        "source": "pinecone-node-upload",
+        "target": "pinecone-node-cleaning",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "pinecone-e3",
+        "source": "pinecone-node-cleaning",
+        "target": "pinecone-node-chunking",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "pinecone-e4",
+        "source": "pinecone-node-chunking",
+        "target": "pinecone-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "pinecone-e5",
+        "source": "pinecone-node-embedding",
+        "target": "pinecone-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "pinecone-e6",
+        "source": "pinecone-node-question",
+        "target": "pinecone-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "pinecone-e7",
+        "source": "pinecone-node-vectordb",
+        "target": "pinecone-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "pinecone-e8",
+        "source": "pinecone-node-retriever",
+        "target": "pinecone-node-llm",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "pinecone-e9",
+        "source": "pinecone-node-llm",
+        "target": "pinecone-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-naive-rag-qdrant-001",
+    "name": "Naive RAG - Qdrant Preset",
+    "description": "System preset flow with Qdrant vector backend.",
+    "nodes": [
+      {
+        "id": "qdrant-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "qdrant-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "qdrant-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 80.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "qdrant-node-cleaning",
+        "templateKey": "process-cleaning",
+        "label": "Text Cleaning",
+        "config": {
+          "removeHeaders": true,
+          "removeFooters": true,
+          "normalizeUnicode": true,
+          "collapseWhitespace": true,
+          "preserveParagraphBreaks": true
+        },
+        "position": {
+          "x": 300.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "qdrant-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 150,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 520.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "qdrant-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "max_token_capacity": 512,
+            "output_dimensions": 1024,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 740.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "qdrant-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Qdrant",
+        "config": {
+          "provider": "qdrant",
+          "collection": "xrag_chunks",
+          "url": "http://localhost:6333",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "QDRANT_API_KEY",
+          "hybridSearch": true
+        },
+        "position": {
+          "x": 960.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "qdrant-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 6,
+          "similarityThreshold": 0.7,
+          "includeMetadata": true,
+          "includeScores": true,
+          "retrieverProvider": "qdrant",
+          "vectorStore": {
+            "provider": "qdrant",
+            "indexName": null,
+            "namespace": null,
+            "metric": "cosine"
+          },
+          "metadataFilter": ""
+        },
+        "position": {
+          "x": 960.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "qdrant-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.2,
+          "max_tokens": 900,
+          "systemPrompt": "You are a helpful RAG assistant. Answer only from retrieved context. If evidence is missing, say so explicitly.",
+          "citationMode": true
+        },
+        "position": {
+          "x": 740.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "qdrant-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 740.0,
+          "y": 480.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "qdrant-e1",
+        "source": "qdrant-node-user",
+        "target": "qdrant-node-question",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "qdrant-e2",
+        "source": "qdrant-node-upload",
+        "target": "qdrant-node-cleaning",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "qdrant-e3",
+        "source": "qdrant-node-cleaning",
+        "target": "qdrant-node-chunking",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "qdrant-e4",
+        "source": "qdrant-node-chunking",
+        "target": "qdrant-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "qdrant-e5",
+        "source": "qdrant-node-embedding",
+        "target": "qdrant-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "qdrant-e6",
+        "source": "qdrant-node-question",
+        "target": "qdrant-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "qdrant-e7",
+        "source": "qdrant-node-vectordb",
+        "target": "qdrant-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "qdrant-e8",
+        "source": "qdrant-node-retriever",
+        "target": "qdrant-node-llm",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "qdrant-e9",
+        "source": "qdrant-node-llm",
+        "target": "qdrant-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-naive-rag-weaviate-001",
+    "name": "Naive RAG - Weaviate Preset",
+    "description": "System preset flow with Weaviate vector backend.",
+    "nodes": [
+      {
+        "id": "weaviate-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "weaviate-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "weaviate-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 80.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "weaviate-node-cleaning",
+        "templateKey": "process-cleaning",
+        "label": "Text Cleaning",
+        "config": {
+          "removeHeaders": true,
+          "removeFooters": true,
+          "normalizeUnicode": true,
+          "collapseWhitespace": true,
+          "preserveParagraphBreaks": true
+        },
+        "position": {
+          "x": 300.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "weaviate-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 150,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 520.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "weaviate-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "max_token_capacity": 512,
+            "output_dimensions": 1024,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 740.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "weaviate-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Weaviate",
+        "config": {
+          "provider": "weaviate",
+          "collection": "XRAGChunk",
+          "url": "http://localhost:8080",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "WEAVIATE_API_KEY",
+          "hybridSearch": true
+        },
+        "position": {
+          "x": 960.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "weaviate-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 6,
+          "similarityThreshold": 0.7,
+          "includeMetadata": true,
+          "includeScores": true,
+          "retrieverProvider": "weaviate",
+          "vectorStore": {
+            "provider": "weaviate",
+            "indexName": null,
+            "namespace": null,
+            "metric": "cosine"
+          },
+          "metadataFilter": ""
+        },
+        "position": {
+          "x": 960.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "weaviate-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.2,
+          "max_tokens": 900,
+          "systemPrompt": "You are a helpful RAG assistant. Answer only from retrieved context. If evidence is missing, say so explicitly.",
+          "citationMode": true
+        },
+        "position": {
+          "x": 740.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "weaviate-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 740.0,
+          "y": 480.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "weaviate-e1",
+        "source": "weaviate-node-user",
+        "target": "weaviate-node-question",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "weaviate-e2",
+        "source": "weaviate-node-upload",
+        "target": "weaviate-node-cleaning",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "weaviate-e3",
+        "source": "weaviate-node-cleaning",
+        "target": "weaviate-node-chunking",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "weaviate-e4",
+        "source": "weaviate-node-chunking",
+        "target": "weaviate-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "weaviate-e5",
+        "source": "weaviate-node-embedding",
+        "target": "weaviate-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "weaviate-e6",
+        "source": "weaviate-node-question",
+        "target": "weaviate-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "weaviate-e7",
+        "source": "weaviate-node-vectordb",
+        "target": "weaviate-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "weaviate-e8",
+        "source": "weaviate-node-retriever",
+        "target": "weaviate-node-llm",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "weaviate-e9",
+        "source": "weaviate-node-llm",
+        "target": "weaviate-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-naive-rag-chroma-001",
+    "name": "Naive RAG - Chroma Preset",
+    "description": "System preset flow with Chroma vector backend.",
+    "nodes": [
+      {
+        "id": "chroma-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "chroma-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "chroma-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 80.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "chroma-node-cleaning",
+        "templateKey": "process-cleaning",
+        "label": "Text Cleaning",
+        "config": {
+          "removeHeaders": true,
+          "removeFooters": true,
+          "normalizeUnicode": true,
+          "collapseWhitespace": true,
+          "preserveParagraphBreaks": true
+        },
+        "position": {
+          "x": 300.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "chroma-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 150,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 520.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "chroma-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "max_token_capacity": 512,
+            "output_dimensions": 1024,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 740.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "chroma-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Chroma",
+        "config": {
+          "provider": "chroma",
+          "collection": "xrag_chunks",
+          "persistDirectory": "./data/chroma",
+          "url": "http://localhost:8001",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "hybridSearch": false
+        },
+        "position": {
+          "x": 960.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "chroma-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 6,
+          "similarityThreshold": 0.7,
+          "includeMetadata": true,
+          "includeScores": true,
+          "retrieverProvider": "chroma",
+          "vectorStore": {
+            "provider": "chroma",
+            "indexName": null,
+            "namespace": null,
+            "metric": "cosine"
+          },
+          "metadataFilter": ""
+        },
+        "position": {
+          "x": 960.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "chroma-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.2,
+          "max_tokens": 900,
+          "systemPrompt": "You are a helpful RAG assistant. Answer only from retrieved context. If evidence is missing, say so explicitly.",
+          "citationMode": true
+        },
+        "position": {
+          "x": 740.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "chroma-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 740.0,
+          "y": 480.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "chroma-e1",
+        "source": "chroma-node-user",
+        "target": "chroma-node-question",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "chroma-e2",
+        "source": "chroma-node-upload",
+        "target": "chroma-node-cleaning",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "chroma-e3",
+        "source": "chroma-node-cleaning",
+        "target": "chroma-node-chunking",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "chroma-e4",
+        "source": "chroma-node-chunking",
+        "target": "chroma-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "chroma-e5",
+        "source": "chroma-node-embedding",
+        "target": "chroma-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "chroma-e6",
+        "source": "chroma-node-question",
+        "target": "chroma-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "chroma-e7",
+        "source": "chroma-node-vectordb",
+        "target": "chroma-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "chroma-e8",
+        "source": "chroma-node-retriever",
+        "target": "chroma-node-llm",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "chroma-e9",
+        "source": "chroma-node-llm",
+        "target": "chroma-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-naive-rag-supabase-001",
+    "name": "Naive RAG - Supabase Preset",
+    "description": "System preset flow with Supabase vector backend.",
+    "nodes": [
+      {
+        "id": "supabase-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "supabase-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "supabase-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 80.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "supabase-node-cleaning",
+        "templateKey": "process-cleaning",
+        "label": "Text Cleaning",
+        "config": {
+          "removeHeaders": true,
+          "removeFooters": true,
+          "normalizeUnicode": true,
+          "collapseWhitespace": true,
+          "preserveParagraphBreaks": true
+        },
+        "position": {
+          "x": 300.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "supabase-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 750,
+          "overlap": 150,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 520.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "supabase-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "max_token_capacity": 512,
+            "output_dimensions": 1024,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 740.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "supabase-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Supabase",
+        "config": {
+          "provider": "supabase",
+          "collection": "documents",
+          "url": "https://your-project.supabase.co",
+          "schemaName": "public",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "SUPABASE_API_KEY",
+          "hybridSearch": false
+        },
+        "position": {
+          "x": 960.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "supabase-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity",
+          "topK": 6,
+          "similarityThreshold": 0.7,
+          "includeMetadata": true,
+          "includeScores": true,
+          "retrieverProvider": "supabase",
+          "vectorStore": {
+            "provider": "supabase",
+            "indexName": null,
+            "namespace": null,
+            "metric": "cosine"
+          },
+          "metadataFilter": ""
+        },
+        "position": {
+          "x": 960.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "supabase-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.2,
+          "max_tokens": 900,
+          "systemPrompt": "You are a helpful RAG assistant. Answer only from retrieved context. If evidence is missing, say so explicitly.",
+          "citationMode": true
+        },
+        "position": {
+          "x": 740.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "supabase-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 740.0,
+          "y": 480.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "supabase-e1",
+        "source": "supabase-node-user",
+        "target": "supabase-node-question",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "supabase-e2",
+        "source": "supabase-node-upload",
+        "target": "supabase-node-cleaning",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "supabase-e3",
+        "source": "supabase-node-cleaning",
+        "target": "supabase-node-chunking",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "supabase-e4",
+        "source": "supabase-node-chunking",
+        "target": "supabase-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "supabase-e5",
+        "source": "supabase-node-embedding",
+        "target": "supabase-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "supabase-e6",
+        "source": "supabase-node-question",
+        "target": "supabase-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "supabase-e7",
+        "source": "supabase-node-vectordb",
+        "target": "supabase-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "supabase-e8",
+        "source": "supabase-node-retriever",
+        "target": "supabase-node-llm",
+        "sourceHandle": "source-left",
+        "targetHandle": "target-right"
+      },
+      {
+        "id": "supabase-e9",
+        "source": "supabase-node-llm",
+        "target": "supabase-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "flow-safety-rag-001",
+    "name": "Safety-First RAG Preset",
+    "description": "Preset flow with PII redaction + guardrails + hallucination guard.",
+    "nodes": [
+      {
+        "id": "safety-node-user",
+        "templateKey": "user-actor",
+        "label": "User",
+        "config": {
+          "role": "user"
+        },
+        "position": {
+          "x": -140.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "safety-node-question",
+        "templateKey": "input-question",
+        "label": "Question",
+        "config": {
+          "language": "auto",
+          "maxLength": 4000
+        },
+        "position": {
+          "x": 80.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "safety-node-upload",
+        "templateKey": "input-upload",
+        "label": "Document Upload",
+        "config": {
+          "remove_headers_footers": true,
+          "normalize_whitespace": true,
+          "ocr_enabled": false
+        },
+        "position": {
+          "x": 80.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "safety-node-cleaning",
+        "templateKey": "process-cleaning",
+        "label": "Text Cleaning",
+        "config": {
+          "removeHeaders": true,
+          "removeFooters": true,
+          "normalizeUnicode": true,
+          "collapseWhitespace": true,
+          "preserveParagraphBreaks": true
+        },
+        "position": {
+          "x": 300.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "safety-node-chunking",
+        "templateKey": "process-chunking",
+        "label": "Chunking",
+        "config": {
+          "strategy": "recursive",
+          "chunkSize": 700,
+          "overlap": 140,
+          "lengthFunction": "characters",
+          "stripWhitespace": true
+        },
+        "position": {
+          "x": 520.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "safety-node-embedding",
+        "templateKey": "process-embedding",
+        "label": "Embedding Model",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "intfloat/multilingual-e5-large",
+          "output_dimensions": 1024,
+          "max_token_capacity": 512,
+          "is_cached": true,
+          "batch_size": 100,
+          "metadata": {
+            "model_id": "intfloat/multilingual-e5-large",
+            "max_token_capacity": 512,
+            "output_dimensions": 1024,
+            "is_cached": true,
+            "batch_size": 100
+          }
+        },
+        "position": {
+          "x": 740.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "safety-node-vectordb",
+        "templateKey": "storage-vector",
+        "label": "Pinecone",
+        "config": {
+          "provider": "pinecone",
+          "indexName": "xrag-knowledge",
+          "namespace": "knowledge",
+          "cloud": "aws",
+          "region": "us-east-1",
+          "metric": "cosine",
+          "dimensions": 1024,
+          "apiKeyEnvVar": "PINECONE_API_KEY",
+          "hybridSearch": false
+        },
+        "position": {
+          "x": 960.0,
+          "y": 40.0
+        }
+      },
+      {
+        "id": "safety-node-retriever",
+        "templateKey": "process-retriever",
+        "label": "Retriever",
+        "config": {
+          "strategy": "similarity_with_threshold",
+          "topK": 6,
+          "similarityThreshold": 0.74,
+          "includeMetadata": true,
+          "includeScores": true,
+          "retrieverProvider": "pinecone",
+          "vectorStore": {
+            "provider": "pinecone",
+            "indexName": "xrag-knowledge",
+            "namespace": "knowledge",
+            "metric": "cosine"
+          },
+          "metadataFilter": ""
+        },
+        "position": {
+          "x": 960.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "safety-node-pii",
+        "templateKey": "process-pii-redaction",
+        "label": "PII Redaction",
+        "config": {
+          "redactEmails": true,
+          "redactPhones": true,
+          "redactIds": true,
+          "redactNames": false,
+          "redactAddresses": false,
+          "redactCreditCards": true,
+          "redactIbans": true,
+          "mask": "[REDACTED]",
+          "whitelistPattern": ""
+        },
+        "position": {
+          "x": 1180.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "safety-node-guardrails",
+        "templateKey": "brain-guardrails",
+        "label": "Guardrails",
+        "config": {
+          "checkJailbreak": true,
+          "checkPromptInjection": true,
+          "checkToxicity": true,
+          "checkOutputPII": true,
+          "checkOutputToxicity": false,
+          "checkOutputRelevance": true,
+          "violationAction": "flag",
+          "rejectionMessage": "This request cannot be processed due to policy restrictions."
+        },
+        "position": {
+          "x": 1400.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "safety-node-llm",
+        "templateKey": "brain-llm",
+        "label": "LLM",
+        "config": {
+          "gateway": "backend_proxy",
+          "model_id": "openai/gpt-4o-mini",
+          "temperature": 0.15,
+          "max_tokens": 850,
+          "systemPrompt": "Answer from retrieved context only. If context is insufficient, explicitly say you do not have enough evidence.",
+          "citationMode": true
+        },
+        "position": {
+          "x": 1620.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "safety-node-hallucination",
+        "templateKey": "process-hallucination-guard",
+        "label": "Hallucination Guard",
+        "config": {
+          "minGroundingScore": 0.8,
+          "fallbackMode": "reject",
+          "rejectionMessage": "I cannot answer this reliably from the available evidence.",
+          "alwaysPassIfNoEvidence": false,
+          "appendScore": true
+        },
+        "position": {
+          "x": 1840.0,
+          "y": 260.0
+        }
+      },
+      {
+        "id": "safety-node-response",
+        "templateKey": "output-response",
+        "label": "Response",
+        "config": {
+          "includeCitations": true,
+          "format": "markdown"
+        },
+        "position": {
+          "x": 1840.0,
+          "y": 480.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "safety-e1",
+        "source": "safety-node-user",
+        "target": "safety-node-question",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e2",
+        "source": "safety-node-upload",
+        "target": "safety-node-cleaning",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e3",
+        "source": "safety-node-cleaning",
+        "target": "safety-node-chunking",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e4",
+        "source": "safety-node-chunking",
+        "target": "safety-node-embedding",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e5",
+        "source": "safety-node-embedding",
+        "target": "safety-node-vectordb",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e6",
+        "source": "safety-node-question",
+        "target": "safety-node-retriever",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e7",
+        "source": "safety-node-vectordb",
+        "target": "safety-node-retriever",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      },
+      {
+        "id": "safety-e8",
+        "source": "safety-node-retriever",
+        "target": "safety-node-pii",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e9",
+        "source": "safety-node-pii",
+        "target": "safety-node-guardrails",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e10",
+        "source": "safety-node-guardrails",
+        "target": "safety-node-llm",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e11",
+        "source": "safety-node-llm",
+        "target": "safety-node-hallucination",
+        "sourceHandle": "source-right",
+        "targetHandle": "target-left"
+      },
+      {
+        "id": "safety-e12",
+        "source": "safety-node-hallucination",
+        "target": "safety-node-response",
+        "sourceHandle": "source-bottom",
+        "targetHandle": "target-top"
+      }
+    ],
+    "createdAt": null,
+    "updatedAt": null
   }
 ]

@@ -379,6 +379,14 @@ def _exec_user(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) ->
     tenant_id = (cfg.get("tenantId") or "").strip() or None
     user_id = (cfg.get("userId") or "").strip() or None
     require_auth = bool(cfg.get("requireAuth", True))
+    locale = str(cfg.get("locale") or "").strip() or None
+    expertise = str(cfg.get("expertise") or "").strip() or None
+    tone = str(cfg.get("tone") or "").strip() or None
+    channel = str(cfg.get("channel") or "").strip() or None
+    session_id = str(cfg.get("sessionId") or "").strip() or None
+    remember_history = bool(cfg.get("rememberHistory", True))
+    consent_data_collection = bool(cfg.get("consentDataCollection", True))
+    consent_training = bool(cfg.get("consentTraining", False))
 
     # ----- Access control ------------------------------------------------
     raw_tools = cfg.get("allowedTools")
@@ -425,9 +433,23 @@ def _exec_user(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) ->
             "user_id": user_id,
             "require_auth": require_auth,
         },
+        "profile": {
+            "locale": locale,
+            "expertise": expertise,
+            "tone": tone,
+        },
+        "session": {
+            "channel": channel,
+            "session_id": session_id,
+            "remember_history": remember_history,
+        },
         "access": {
             "allowed_tools": allowed_tools,
             "rate_limit_rpm": rate_limit_rpm,
+        },
+        "privacy": {
+            "consent_data_collection": consent_data_collection,
+            "consent_training": consent_training,
         },
         "warnings": warnings,
     }
@@ -523,6 +545,9 @@ def _exec_question(node: CanvasNode, context: RunContext, inputs: dict[str, Any]
         "language": language,
         "blocked": blocked,
         "history_turns": history_turns,
+        "spell_check": bool(cfg.get("spellCheck", False)),
+        "voice_input": bool(cfg.get("voiceInput", False)),
+        "stt_fallback": bool(cfg.get("enableSttFallback", False)),
     }
 
     return {
@@ -532,6 +557,9 @@ def _exec_question(node: CanvasNode, context: RunContext, inputs: dict[str, Any]
         "language": language,
         "history_turns": history_turns,
         "blocked": blocked,
+        "spell_check": bool(cfg.get("spellCheck", False)),
+        "voice_input": bool(cfg.get("voiceInput", False)),
+        "stt_fallback": bool(cfg.get("enableSttFallback", False)),
         "warnings": warnings,
     }
 
@@ -1110,12 +1138,6 @@ def _exec_retriever(node: CanvasNode, context: RunContext, inputs: dict[str, Any
             "includeScores",
             "metadataFilter",
             "mmrLambda",
-            "mmrFetchK",
-            "hybridAlpha",
-            "embeddingProfile",
-            "vectorStore",
-            "retrieverProvider",
-            "providerCredentialEnvVars",
         }
     }
 
@@ -1556,23 +1578,43 @@ def _exec_hallucination_guard(node: CanvasNode, context: RunContext, inputs: dic
     chunks = _collect_chunks(inputs) or context.scratch.get("evidence", []) or []
 
     score, unsupported = _grounding_score(answer, chunks)
-    passed = score >= min_score or not chunks
+    fallback_mode = str(node.config.get("fallbackMode", "flag")).strip().lower() or "flag"
+    rejection_message = str(
+        node.config.get("rejectionMessage", "I cannot answer this based on the available evidence.")
+    ).strip() or "I cannot answer this based on the available evidence."
+    always_pass_if_no_evidence = bool(node.config.get("alwaysPassIfNoEvidence", True))
+    append_score = bool(node.config.get("appendScore", False))
+
+    passed = score >= min_score or (not chunks and always_pass_if_no_evidence)
+    answer_out = answer
+    if not passed:
+        if fallback_mode == "reject":
+            answer_out = rejection_message
+        elif fallback_mode == "abstain":
+            answer_out = ""
 
     # Persist for the Reflection Loop and the LLM scratch so a later revision
     # pass can target the unsupported terms specifically.
     context.scratch["grounding_score"] = round(score, 3)
     context.scratch["grounding_passed"] = passed
     context.scratch["grounding_unsupported"] = unsupported
-    context.scratch["answer"] = answer  # always keep the clean answer in scratch
+    if append_score:
+        context.scratch["grounding_trace"] = {
+            "grounding_score": round(score, 3),
+            "passed": passed,
+            "fallback_mode": fallback_mode,
+        }
+    context.scratch["answer"] = answer_out
 
     return {
-        "answer": answer,
-        "text": answer,
+        "answer": answer_out,
+        "text": answer_out,
         "chunks": chunks,
         "grounding_score": round(score, 3),
         "min_score": min_score,
         "passed": passed,
         "unsupported_terms": unsupported,
+        "fallback_mode": fallback_mode,
         "guard_status": "ok" if passed else "weakly_grounded",
     }
 
@@ -2193,6 +2235,10 @@ def _exec_image_upload(node: CanvasNode, context: RunContext, inputs: dict[str, 
     cfg = node.config or {}
     mode = str(cfg.get("mode", "upload"))
     role = str(cfg.get("role", "query-image"))
+    max_file_size_mb = float(cfg.get("maxFileSizeMb", cfg.get("maxSizeMB", 10)) or 10)
+    auto_resize = bool(cfg.get("autoResize", True))
+    extract_text = bool(cfg.get("extractText", cfg.get("extractExif", False)))
+    generate_caption = bool(cfg.get("generateCaption", cfg.get("autoCaption", False)))
 
     # In real usage the frontend / API would pass image_data in the request.
     # Here we create a descriptive placeholder so downstream nodes can run.
@@ -2207,9 +2253,10 @@ def _exec_image_upload(node: CanvasNode, context: RunContext, inputs: dict[str, 
             "url": image_url,
             "data": image_data[:200] if image_data else "",  # truncate blob for trace
             "format": str(cfg.get("acceptedFormats", "image/png")).split(",")[0].strip(),
-            "size_mb": float(cfg.get("maxFileSizeMb", 10)),
-            "extract_text": bool(cfg.get("extractText", False)),
-            "generate_caption": bool(cfg.get("generateCaption", False)),
+            "size_mb": max_file_size_mb,
+            "auto_resize": auto_resize,
+            "extract_text": extract_text,
+            "generate_caption": generate_caption,
         }
     ]
 
@@ -2240,11 +2287,17 @@ def _exec_vision(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) 
     are present, so the canvas can still run end-to-end.
     """
     cfg = node.config or {}
-    model = str(cfg.get("model", "openai/gpt-4o"))
-    temperature = float(cfg.get("temperature", 0.2))
-    max_tokens = int(cfg.get("maxTokens", 1024))
-    task = str(cfg.get("task", "vqa"))
-    custom_prompt = str(cfg.get("customPrompt", "")).strip()
+    metadata = cfg.get("metadata") if isinstance(cfg.get("metadata"), dict) else {}
+    model = str(cfg.get("model") or metadata.get("model_id") or "openai/gpt-4o")
+    temperature = float(cfg.get("temperature", metadata.get("temperature", 0.2)))
+    max_tokens = int(cfg.get("maxTokens", metadata.get("max_tokens", 1024)))
+    task = str(cfg.get("task") or cfg.get("mode") or "vqa")
+    custom_prompt = str(cfg.get("customPrompt") or cfg.get("systemPrompt") or "").strip()
+    include_image_in_context = bool(cfg.get("includeImageInContext", True))
+    detail_high = bool(cfg.get("detailHigh", metadata.get("detail") == "high"))
+    include_ocr = bool(cfg.get("includeOCR", False))
+    output_format = str(cfg.get("outputFormat", "text"))
+    caption_style = str(cfg.get("captionStyle", "detailed"))
 
     # Collect images from all upstream inputs.
     images: list[dict[str, Any]] = []
@@ -2284,7 +2337,10 @@ def _exec_vision(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) 
         for img in images[:4]:  # cap at 4 images per call
             url = img.get("url") or img.get("data") or ""
             if url:
-                content.append({"type": "image_url", "image_url": {"url": url}})
+                image_url: dict[str, Any] = {"url": url}
+                if detail_high:
+                    image_url["detail"] = "high"
+                content.append({"type": "image_url", "image_url": image_url})
         if not content:
             content = [{"type": "text", "text": query or "Describe this image."}]
 
@@ -2324,6 +2380,10 @@ def _exec_vision(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) 
         "task": task,
         "images_processed": len(images),
         "used_llm": used_llm,
+        "include_image_in_context": include_image_in_context,
+        "include_ocr": include_ocr,
+        "output_format": output_format,
+        "caption_style": caption_style,
         "warnings": warnings,
     }
 
@@ -2438,7 +2498,7 @@ _REGISTRATIONS: list[NodeSpec] = [
         # stores) and `chunks` (loose contract so retrievers / rerankers can
         # consume the embedded payload directly when no DB is wired in).
         ["embedded_chunks", "chunks"],
-        {"model": "text-embedding-3-large"},
+        {"gateway": "backend_proxy", "model_id": "", "max_token_capacity": 0, "output_dimensions": None, "is_cached": True, "batch_size": 100, "metadata": None},
         _exec_embedding,
     ),
     NodeSpec("process-query-rewriter", "Process", "Query Rewriter", "Expand query", ["text"], ["text", "query"], {"strategy": "intent-aware", "expansionTerms": 3, "variants": 3, "model": "openai/gpt-4o-mini", "temperature": 0.3, "preserveOriginal": True}, _exec_query_rewriter),
@@ -2499,7 +2559,7 @@ _REGISTRATIONS: list[NodeSpec] = [
         "Score answer grounding against retrieved evidence (non-destructive)",
         ["text", "chunks"],
         ["answer", "chunks"],
-        {"minGroundingScore": 0.75},
+        {"minGroundingScore": 0.75, "fallbackMode": "flag", "rejectionMessage": "I cannot answer this based on the available evidence.", "alwaysPassIfNoEvidence": True, "appendScore": False},
         _exec_hallucination_guard,
     ),
     NodeSpec(
@@ -2634,12 +2694,13 @@ _REGISTRATIONS: list[NodeSpec] = [
         ["images", "documents"],
         {
             "mode": "upload",
-            "role": "query-image",
-            "acceptedFormats": "image/png,image/jpeg,image/webp,image/gif",
-            "maxFileSizeMb": 10,
-            "autoResize": True,
-            "extractText": False,
-            "generateCaption": False,
+            "role": "library",
+            "acceptedFormats": "jpg,jpeg,png,webp,gif,tiff,pdf",
+            "maxSizeMB": 20,
+            "maxImages": 50,
+            "extractExif": True,
+            "generateThumbnail": True,
+            "autoCaption": False,
         },
         _exec_image_upload,
     ),
@@ -2651,13 +2712,18 @@ _REGISTRATIONS: list[NodeSpec] = [
         ["images", "text"],
         ["answer", "text"],
         {
-            "model": "openai/gpt-4o",
-            "temperature": 0.2,
-            "maxTokens": 1024,
-            "task": "vqa",
-            "customPrompt": "",
-            "includeImageInContext": True,
-            "detailHigh": False,
+            "gateway": "backend_proxy",
+            "metadata": {
+                "model_id": "openai/gpt-4o-mini",
+                "temperature": 0.1,
+                "max_tokens": 512,
+                "detail": "auto",
+            },
+            "mode": "caption",
+            "captionStyle": "detailed",
+            "systemPrompt": "Describe this image in detail, including all visible text, objects, charts, diagrams, and spatial relationships. This description will be used for semantic search retrieval.",
+            "includeOCR": True,
+            "outputFormat": "text",
         },
         _exec_vision,
     ),

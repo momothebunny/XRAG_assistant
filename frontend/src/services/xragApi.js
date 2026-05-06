@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_XRAG_API_BASE_URL ?? 'http://localhost:8000';
+const API_TIMEOUT_MS = Number(import.meta.env.VITE_XRAG_API_TIMEOUT_MS ?? 7000);
 
 // Token storage — synced with the AuthScreen / App. Kept in module-scope so
 // every API call automatically attaches the bearer header without each
@@ -24,17 +25,51 @@ export const setAuthToken = (token) => {
 export const getAuthToken = () => _authToken;
 
 const requestJson = async (path, options = {}) => {
+  const {
+    headers: optionHeaders,
+    signal: externalSignal,
+    ...restOptions
+  } = options;
+
   const headers = {
     'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(optionHeaders || {}),
   };
   if (_authToken && !headers.Authorization) {
     headers.Authorization = `Bearer ${_authToken}`;
   }
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+  }
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...restOptions,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      const timeoutErr = new Error(
+        `Request timed out after ${Math.round(API_TIMEOUT_MS / 1000)}s. Backend may be offline (${API_BASE_URL}).`
+      );
+      timeoutErr.status = 0;
+      throw timeoutErr;
+    }
+    const networkErr = new Error(`Network error. Backend may be offline (${API_BASE_URL}).`);
+    networkErr.status = 0;
+    throw networkErr;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
