@@ -63,7 +63,7 @@ const PromptRow = ({ answer, isSelected, onSelect, onDelete }) => (
           </span>
         )}
         {answer.sources?.length > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-100">
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-slate-900 px-1.5 py-0.5 text-[10px] font-black text-amber-200">
             <FileText size={9} />
             {answer.sources.length} source{answer.sources.length !== 1 ? 's' : ''}
           </span>
@@ -254,10 +254,10 @@ const SavedPromptsPanel = () => {
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total saved',    value: answers.length,      Icon: BookMarked,    tint: 'bg-amber-50 text-amber-600' },
-          { label: 'This month',     value: totals.thisMonth,    Icon: CalendarDays,  tint: 'bg-indigo-50 text-indigo-600' },
-          { label: 'With ref.',      value: totals.withRef,      Icon: Link2,         tint: 'bg-sky-50 text-sky-600' },
-          { label: 'Total sources',  value: totals.sources,      Icon: BrainCircuit,  tint: 'bg-amber-50 text-amber-600' },
+          { label: 'Total saved',    value: answers.length,      Icon: BookMarked,    tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'This month',     value: totals.thisMonth,    Icon: CalendarDays,  tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'With ref.',      value: totals.withRef,      Icon: Link2,         tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Total sources',  value: totals.sources,      Icon: BrainCircuit,  tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
         ].map((stat) => {
           const StatIcon = stat.Icon;
           return (

@@ -250,7 +250,7 @@ const App = () => {
       return (
         <>
           {canvasPane}
-          {overlayPane(<DocumentsTab documents={documents} />)}
+          {overlayPane(<DocumentsTab />)}
         </>
       );
     }

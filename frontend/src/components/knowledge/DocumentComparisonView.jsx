@@ -55,17 +55,17 @@ const CompareRow = ({ label, hint, aVal, bVal, format }) => {
         {hint && <p className="text-[8px] text-slate-400 italic mt-0.5 leading-snug">{hint}</p>}
         {diff && <span className="text-[8px] bg-indigo-50 text-indigo-500 rounded px-1 py-0.5 font-bold mt-1 inline-block">{diff.text}</span>}
       </div>
-      <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
         <span className="w-3.5 h-3.5 rounded-sm bg-blue-100 flex items-center justify-center text-[6px] font-black text-blue-600 shrink-0">A</span>
         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${aPct}%`, background: 'linear-gradient(90deg, #60a5fa, #818cf8)' }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${aPct}%`, backgroundColor: '#fbbf24' }} />
         </div>
         <span className="text-[10px] font-black text-blue-700 tabular-nums shrink-0 w-10 text-right">{fmt_(aVal)}</span>
       </div>
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="w-3.5 h-3.5 rounded-sm bg-amber-100 flex items-center justify-center text-[6px] font-black text-amber-600 shrink-0">B</span>
         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${bPct}%`, background: 'linear-gradient(90deg, #fbbf24, #facc15)' }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${bPct}%`, backgroundColor: '#d97706' }} />
         </div>
         <span className="text-[10px] font-black text-amber-700 tabular-nums shrink-0 w-10 text-right">{fmt_(bVal)}</span>
       </div>
@@ -86,14 +86,14 @@ const ScoreRow = ({ label, hint, scoreA, scoreB }) => {
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="w-3.5 h-3.5 rounded-sm bg-blue-100 flex items-center justify-center text-[6px] font-black text-blue-600 shrink-0">A</span>
         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pA}%`, background: 'linear-gradient(90deg, #60a5fa, #818cf8)' }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pA}%`, backgroundColor: '#fbbf24' }} />
         </div>
         <span className="text-[10px] font-black text-blue-700 tabular-nums shrink-0 w-8 text-right">{pA}%</span>
       </div>
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="w-3.5 h-3.5 rounded-sm bg-amber-100 flex items-center justify-center text-[6px] font-black text-amber-600 shrink-0">B</span>
         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pB}%`, background: 'linear-gradient(90deg, #fbbf24, #facc15)' }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pB}%`, backgroundColor: '#d97706' }} />
         </div>
         <span className="text-[10px] font-black text-amber-700 tabular-nums shrink-0 w-8 text-right">{pB}%</span>
       </div>
@@ -317,7 +317,7 @@ const DocumentComparisonView = () => {
   const isSamePair = docA?.id === docB?.id;
 
   return (
-    <div className="p-5 md:p-7 space-y-6 bg-slate-50/50">
+    <div className="xrag-kb-dark p-5 md:p-7 space-y-6 bg-slate-950">
 
       {/* Document selector */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_48px_1fr] gap-3 items-end">
@@ -369,14 +369,14 @@ const DocumentComparisonView = () => {
             const circ = 2 * Math.PI * r;
             const dash = (pct / 100) * circ;
             return (
-              <div className="rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-amber-600 p-5 text-white shadow-lg">
+              <div className="rounded-2xl border border-amber-500/30 bg-slate-950 p-5 text-amber-100 shadow-lg">
                 <div className="flex items-center gap-5">
                   <div className="shrink-0 relative w-16 h-16 flex items-center justify-center">
                     <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
-                      <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="6" />
+                      <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(251,191,36,0.25)" strokeWidth="6" />
                       <circle
                         cx="32" cy="32" r={r} fill="none"
-                        stroke="rgba(255,255,255,0.85)" strokeWidth="6"
+                        stroke="rgba(251,191,36,0.92)" strokeWidth="6"
                         strokeLinecap="round"
                         strokeDasharray={`${dash} ${circ}`}
                         style={{ transition: 'stroke-dasharray 0.7s ease' }}
@@ -389,9 +389,9 @@ const DocumentComparisonView = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       <p className="text-sm font-black tracking-tight">Semantic Similarity</p>
-                      <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-white/30 bg-white/15 text-white shrink-0">{levelLabel}</span>
+                      <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-200 shrink-0">{levelLabel}</span>
                     </div>
-                    <p className="text-[9px] font-medium opacity-60 leading-relaxed">Taxonomy · structural cosine · volume proximity composite estimate</p>
+                    <p className="text-[9px] font-medium text-amber-100/60 leading-relaxed">Taxonomy · structural cosine · volume proximity composite estimate</p>
                   </div>
                 </div>
               </div>
@@ -409,7 +409,7 @@ const DocumentComparisonView = () => {
               const cfg = {
                 indigo: { card: 'bg-indigo-50/60 border-indigo-200', val: 'text-indigo-800', sub: 'text-indigo-400' },
                 blue:   { card: 'bg-blue-50 border-blue-200',        val: 'text-blue-800',   sub: 'text-blue-400' },
-                violet: { card: 'bg-amber-50 border-amber-200',    val: 'text-amber-800', sub: 'text-amber-400' },
+                amber:  { card: 'bg-amber-50 border-amber-200',      val: 'text-amber-800',  sub: 'text-amber-400' },
               }[color];
               return (
                 <div key={label} className={`rounded-2xl border-2 ${cfg.card} p-4 text-center shadow-sm`}>
@@ -426,27 +426,27 @@ const DocumentComparisonView = () => {
           </div>
 
           {/* AI Content Summary */}
-          <div className="rounded-2xl border border-indigo-200 overflow-hidden shadow-sm">
-            <div className="flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-amber-600">
-              <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center shrink-0">
-                <Sparkles size={11} className="text-white" />
+          <div className="rounded-2xl border border-amber-500/30 overflow-hidden shadow-sm bg-slate-950">
+            <div className="flex items-center gap-2.5 px-5 py-3.5 bg-slate-900 border-b border-slate-800">
+              <div className="w-5 h-5 rounded-md bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Sparkles size={11} className="text-amber-300" />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/90">AI Content Summary</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-amber-200">AI Content Summary</p>
               {aiSummaryLoading && (
-                <Loader2 size={12} className="ml-auto animate-spin text-white/70" />
+                <Loader2 size={12} className="ml-auto animate-spin text-amber-200/70" />
               )}
             </div>
-            <div className="px-5 py-4 bg-gradient-to-br from-indigo-50/50 via-white to-amber-50/30 min-h-[64px] flex items-center">
+            <div className="px-5 py-4 bg-slate-950 min-h-[64px] flex items-center">
               {aiSummaryLoading ? (
-                <p className="text-xs italic text-slate-400">Generating AI summary…</p>
+                <p className="text-xs italic text-amber-100/60">Generating AI summary…</p>
               ) : aiSummary ? (
                 <p className={`text-xs font-medium leading-relaxed ${
-                  aiSummary.status === 'error' ? 'text-red-500 italic' : 'text-slate-700'
+                  aiSummary.status === 'error' ? 'text-amber-300 italic' : 'text-amber-100'
                 }`}>
                   {aiSummary.summary}
                 </p>
               ) : (
-                <p className="text-xs italic text-slate-400">Select two different documents to generate a summary.</p>
+                <p className="text-xs italic text-amber-100/60">Select two different documents to generate a summary.</p>
               )}
             </div>
           </div>
@@ -552,7 +552,7 @@ const DocumentComparisonView = () => {
                             <span className={`text-[11px] font-black tabular-nums ${accent.val}`}>{freshPct}%</span>
                           </div>
                           <div className="h-1.5 bg-white/70 rounded-full overflow-hidden border border-current/10">
-                            <div className={`h-full rounded-full bg-gradient-to-r ${accent.bar} transition-all duration-700`} style={{ width: `${freshPct}%` }} />
+                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${freshPct}%`, backgroundColor: '#f59e0b' }} />
                           </div>
                           <p className="text-[8px] text-slate-400 mt-1">2-year horizon; 0% = not updated for ≥2 years</p>
                         </div>
@@ -647,7 +647,7 @@ const DocumentComparisonView = () => {
           )}
 
           {/* Insight footer */}
-          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-slate-50 to-indigo-50/30 p-5 flex items-start gap-3 shadow-sm">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 flex items-start gap-3 shadow-sm">
             <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
               <TrendingUp size={15} className="text-indigo-600" />
             </div>

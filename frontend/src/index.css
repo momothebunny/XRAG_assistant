@@ -288,3 +288,117 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
 .xrag-tabpane-slide {
   animation: xrag-tabpane-slide-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* ---------------------------------------------------------------------- */
+/* Knowledge Base — unified black/yellow skin (no gradients)              */
+/* ---------------------------------------------------------------------- */
+.xrag-kb-theme,
+.xrag-kb-dark {
+  background: rgb(2 6 23);
+  color: rgb(226 232 240);
+}
+
+.xrag-kb-theme [class*="bg-gradient"],
+.xrag-kb-dark [class*="bg-gradient"] {
+  background-image: none !important;
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-kb-theme [class*="bg-white"],
+.xrag-kb-theme [class*="bg-slate-50"],
+.xrag-kb-theme [class*="bg-slate-100"],
+.xrag-kb-theme [class*="bg-blue-50"],
+.xrag-kb-theme [class*="bg-blue-100"],
+.xrag-kb-theme [class*="bg-indigo-50"],
+.xrag-kb-theme [class*="bg-indigo-100"],
+.xrag-kb-theme [class*="bg-amber-50"],
+.xrag-kb-theme [class*="bg-emerald-50"],
+.xrag-kb-theme [class*="bg-emerald-100"],
+.xrag-kb-theme [class*="bg-sky-50"],
+.xrag-kb-theme [class*="bg-sky-100"],
+.xrag-kb-theme [class*="bg-rose-50"],
+.xrag-kb-theme [class*="bg-rose-100"],
+.xrag-kb-theme [class*="bg-cyan-50"],
+.xrag-kb-theme [class*="bg-cyan-100"],
+.xrag-kb-theme [class*="bg-amber-100"],
+.xrag-kb-dark [class*="bg-white"],
+.xrag-kb-dark [class*="bg-slate-50"],
+.xrag-kb-dark [class*="bg-slate-100"],
+.xrag-kb-dark [class*="bg-blue-50"],
+.xrag-kb-dark [class*="bg-blue-100"],
+.xrag-kb-dark [class*="bg-indigo-50"],
+.xrag-kb-dark [class*="bg-indigo-100"],
+.xrag-kb-dark [class*="bg-amber-50"],
+.xrag-kb-dark [class*="bg-emerald-50"],
+.xrag-kb-dark [class*="bg-emerald-100"],
+.xrag-kb-dark [class*="bg-sky-50"],
+.xrag-kb-dark [class*="bg-sky-100"],
+.xrag-kb-dark [class*="bg-rose-50"],
+.xrag-kb-dark [class*="bg-rose-100"],
+.xrag-kb-dark [class*="bg-cyan-50"],
+.xrag-kb-dark [class*="bg-cyan-100"],
+.xrag-kb-dark [class*="bg-amber-100"] {
+  background-color: rgb(15 23 42) !important;
+}
+
+.xrag-kb-theme [class*="border-slate-"],
+.xrag-kb-theme [class*="border-blue-"],
+.xrag-kb-theme [class*="border-indigo-"],
+.xrag-kb-theme [class*="border-amber-"],
+.xrag-kb-theme [class*="border-emerald-"],
+.xrag-kb-theme [class*="border-sky-"],
+.xrag-kb-theme [class*="border-rose-"],
+.xrag-kb-theme [class*="border-cyan-"],
+.xrag-kb-dark [class*="border-slate-"],
+.xrag-kb-dark [class*="border-blue-"],
+.xrag-kb-dark [class*="border-indigo-"],
+.xrag-kb-dark [class*="border-amber-"],
+.xrag-kb-dark [class*="border-emerald-"],
+.xrag-kb-dark [class*="border-sky-"],
+.xrag-kb-dark [class*="border-rose-"],
+.xrag-kb-dark [class*="border-cyan-"] {
+  border-color: rgb(51 65 85) !important;
+}
+
+.xrag-kb-theme [class*="text-slate-"],
+.xrag-kb-theme [class*="text-blue-"],
+.xrag-kb-theme [class*="text-indigo-"],
+.xrag-kb-theme [class*="text-white"],
+.xrag-kb-dark [class*="text-slate-"],
+.xrag-kb-dark [class*="text-blue-"],
+.xrag-kb-dark [class*="text-indigo-"],
+.xrag-kb-dark [class*="text-white"] {
+  color: rgb(226 232 240) !important;
+}
+
+.xrag-kb-theme [class*="text-amber-"],
+.xrag-kb-theme [class*="text-emerald-"],
+.xrag-kb-theme [class*="text-sky-"],
+.xrag-kb-theme [class*="text-rose-"],
+.xrag-kb-theme [class*="text-cyan-"],
+.xrag-kb-dark [class*="text-amber-"] {
+  color: rgb(252 211 77) !important;
+}
+
+.xrag-kb-dark [class*="text-emerald-"],
+.xrag-kb-dark [class*="text-sky-"],
+.xrag-kb-dark [class*="text-rose-"],
+.xrag-kb-dark [class*="text-cyan-"] {
+  color: rgb(252 211 77) !important;
+}
+
+.xrag-kb-theme .font-black,
+.xrag-kb-dark .font-black {
+  color: rgb(253 230 138);
+}
+
+.xrag-kb-theme select,
+.xrag-kb-theme option,
+.xrag-kb-theme input,
+.xrag-kb-dark select,
+.xrag-kb-dark option,
+.xrag-kb-dark input {
+  background-color: rgb(15 23 42);
+  color: rgb(226 232 240);
+  border-color: rgb(71 85 105);
+}

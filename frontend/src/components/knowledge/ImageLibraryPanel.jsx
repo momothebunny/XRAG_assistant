@@ -75,7 +75,7 @@ const renderImageRow = (image, ctx) => {
             </span>
           )}
           {image.format && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-100 uppercase">
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-slate-900 px-1.5 py-0.5 text-[10px] font-black text-amber-200 uppercase">
               {image.format}
             </span>
           )}
@@ -266,6 +266,13 @@ const ImageLibraryPanel = () => {
         created_at: new Date().toISOString(),
       };
       setImages((prev) => [...prev, newImage]);
+      window.setTimeout(() => {
+        setImages((prev) => prev.map((img) => (
+          img.id === newImage.id && img.status === 'pending'
+            ? { ...img, status: 'captioned', caption: img.caption || simulateCaption(newImage.id) }
+            : img
+        )));
+      }, 900 + i * 180);
       setUploadState((p) => ({ ...p, doneFiles: i + 1, progress: ((i + 1) / total) * 100 }));
     }
 
@@ -307,6 +314,13 @@ const ImageLibraryPanel = () => {
         ? { ...img, name: file.name, format: file.name.split('.').pop().toLowerCase(), size_bytes: file.size, thumbnail_url: objectUrl, status: 'pending', caption: null }
         : img
     ));
+    window.setTimeout(() => {
+      setImages((prev) => prev.map((img) => (
+        img.id === id && img.status === 'pending'
+          ? { ...img, status: 'captioned', caption: img.caption || simulateCaption(id) }
+          : img
+      )));
+    }, 950);
   };
 
   const handleDelete = (imageId) => {
@@ -334,12 +348,13 @@ const ImageLibraryPanel = () => {
   const handleGenerateCaption = async (imageId) => {
     setCaptioningId(imageId);
     await new Promise((r) => window.setTimeout(r, 1200 + Math.random() * 800));
+    const generatedCaption = simulateCaption(imageId);
     setImages((prev) => prev.map((img) =>
-      img.id === imageId ? { ...img, status: 'captioned', caption: simulateCaption(imageId) } : img
+      img.id === imageId ? { ...img, status: 'captioned', caption: generatedCaption } : img
     ));
     setCaptioningId(null);
     if (selectedImageId === imageId) {
-      setSelectedImageDetail((prev) => prev ? { ...prev, status: 'captioned', caption: simulateCaption(imageId) } : prev);
+      setSelectedImageDetail((prev) => prev ? { ...prev, status: 'captioned', caption: generatedCaption } : prev);
     }
   };
 
@@ -376,7 +391,7 @@ const ImageLibraryPanel = () => {
             <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">Image Library</h2>
             <p className="text-[11px] text-slate-500 leading-snug max-w-2xl">
               Upload images for multimodal RAG. Vision LLM generates searchable captions at ingestion time — these get embedded into the
-              <span className="mx-1 rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">Multimodal Index</span>
+              <span className="mx-1 rounded border border-amber-400/50 bg-slate-900 px-1.5 py-0.5 text-[10px] font-black text-amber-200">Multimodal Index</span>
               alongside text chunks.
             </p>
           </div>
@@ -393,10 +408,10 @@ const ImageLibraryPanel = () => {
       {/* ── Stats strip ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Images',    value: images.length,    Icon: Files,      tint: 'bg-sky-50 text-sky-600' },
-          { label: 'Captioned', value: totals.captioned, Icon: Eye,        tint: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Errors',    value: totals.errors,    Icon: AlertCircle, tint: totals.errors > 0 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400' },
-          { label: 'Total size',value: formatBytes(totals.bytes), Icon: HardDrive, tint: 'bg-slate-50 text-slate-600' },
+          { label: 'Images',    value: images.length,    Icon: Files,      tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Captioned', value: totals.captioned, Icon: Eye,        tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Errors',    value: totals.errors,    Icon: AlertCircle, tint: totals.errors > 0 ? 'border border-amber-400/40 bg-slate-900 text-amber-300' : 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Total size',value: formatBytes(totals.bytes), Icon: HardDrive, tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
         ].map((stat) => {
           const StatIcon = stat.Icon;
           return (
