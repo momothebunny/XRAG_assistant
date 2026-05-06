@@ -1333,7 +1333,7 @@ const BenchmarkPanel = () => {
 
                 <div className="relative flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-md shadow-amber-500/30 flex items-center justify-center text-white">
+                    <div className="shrink-0 w-11 h-11 rounded-2xl bg-slate-800 border border-amber-500/50 shadow-md flex items-center justify-center text-amber-400">
                       <BookOpen size={18} />
                     </div>
                     <div className="min-w-0">
