@@ -654,7 +654,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'reranker-rag',
     label: 'Reranker RAG',
-    description: 'MMR retrieval (top 20) → LLM-as-reranker (top 5) → GPT-4o-mini answer.',
+    description: 'MMR retrieval (top 6) -> multilingual reranker (top 4) -> grounded GPT-4o-mini answer.',
     backendFlowId: 'flow-c504631287',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-cleaning',
@@ -665,7 +665,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'hyde-rag',
     label: 'HyDE RAG',
-    description: 'LLM drafts a hypothetical answer, embeds it for retrieval, then reranks against the original question.',
+    description: 'HyDE query expansion + strict MMR retrieval + reranker for harder semantic queries.',
     backendFlowId: 'flow-hyde-rag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
@@ -676,7 +676,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'self-rag',
     label: 'Self-RAG',
-    description: 'LLM decides when to retrieve, scores chunk relevance and self-checks groundedness with a reflection loop.',
+    description: 'Self-checking RAG with retrieval decision, relevance filtering and one-pass grounded reflection.',
     backendFlowId: 'flow-self-rag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-cleaning',
@@ -688,7 +688,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'agentic-rag',
     label: 'Agentic RAG',
-    description: 'Plan → Act → Observe → Reason: query decomposition, dual retrieval + hybrid merge, reflection and hallucination guard.',
+    description: 'Agent-style routing + dual retrieval, then strict reranking and grounded low-temperature generation.',
     backendFlowId: 'flow-agentic-rag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
@@ -701,7 +701,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'pdr-rag',
     label: 'Parent-Document RAG',
-    description: 'Two-tier chunking: small child chunks for precise vector search, full parent chunks given to the LLM as context.',
+    description: 'Parent/child retrieval with stricter reranking and concise grounded generation from parent context.',
     backendFlowId: 'flow-pdr-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
@@ -712,7 +712,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'graph-rag',
     label: 'GraphRAG',
-    description: 'Knowledge graph (Neo4j) + vector retrieval running in parallel, then hybrid merge unifies graph and semantic context.',
+    description: 'Graph + vector retrieval merged, then strict reranking and grounded answer generation.',
     backendFlowId: 'flow-graphrag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-cleaning',
@@ -724,7 +724,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'router-rag',
     label: 'Router RAG',
-    description: 'Query Router routes the question to one of three specialised retrieval paths, then RRF-merge → reranker → LLM.',
+    description: 'Intent-based path routing with tighter retrieval budgets, RRF merge and strict reranking before answering.',
     backendFlowId: 'flow-router-rag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
@@ -736,7 +736,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'long-context-rag',
     label: 'Long-Context RAG',
-    description: 'Large 2.5k-token chunks, ingestion-time LLM summaries cached in Redis, pyramid re-ordering, 200k-context generator.',
+    description: 'Long-context retrieval with stricter evidence pruning and grounded generation tuned for benchmark stability.',
     backendFlowId: 'flow-lcrag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
@@ -747,7 +747,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'corrective-rag',
     label: 'Corrective RAG',
-    description: 'Retrieves, evaluates relevance, and corrects with web search / query rewrite when the evidence is weak.',
+    description: 'Corrective pipeline: retrieve, score relevance, refine evidence, and only then generate with strict grounding.',
     backendFlowId: 'flow-crag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
@@ -759,7 +759,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'multimodal-rag',
     label: 'Multi-Modal RAG',
-    description: 'Combines text and image inputs for vision-aware retrieval and answer generation.',
+    description: 'Unified text+image retrieval with stricter reranking and grounded multimodal generation.',
     backendFlowId: 'flow-mmrag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-chunking',
@@ -770,7 +770,7 @@ export const RAG_BLUEPRINTS = [
   {
     id: 'modular-rag',
     label: 'Modular RAG',
-    description: 'Composable pre-/retrieval/post modules with guardrails, PII redaction and reflection — production-grade default.',
+    description: 'Composable enterprise stack with tightened retrievers, stricter reranking and grounded low-entropy generation.',
     backendFlowId: 'flow-modular-rag-001',
     templateKeys: [
       'user-actor', 'input-question', 'input-upload', 'process-cleaning',
@@ -781,6 +781,10 @@ export const RAG_BLUEPRINTS = [
     ],
   },
 ];
+
+export const BENCHMARK_RECOMMENDED_BLUEPRINT_FLOW_IDS = new Set(
+  RAG_BLUEPRINTS.map((bp) => bp.backendFlowId).filter(Boolean)
+);
 
 export const templateByKey = NODE_LIBRARY.reduce((accumulator, item) => {
   accumulator[item.key] = item;

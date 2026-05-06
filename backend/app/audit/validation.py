@@ -382,9 +382,9 @@ def _llm_judge(
             ],
             model=model,
             temperature=0.0,
-            max_tokens=900,
+            max_tokens=450,
             response_format="json",
-            timeout=90.0,
+            timeout=25.0,
         )
     except Exception:  # noqa: BLE001
         return None

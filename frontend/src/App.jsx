@@ -1,9 +1,10 @@
-import { Activity, ChevronUp, FileText, Globe, Info, Menu, MessageSquare, Search, Settings, Workflow, X, LogOut } from 'lucide-react';
+import { Activity, ChevronUp, ClipboardList, FileText, Globe, Info, Menu, MessageSquare, Search, Settings, Workflow, X, LogOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import NavItem from './components/NavItem';
 import CanvasTab from './components/tabs/CanvasTab';
 import ChatTab from './components/tabs/ChatTab';
 import DocumentsTab from './components/tabs/DocumentsTab';
+import AuditTab from './components/tabs/AuditTab';
 import HealthTab from './components/tabs/HealthTab';
 import SettingsTab from './components/tabs/SettingsTab';
 import SharedSpaceTab from './components/tabs/SharedSpaceTab';
@@ -16,6 +17,7 @@ const TAB_TITLES = {
   chat: 'Intelligent Reasoning Interface',
   documents: 'Knowledge Ecosystem',
   canvas: 'No-Code RAG Canvas',
+  audit: 'RAG Audit Arena',
   'shared-space': 'Shared Space',
   health: 'LLM Status & Health',
   settings: 'Infrastructure Config',
@@ -268,6 +270,15 @@ const App = () => {
       );
     }
 
+    if (activeTab === 'audit') {
+      return (
+        <>
+          {canvasPane}
+          {overlayPane(<AuditTab />)}
+        </>
+      );
+    }
+
     if (activeTab === 'health') {
       return (
         <>
@@ -415,6 +426,7 @@ const App = () => {
               <NavItem icon={<MessageSquare size={18} />} label="XRAG Assistant" active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<FileText size={18} />} label="Knowledge Base" active={activeTab === 'documents'} onClick={() => setActiveTab('documents')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<Workflow size={18} />} label="Canvas" active={activeTab === 'canvas'} onClick={() => setActiveTab('canvas')} collapsed={isMainNavCollapsed} />
+              <NavItem icon={<ClipboardList size={18} />} label="Audit Arena" active={activeTab === 'audit'} onClick={() => setActiveTab('audit')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<Globe size={18} />} label="Shared Space" active={activeTab === 'shared-space'} onClick={() => setActiveTab('shared-space')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<Activity size={18} />} label="Model Health" active={activeTab === 'health'} onClick={() => setActiveTab('health')} collapsed={isMainNavCollapsed} />
               <NavItem icon={<Settings size={18} />} label="System Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} collapsed={isMainNavCollapsed} />

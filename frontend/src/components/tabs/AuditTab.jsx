@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { xragApi } from '../../services/xragApi';
+import { BENCHMARK_RECOMMENDED_BLUEPRINT_FLOW_IDS } from './canvas/canvasConfig';
 
 const MAX_Q = 15;
 
@@ -96,6 +97,7 @@ const METRIC_INFO = {
   hallucination_rate: 'Hallucination Rate (RAGChecker) — fraction of model claims NOT supported by any retrieved context. LOWER is better; the table inverts it for the bar.',
   context_utilization: 'Context Utilization (RAGChecker) — fraction of gold claims that are actually present in the retrieved context. The retrieval ceiling — if this is low the LLM can’t win.',
   overall_score: 'Overall — mean of all positive RAGAS+RAGChecker metrics with hallucination inverted. Use as the primary ranking signal.',
+  estimated_cost: 'Estimated Cost — rough USD estimate derived from token heuristics and public per-model pricing defaults. Useful for relative comparison, not billing-accurate accounting.',
 };
 
 // Small dotted-underline label + tooltip on hover. Native `title` attribute
@@ -488,6 +490,106 @@ const ReportView = ({ report, onClose }) => {
 const mColor = (v) => { const p = v * 100; return p >= 80 ? 'text-emerald-700' : p >= 50 ? 'text-amber-700' : 'text-rose-700'; };
 const mBg = (v) => { const p = v * 100; return p >= 80 ? 'bg-emerald-500' : p >= 50 ? 'bg-amber-500' : 'bg-rose-500'; };
 
+const METRIC_GROUPS = [
+  {
+    title: 'Lexical baselines', color: 'slate',
+    items: [
+      { key: 'Exact Match', def: 'Case-insensitive full-string equality between the model answer and the gold answer. Extremely strict — useful as a lower-bound sanity check. Rarely above 0 for free-form answers.' },
+      { key: 'Character Similarity', def: 'Python SequenceMatcher ratio (0–1). Measures how many contiguous character runs are shared. More forgiving than Exact Match towards whitespace, punctuation and minor paraphrasing.' },
+      { key: 'Token F1', def: 'SQuAD-style word-overlap F1 score. Precision = shared tokens ÷ answer tokens; Recall = shared tokens ÷ gold tokens; F1 = harmonic mean. The standard reading-comprehension metric. Scale: 0–1.' },
+    ],
+  },
+  {
+    title: 'RAGAS — reference-free quality', color: 'amber',
+    items: [
+      { key: 'Faithfulness', def: 'Fraction of atomic claims in the model answer that can be directly inferred from the retrieved context. A claim is hallucinated if it cannot be traced to any retrieved chunk. Higher = less hallucination. Scale: 0–1.' },
+      { key: 'Answer Relevancy', def: 'How directly and completely the answer addresses the question, measured semantically. Penalises off-topic or overly verbose answers. Scale: 0–1.' },
+      { key: 'Context Precision', def: 'Of all retrieved chunks, what fraction are genuinely relevant to the question. Penalises noisy or tangential retrieval — a high-precision retriever brings only what is needed. Scale: 0–1.' },
+      { key: 'Context Recall', def: 'Do the retrieved chunks collectively contain all the information required to produce the gold answer? Low recall means the retriever missed critical passages. Scale: 0–1.' },
+      { key: 'Answer Similarity', def: 'Semantic (embedding-based) similarity between the model answer and the gold answer. Captures paraphrase overlap that token F1 misses. Scale: 0–1.' },
+      { key: 'Answer Correctness', def: 'Weighted combination of factual F1 overlap and semantic similarity against the gold answer. The single closest "overall quality" RAGAS score. Scale: 0–1.' },
+    ],
+  },
+  {
+    title: 'RAGChecker — claim-level decomposition', color: 'rose',
+    items: [
+      { key: 'Claim Recall', def: 'The answer is decomposed into atomic claims; this metric measures what fraction of the gold answer\'s claims the model answer also expresses. Captures completeness. Scale: 0–1.' },
+      { key: 'Claim Precision', def: 'Of all atomic claims made by the model, what fraction are supported by the retrieved context. Measures groundedness — a low-precision answer makes up facts not found in context. Scale: 0–1.' },
+      { key: 'Hallucination Rate ↓', def: 'Fraction of model-answer claims that are NOT supported by any retrieved chunk. Lower is better. The bar in the table is inverted so a longer bar always means a better-performing flow. Scale: 0–1 (lower = better).' },
+      { key: 'Context Utilization', def: 'Fraction of the gold answer\'s claims that actually appear in the retrieved context. This is the retrieval ceiling: if utilization is 50 % the LLM could never fully reconstruct the gold answer even with perfect reasoning. Scale: 0–1.' },
+    ],
+  },
+  {
+    title: 'Performance & coverage', color: 'sky',
+    items: [
+      { key: 'Avg Latency', def: 'Mean wall-clock time from question input to final response, measured per question. Includes all pipeline steps (retrieval, reranking, LLM call). Green < 2 s, amber < 8 s, red ≥ 8 s.' },
+      { key: 'Min / Max Latency', def: 'The fastest and slowest individual question response times for the flow. Large spread indicates high variance — possibly from retrieval cache misses or LLM throttling.' },
+      { key: 'P95 Latency', def: '95th percentile latency. Captures tail performance better than averages and highlights occasional slow requests.' },
+      { key: 'Errors', def: 'Number of questions where the flow returned an error or exceeded the per-cell timeout (default 180 s). Errors are excluded from metric averages. 0 is ideal.' },
+      { key: 'Success Rate', def: 'Share of successful, non-error answers. Computed as 1 − (error_count / question_count). Scale: 0–1.' },
+      { key: 'Avg Chunks', def: 'Average number of context chunks the flow retrieved per question. Higher is broader coverage; too high can hurt faithfulness by introducing noisy context.' },
+      { key: 'Avg Tokens', def: 'Estimated prompt+completion tokens per question using a simple char-to-token heuristic. Useful for relative comparisons across flows.' },
+      { key: 'Avg/Total Cost', def: 'Estimated USD cost based on token estimates and public model pricing defaults. This is an operational estimate, not billing-grade metering.' },
+    ],
+  },
+  {
+    title: 'Composite', color: 'indigo',
+    items: [
+      { key: 'Overall Score', def: 'Arithmetic mean of all positive RAGAS and RAGChecker metrics with Hallucination Rate replaced by (1 − Hallucination Rate). Use this as the primary single-number ranking signal.' },
+    ],
+  },
+];
+
+const COLOR_MAP = {
+  slate: { border: 'border-slate-200', header: 'bg-slate-50 text-slate-700', keyCol: 'text-slate-600 bg-slate-50' },
+  amber: { border: 'border-amber-200', header: 'bg-amber-50 text-amber-700', keyCol: 'text-amber-700 bg-amber-50' },
+  rose:  { border: 'border-rose-200',  header: 'bg-rose-50 text-rose-700',   keyCol: 'text-rose-700 bg-rose-50'   },
+  sky:   { border: 'border-sky-200',   header: 'bg-sky-50 text-sky-700',     keyCol: 'text-sky-700 bg-sky-50'     },
+  indigo:{ border: 'border-indigo-200',header: 'bg-indigo-50 text-indigo-700',keyCol: 'text-indigo-700 bg-indigo-50'},
+};
+
+const MetricGlossary = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen size={14} className="text-slate-500" />
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">Metric glossary</span>
+          <span className="text-[9px] text-slate-400 font-black">— full definitions of every score</span>
+        </div>
+        <ChevronRight size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && (
+        <div className="border-t border-slate-100 p-5 space-y-5">
+          {METRIC_GROUPS.map(g => {
+            const c = COLOR_MAP[g.color];
+            return (
+              <div key={g.title} className={`rounded-2xl border ${c.border} overflow-hidden`}>
+                <div className={`px-4 py-2 ${c.header} font-black text-[10px] uppercase tracking-wider`}>{g.title}</div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    {g.items.map(item => (
+                      <tr key={item.key} className="border-t border-slate-100 first:border-t-0">
+                        <td className={`px-4 py-2.5 font-black whitespace-nowrap align-top w-44 ${c.keyCol}`}>{item.key}</td>
+                        <td className="px-4 py-2.5 text-slate-600 leading-relaxed">{item.def}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BenchmarkPanel = () => {
   const [subTab, setSubTab] = useState('runs');
   const [bview, setBview] = useState('list');
@@ -511,6 +613,7 @@ const BenchmarkPanel = () => {
   const [runName, setRunName] = useState('');
   const [selectedDs, setSelectedDs] = useState('');
   const [selectedFlows, setSelectedFlows] = useState([]);
+  const [showRecommendedOnly, setShowRecommendedOnly] = useState(true);
   const [enableRagValidation, setEnableRagValidation] = useState(true);
   const [useLlmJudge, setUseLlmJudge] = useState(true);
   const [judgeModel, setJudgeModel] = useState('');
@@ -520,6 +623,12 @@ const BenchmarkPanel = () => {
 
   // Report
   const [bmReport, setBmReport] = useState(null);
+
+  const visibleBenchmarkFlows = useMemo(() => {
+    if (!showRecommendedOnly) return backendFlows;
+    const curated = backendFlows.filter((flow) => BENCHMARK_RECOMMENDED_BLUEPRINT_FLOW_IDS.has(flow.id));
+    return curated.length > 0 ? curated : backendFlows;
+  }, [backendFlows, showRecommendedOnly]);
 
   const loadRuns = async () => { setRunsLoading(true); try { setRuns(await xragApi.listBenchmarkRuns() || []); } catch {} finally { setRunsLoading(false); } };
   // Silent variant used by the background polling tick — does NOT toggle the
@@ -577,7 +686,7 @@ const BenchmarkPanel = () => {
 
   const handleStartRun = async () => {
     if (!selectedDs) { setRunError('Select a dataset.'); return; }
-    if (selectedFlows.length < 2) { setRunError('Select at least 2 flows.'); return; }
+    if (selectedFlows.length < 1) { setRunError('Select at least 1 flow.'); return; }
     setStarting(true); setRunError('');
     try {
       const r = await xragApi.runBenchmark(selectedDs, {
@@ -1247,6 +1356,18 @@ const BenchmarkPanel = () => {
                   <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700">
                     <BookOpen size={9} /> {ds.entry_count} Q
                   </span>
+                  {ds.document_count > 0 ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-700">
+                      <Database size={9} /> {ds.document_count} docs
+                    </span>
+                  ) : (
+                    <span
+                      title="No corpus documents linked. The benchmark will search the entire knowledge base. Re-import with 'Upload documents' enabled to scope retrieval."
+                      className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-rose-600 cursor-help"
+                    >
+                      <AlertCircle size={9} /> No corpus
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => { setRunName(''); setSelectedDs(ds.id); setSelectedFlows([]); setRunError(''); setBview('start-run'); }}
@@ -1363,9 +1484,21 @@ const BenchmarkPanel = () => {
             )}
           </div>
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Flows to benchmark ({selectedFlows.length} selected)</label>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
+                Flows to benchmark ({selectedFlows.length} selected)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowRecommendedOnly((v) => !v)}
+                className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-wider transition ${showRecommendedOnly ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:text-slate-700'}`}
+                title="Show only curated blueprint flows for more stable benchmark comparisons"
+              >
+                {showRecommendedOnly ? 'Recommended only' : 'Show all flows'}
+              </button>
+            </div>
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {backendFlows.map((flow) => {
+              {visibleBenchmarkFlows.map((flow) => {
                 const sel = selectedFlows.includes(flow.id);
                 const idx = selectedFlows.indexOf(flow.id);
                 const accent = idx >= 0 ? ACCENT_PALETTE[idx % ACCENT_PALETTE.length] : null;
@@ -1387,6 +1520,14 @@ const BenchmarkPanel = () => {
           </div>
           {runError && (
             <p className="flex items-center gap-1.5 rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700 font-black"><AlertCircle size={13} /> {runError}</p>
+          )}
+          {selectedDs && datasets.find(d => d.id === selectedDs)?.document_count === 0 && (
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-300 px-3 py-2.5">
+              <AlertCircle size={13} className="text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-amber-800 leading-snug">
+                <span className="font-black">No corpus documents.</span> This dataset has no linked documents — retrieval will fall back to your entire knowledge base. For accurate scoped results, delete and re-import this dataset with <em>Upload documents</em> enabled.
+              </p>
+            </div>
           )}
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
@@ -1458,7 +1599,7 @@ const BenchmarkPanel = () => {
           )}
           <div className="flex gap-2">
             <button type="button" onClick={() => setBview('list')} className="flex-1 rounded-2xl border border-slate-200 py-2.5 text-xs font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50">Cancel</button>
-            <button type="button" onClick={handleStartRun} disabled={starting || !selectedDs || selectedFlows.length < 2}
+            <button type="button" onClick={handleStartRun} disabled={starting || !selectedDs || selectedFlows.length < 1}
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed">
               {starting ? <Loader2 size={13} className="animate-spin" /> : <PlayCircle size={13} />} {starting ? 'Running…' : 'Run benchmark'}
             </button>
@@ -1547,7 +1688,7 @@ const BenchmarkPanel = () => {
             </div>
           )}
 
-          {bmReport.flow_summaries.length > 0 && (() => {
+          {bmReport.status === 'finished' && bmReport.flow_summaries.length > 1 && (() => {
             const best = bmReport.flow_summaries[0];
             const hasRag = (best.avg_overall_score || 0) > 0;
             return (
@@ -1569,7 +1710,15 @@ const BenchmarkPanel = () => {
             );
           })()}
 
-          <div className="rounded-3xl border border-slate-200 bg-white overflow-hidden">
+          {bmReport.status === 'finished' && bmReport.flow_summaries.length === 1 && (
+            <div className="rounded-3xl bg-gradient-to-br from-slate-50 to-indigo-50 border-2 border-slate-200 p-6 text-center">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Single-flow benchmark</p>
+              <p className="text-xl font-black text-slate-800">{bmReport.flow_summaries[0].flow_name}</p>
+              <p className="text-xs text-slate-500 mt-1">No winner is declared when only one flow is evaluated.</p>
+            </div>
+          )}
+
+          {bmReport.status === 'finished' && <div className="rounded-3xl border border-slate-200 bg-white overflow-hidden">
             <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2 flex-wrap">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-700">Lexical metrics</p>
@@ -1616,9 +1765,112 @@ const BenchmarkPanel = () => {
             <div className="px-5 py-2.5 border-t border-slate-100 bg-slate-50">
               <p className="text-[9px] text-slate-400 font-black">Hover any column header for the full definition.</p>
             </div>
-          </div>
+          </div>}
 
-          {bmReport.flow_summaries.some(fs => (fs.avg_overall_score || 0) > 0) && (() => {
+          {/* ── Performance & Coverage table ── */}
+          {bmReport.status === 'finished' && (() => {
+            const speedColor = (ms) => ms < 2000 ? 'text-emerald-600' : ms < 8000 ? 'text-amber-600' : 'text-rose-600';
+            const errColor = (n, total) => n === 0 ? 'text-emerald-600' : n / total > 0.3 ? 'text-rose-600' : 'text-amber-600';
+            const totalQ = bmReport.question_count || 1;
+            const money = (usd) => {
+              const v = Number(usd || 0);
+              if (v === 0) return '$0';
+              if (v < 0.0001) return `$${v.toExponential(2)}`;
+              if (v < 0.01) return `$${v.toFixed(6)}`;
+              return `$${v.toFixed(4)}`;
+            };
+            return (
+              <div className="rounded-3xl border border-sky-200 bg-white overflow-hidden">
+                <div className="px-5 py-3 border-b border-sky-100 bg-sky-50/40">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-sky-700">Performance &amp; coverage</p>
+                  <p className="text-[9px] text-sky-500/80 font-black mt-0.5">Latency, reliability, token usage and estimated generation cost.</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-slate-50">
+                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-wider text-slate-500">Flow</th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Avg latency" info="Average wall-clock time from question submission to final answer, measured per question. Lower is better." />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Min / Max" info="Fastest and slowest individual question response times for this flow." />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="P95" info="95th percentile latency. Better tail-latency signal than averages." />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Errors" info="Number of questions where the flow returned an error or timed out. 0 is ideal." />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Success" info="Share of successful (non-error) answers." />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Avg chunks" info="Average number of context chunks the flow retrieved per question. Higher generally means broader evidence coverage (up to a point)." />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Avg tokens" info="Estimated prompt + completion tokens per question." />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Avg cost" info={METRIC_INFO.estimated_cost} />
+                        </th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <MetricHeader label="Total cost" info="Estimated total USD cost across all questions for this flow." />
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bmReport.flow_summaries.map((fs, i) => {
+                        const accent = ACCENT_PALETTE[i % ACCENT_PALETTE.length];
+                        return (
+                          <tr key={fs.flow_id} className="border-b border-slate-50 last:border-0 hover:bg-sky-50/20">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[9px] font-black text-white ${accent.bg}`}>{i + 1}</span>
+                                <span className="font-black text-slate-700">{fs.flow_name}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className={`font-black text-sm ${speedColor(fs.avg_duration_ms || 0)}`}>{fmt(fs.avg_duration_ms || 0)}</span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className="text-[10px] text-slate-500 font-black">{fmt(fs.min_duration_ms || 0)} / {fmt(fs.max_duration_ms || 0)}</span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className={`font-black text-sm ${speedColor(fs.p95_duration_ms || 0)}`}>{fmt(fs.p95_duration_ms || 0)}</span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className={`font-black text-sm ${errColor(fs.error_count || 0, totalQ)}`}>{fs.error_count || 0}</span>
+                              {(fs.error_count || 0) > 0 && (
+                                <span className="ml-1 text-[9px] text-slate-400">({Math.round((fs.error_count / totalQ) * 100)}%)</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className="font-black text-sm text-emerald-700">{Math.round((fs.success_rate || 0) * 100)}%</span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className="font-black text-sm text-slate-700">{(fs.avg_retrieved_context_count || 0).toFixed(1)}</span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className="font-black text-sm text-slate-700">{Math.round(fs.avg_total_tokens || 0)}</span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className="font-black text-sm text-slate-700">{money(fs.avg_estimated_cost_usd)}</span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className="font-black text-sm text-slate-700">{money(fs.total_estimated_cost_usd)}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {bmReport.status === 'finished' && bmReport.flow_summaries.some(fs => (fs.avg_overall_score || 0) > 0) && (() => {
             // Common renderer for a metric cell with bar.
             const renderCell = (value, opts = {}) => {
               const { invert = false, accent = false } = opts;
@@ -1775,7 +2027,7 @@ const BenchmarkPanel = () => {
             );
           })()}
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
+          {bmReport.status === 'finished' && <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Per-question breakdown</p>
             {[...new Set(bmReport.results.map(r => r.question_index))].sort((a, b) => a - b).map(qi => {
               const qResults = bmReport.results.filter(r => r.question_index === qi);
@@ -1820,11 +2072,12 @@ const BenchmarkPanel = () => {
                 </div>
               );
             })}
-          </div>
+          </div>}
+
+          {/* ── Metric glossary ── */}
+          {bmReport.status === 'finished' && <MetricGlossary />}
         </div>
       )}
-
-      {/* HUGGINGFACE IMPORT MODAL */}
       {hfOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={() => !hfBusy && setHfOpen(false)}>
           <div className="w-full max-w-2xl max-h-[92vh] rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
@@ -2266,14 +2519,20 @@ const AuditTab = () => {
     if (!currentRound || !activeSession) return;
     try {
       await xragApi.auditVote(activeSession.id, currentRound.question_index, winnerLabel);
-      setVoted(true);
-      // Refresh session
+      // Refresh session first so the voted round appears in history with its winner label
       const s = await xragApi.getAuditSession(activeSession.id);
       setActiveSession(s);
       if (s.status === 'finished') {
         const r = await xragApi.getAuditReport(s.id);
         setReport(r);
+        setView('report');
         await loadSessions();
+      } else {
+        // Clear current round → it now lives in "Previous rounds"; reset for next question
+        setCurrentRound(null);
+        setVoted(false);
+        setRevealed(false);
+        setTimeout(() => questionRef.current?.focus(), 50);
       }
     } catch (e) {
       alert(e.message);
