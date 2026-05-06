@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 52">
+  <!-- "aws" wordmark -->
+  <text
+    x="3" y="36"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="36"
+    font-weight="900"
+    fill="#FF9900"
+    letter-spacing="-1"
+  >aws</text>
+  <!-- Smile arrow -->
+  <path
+    d="M 4 44 Q 40 57 74 44"
+    stroke="#FF9900"
+    stroke-width="3.5"
+    fill="none"
+    stroke-linecap="round"
+  />
+  <polygon points="74,44 66,40 67,48" fill="#FF9900"/>
+</svg>

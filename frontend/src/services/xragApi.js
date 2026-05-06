@@ -130,6 +130,8 @@ export const xragApi = {
   fetchVectorProvidersRegistry: () => requestJson('/api/registry/vector-providers'),
   fetchGraphProvidersRegistry: () => requestJson('/api/registry/graph-providers'),
   fetchRerankersRegistry: () => requestJson('/api/registry/rerankers'),
+  fetchRetrieverProvidersRegistry: () => requestJson('/api/registry/retriever-providers'),
+  fetchEmbeddingProvidersRegistry: () => requestJson('/api/registry/embedding-providers'),
   // Server-side proxy to OpenRouter — keeps the API key off the client.
   listEmbeddingModels: () => requestJson('/api/models/embeddings'),
   listRerankerModels: () => requestJson('/api/models/rerankers'),

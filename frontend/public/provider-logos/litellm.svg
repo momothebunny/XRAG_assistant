@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Concentric blue circles (outermost to innermost) -->
+  <circle cx="50" cy="50" r="48" fill="#b8e4f9" opacity="0.5"/>
+  <circle cx="50" cy="50" r="41" fill="#7dcef5" opacity="0.55"/>
+  <circle cx="50" cy="50" r="34" fill="#42b9f0" opacity="0.65"/>
+  <circle cx="50" cy="50" r="27" fill="#1aa3e8" opacity="0.8"/>
+  <circle cx="50" cy="50" r="20" fill="#0d90d6"/>
+  <!-- Bullet train body (white/light) -->
+  <!-- Main body -->
+  <rect x="20" y="44" width="60" height="16" rx="4" fill="white"/>
+  <!-- Nose cone (pointed left) -->
+  <path d="M20,44 Q10,52 20,60 Z" fill="white"/>
+  <!-- Blue stripe on body -->
+  <rect x="20" y="52" width="60" height="5" rx="0" fill="#2a7fc9" opacity="0.7"/>
+  <!-- Tail end (flat right side with slight taper) -->
+  <path d="M80,44 Q84,46 84,52 Q84,58 80,60 L80,44 Z" fill="#e8f4fb"/>
+  <!-- Windows row -->
+  <rect x="30" y="46" width="7" height="5" rx="1.5" fill="#b0d8f0"/>
+  <rect x="40" y="46" width="7" height="5" rx="1.5" fill="#b0d8f0"/>
+  <rect x="50" y="46" width="7" height="5" rx="1.5" fill="#b0d8f0"/>
+  <rect x="60" y="46" width="7" height="5" rx="1.5" fill="#b0d8f0"/>
+  <!-- Headlight / front glass (amber tint) -->
+  <ellipse cx="16" cy="52" rx="3.5" ry="4" fill="#f5c842" opacity="0.9"/>
+  <!-- Undercarriage line -->
+  <line x1="20" y1="60" x2="80" y2="60" stroke="#cce8f6" stroke-width="0.8"/>
+  <!-- Wheels suggestion -->
+  <ellipse cx="32" cy="61" rx="3.5" ry="2" fill="#1878bb"/>
+  <ellipse cx="48" cy="61" rx="3.5" ry="2" fill="#1878bb"/>
+  <ellipse cx="64" cy="61" rx="3.5" ry="2" fill="#1878bb"/>
+</svg>
