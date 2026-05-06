@@ -872,42 +872,63 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
   background-color: rgb(15 23 42) !important;
 }
 
-/* Pastel-50 section backgrounds → dark tinted equivalents */
-.xrag-audit-theme [class*="bg-amber-50"],
-.xrag-audit-theme [class*="bg-orange-50"],
-.xrag-audit-theme [class*="bg-yellow-50"] {
+/* Pastel-50 section backgrounds → dark tinted equivalents
+   Use [class~=] for exact word match + [class*="/"] for opacity variants
+   to avoid accidentally matching -500/-600 etc. bg classes */
+.xrag-audit-theme [class~="bg-amber-50"],
+.xrag-audit-theme [class*="bg-amber-50/"],
+.xrag-audit-theme [class~="bg-orange-50"],
+.xrag-audit-theme [class*="bg-orange-50/"],
+.xrag-audit-theme [class~="bg-yellow-50"],
+.xrag-audit-theme [class*="bg-yellow-50/"] {
   background-color: rgb(41 20 0 / 0.55) !important;
 }
-.xrag-audit-theme [class*="bg-sky-50"],
-.xrag-audit-theme [class*="bg-cyan-50"] {
+.xrag-audit-theme [class~="bg-sky-50"],
+.xrag-audit-theme [class*="bg-sky-50/"],
+.xrag-audit-theme [class~="bg-cyan-50"],
+.xrag-audit-theme [class*="bg-cyan-50/"] {
   background-color: rgb(2 38 60 / 0.55) !important;
 }
-.xrag-audit-theme [class*="bg-rose-50"],
-.xrag-audit-theme [class*="bg-red-50"],
-.xrag-audit-theme [class*="bg-pink-50"] {
+.xrag-audit-theme [class~="bg-rose-50"],
+.xrag-audit-theme [class*="bg-rose-50/"],
+.xrag-audit-theme [class~="bg-red-50"],
+.xrag-audit-theme [class*="bg-red-50/"],
+.xrag-audit-theme [class~="bg-pink-50"],
+.xrag-audit-theme [class*="bg-pink-50/"] {
   background-color: rgb(59 7 25 / 0.55) !important;
 }
-.xrag-audit-theme [class*="bg-indigo-50"],
-.xrag-audit-theme [class*="bg-violet-50"],
-.xrag-audit-theme [class*="bg-purple-50"],
-.xrag-audit-theme [class*="bg-fuchsia-50"] {
+.xrag-audit-theme [class~="bg-indigo-50"],
+.xrag-audit-theme [class*="bg-indigo-50/"],
+.xrag-audit-theme [class~="bg-violet-50"],
+.xrag-audit-theme [class*="bg-violet-50/"],
+.xrag-audit-theme [class~="bg-purple-50"],
+.xrag-audit-theme [class*="bg-purple-50/"],
+.xrag-audit-theme [class~="bg-fuchsia-50"],
+.xrag-audit-theme [class*="bg-fuchsia-50/"] {
   background-color: rgb(26 16 69 / 0.55) !important;
 }
-.xrag-audit-theme [class*="bg-emerald-50"],
-.xrag-audit-theme [class*="bg-green-50"],
-.xrag-audit-theme [class*="bg-teal-50"] {
+.xrag-audit-theme [class~="bg-emerald-50"],
+.xrag-audit-theme [class*="bg-emerald-50/"],
+.xrag-audit-theme [class~="bg-green-50"],
+.xrag-audit-theme [class*="bg-green-50/"],
+.xrag-audit-theme [class~="bg-teal-50"],
+.xrag-audit-theme [class*="bg-teal-50/"] {
   background-color: rgb(2 44 30 / 0.55) !important;
 }
-.xrag-audit-theme [class*="bg-lime-50"] {
+.xrag-audit-theme [class~="bg-lime-50"],
+.xrag-audit-theme [class*="bg-lime-50/"] {
   background-color: rgb(10 44 0 / 0.55) !important;
 }
 
 /* Gradient from/to pastel-50 stops → dark equivalents */
-.xrag-audit-theme [class*="from-amber-50"] {
+.xrag-audit-theme [class~="from-amber-50"],
+.xrag-audit-theme [class*="from-amber-50/"] {
   --tw-gradient-from: rgb(41 20 0) var(--tw-gradient-from-position) !important;
 }
-.xrag-audit-theme [class*="to-indigo-50"],
-.xrag-audit-theme [class*="to-violet-50"] {
+.xrag-audit-theme [class~="to-indigo-50"],
+.xrag-audit-theme [class*="to-indigo-50/"],
+.xrag-audit-theme [class~="to-violet-50"],
+.xrag-audit-theme [class*="to-violet-50/"] {
   --tw-gradient-to: rgb(26 16 69) var(--tw-gradient-to-position) !important;
 }
 
