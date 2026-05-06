@@ -255,7 +255,7 @@ const SessionCard = ({ session, onOpen, onDelete }) => {
 
       <div className="relative flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-amber-600 shadow-md shadow-indigo-500/30 flex items-center justify-center text-white">
+          <div className="shrink-0 w-11 h-11 rounded-2xl bg-slate-800 border border-indigo-500/50 shadow-md flex items-center justify-center text-indigo-400">
             <FlaskConical size={18} />
           </div>
           <div className="min-w-0">
