@@ -23,7 +23,7 @@
  * CONNECTION CONTRACT (CANONICAL_PIPELINE_RANK = 18)
  *    Inputs (one of, preferred order):
  *       - `chat_completion` from `brain-llm`
- *       - `text` from `brain-tts` (already voice-narrated)
+ *       - `text` from upstream answer-producing nodes
  *    Outputs: terminal  produces a `final_response` payload that the
  *     runner persists to the chat transcript.
  */
@@ -643,7 +643,7 @@ export default function ResponseSettingsPanel({
             checked={config.channels?.voice}
             onChange={(v) => setChannel('voice', v)}
             label="Voice (TTS)"
-            help="Read aloud via the brain-tts node."
+            help="Read aloud via the app voice delivery channel."
           />
           <ToggleChip
             checked={config.channels?.export}

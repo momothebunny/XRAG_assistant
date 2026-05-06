@@ -2623,8 +2623,6 @@ _REGISTRATIONS: list[NodeSpec] = [
         _exec_llm,
     ),
     NodeSpec("brain-hyde-gen", "Brain", "LLM: HyDE Gen", "Hypothetical doc generator", ["text"], ["text", "query"], {"model": "gpt-4o-mini", "hypothesesPerQuery": 3, "maxTokens": 256, "temperature": 0.7}, _exec_hyde),
-    NodeSpec("brain-stt", "Brain", "Speech-to-Text", "Audio transcript", ["audio"], ["text"], {"model": "whisper-large-v3", "language": "auto", "punctuate": True, "timestamps": False, "diarize": False}, _exec_stt),
-    NodeSpec("brain-tts", "Brain", "Text-to-Speech", "Voice output", ["text"], ["audio"], {"provider": "openai-tts", "voice": "alloy", "format": "mp3", "speed": 1.0, "streamOutput": False}, _exec_tts),
     NodeSpec("brain-router", "Brain", "Model Router", "Route by intent", ["text"], ["text"], {"strategy": "intent-first", "fallbackModel": "openai/gpt-4o-mini", "simpleModel": "openai/gpt-4o-mini", "complexModel": "openai/gpt-4o", "codeModel": "", "simpleQueryMaxLength": 120}, _exec_router),
     NodeSpec("brain-guardrails", "Brain", "Guardrails", "Policy filter", ["text"], ["text"], {"checkJailbreak": True, "checkPromptInjection": True, "checkToxicity": False, "checkOutputPII": False, "checkOutputToxicity": False, "checkOutputRelevance": False, "violationAction": "flag", "rejectionMessage": "This request cannot be processed due to policy restrictions."}, _exec_guardrails),
     NodeSpec(
@@ -2664,7 +2662,6 @@ _REGISTRATIONS: list[NodeSpec] = [
         _exec_vision,
     ),
     NodeSpec("output-response", "Output", "Final Response", "Surface to user", ["text"], ["answer"], {}, _exec_output),
-    NodeSpec("output-chat", "Output", "Chat Surface", "Send to chat", ["text"], ["answer"], {"mode": "markdown", "showTrace": True, "showCitations": True, "showMetrics": False, "multiTurn": True, "maxHistoryTurns": 10}, _exec_output),
 ]
 
 for _spec in _REGISTRATIONS:

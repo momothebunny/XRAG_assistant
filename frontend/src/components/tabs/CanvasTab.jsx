@@ -61,8 +61,6 @@ import HallucinationGuardSettingsPanel from '../canvas/HallucinationGuardSetting
 import ReflectionLoopSettingsPanel from '../canvas/ReflectionLoopSettingsPanel';
 import KVSessionStoreSettingsPanel from '../canvas/KVSessionStoreSettingsPanel';
 import HyDEGenSettingsPanel from '../canvas/HyDEGenSettingsPanel';
-import STTSettingsPanel from '../canvas/STTSettingsPanel';
-import TTSSettingsPanel from '../canvas/TTSSettingsPanel';
 import ModelRouterSettingsPanel from '../canvas/ModelRouterSettingsPanel';
 import GuardrailsSettingsPanel from '../canvas/GuardrailsSettingsPanel';
 import PiiRedactionSettingsPanel from '../canvas/PIIRedactionSettingsPanel';
@@ -238,7 +236,6 @@ const CANONICAL_PIPELINE_RANK = {
   'brain-guardrails': 14,
   'process-hallucination-guard': 15,
   'process-reflection-loop': 16,
-  'brain-tts': 17,
   'output-response': 18,
 };
 
@@ -3529,8 +3526,6 @@ const CanvasBoard = () => {
   const isReflectionLoopNode = selectedNode?.data?.templateKey === 'process-reflection-loop';
   const isKVStoreNode = selectedNode?.data?.templateKey === 'storage-keyvalue';
   const isHyDEGenNode = selectedNode?.data?.templateKey === 'brain-hyde-gen';
-  const isSTTNode = selectedNode?.data?.templateKey === 'brain-stt';
-  const isTTSNode = selectedNode?.data?.templateKey === 'brain-tts';
   const isModelRouterNode = selectedNode?.data?.templateKey === 'brain-router';
   const isGuardrailsNode = selectedNode?.data?.templateKey === 'brain-guardrails';
   const isImageUploadNode = selectedNode?.data?.templateKey === 'input-image';
@@ -5584,10 +5579,6 @@ const CanvasBoard = () => {
                     <KVSessionStoreSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
                   ) : isHyDEGenNode ? (
                     <HyDEGenSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-                  ) : isSTTNode ? (
-                    <STTSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
-                  ) : isTTSNode ? (
-                    <TTSSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
                   ) : isModelRouterNode ? (
                     <ModelRouterSettingsPanel value={selectedNode.data.config} onChange={updateSelectedNodeConfig} />
                   ) : isGuardrailsNode ? (

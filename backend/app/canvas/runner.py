@@ -203,7 +203,7 @@ class CanvasFlowRunner:
         context: RunContext,
     ) -> str:
         # Prefer explicit Output nodes.
-        output_keys = {"output-response", "output-chat"}
+        output_keys = {"output-response"}
         for node in flow.nodes:
             if node.template_key in output_keys:
                 bag = node_outputs.get(node.id, {})
