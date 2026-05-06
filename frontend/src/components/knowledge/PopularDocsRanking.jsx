@@ -42,7 +42,7 @@ const DocRow = ({ document, rank, compact = false }) => (
     </div>
     <div className="h-1 rounded-full bg-slate-200 overflow-hidden">
       <div
-        className="h-full rounded-full bg-gradient-to-r from-indigo-400 via-amber-400 to-yellow-500"
+        className="h-full rounded-full bg-amber-500"
         style={{ width: `${Math.max(8, Math.min(100, Math.round((document.token_estimate || 50) / 20)))}%` }}
       />
     </div>

@@ -373,7 +373,8 @@ const VectorScene = ({ canvasHeightClass, cubeSize, points }) => {
       ];
 
       edges.forEach(([fromIndex, toIndex]) => {
-        drawLine3D(context, scaledCubeVertices[fromIndex], scaledCubeVertices[toIndex], rect.width, rect.height, 'rgba(100,116,139,0.24)', 1);
+        drawLine3D(context, scaledCubeVertices[fromIndex], scaledCubeVertices[toIndex], rect.width, rect.height, 'rgba(245,158,11,0.42)', 2.2);
+        drawLine3D(context, scaledCubeVertices[fromIndex], scaledCubeVertices[toIndex], rect.width, rect.height, 'rgba(251,191,36,0.92)', 1.15);
       });
 
       const axisLength = cubeSize + 22;

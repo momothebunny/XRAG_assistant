@@ -1,7 +1,6 @@
 import { AlertCircle, AlertTriangle, BrainCircuit, CheckCircle2, ChevronDown, ChevronRight, Clock, Database, FileText, Files, Folder, FolderOpen, FolderUp, HardDrive, Layers, Loader2, RefreshCw, ShieldCheck, ShieldAlert, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { xragApi } from '../../services/xragApi';
-import { getCategoryColor } from '../../utils/categoryColor';
 import KnowledgeUploadProgress from './KnowledgeUploadProgress';
 
 const STATUS_BADGES = {
@@ -677,11 +676,11 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Documents', value: documents.length, Icon: Files, accent: 'from-indigo-500 to-indigo-600', tint: 'bg-indigo-50 text-indigo-600' },
-          { label: 'Indexed', value: totals.indexed, Icon: CheckCircle2, accent: 'from-emerald-500 to-emerald-600', tint: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Total chunks', value: totals.chunks, Icon: Layers, accent: 'from-amber-500 to-amber-600', tint: 'bg-amber-50 text-amber-600' },
-          { label: 'Est. tokens', value: totals.tokens.toLocaleString('en-US'), Icon: BrainCircuit, accent: 'from-amber-500 to-amber-600', tint: 'bg-amber-50 text-amber-600' },
-          { label: 'Total size', value: formatBytes(totals.bytes), Icon: HardDrive, accent: 'from-sky-500 to-sky-600', tint: 'bg-sky-50 text-sky-600' },
+          { label: 'Documents', value: documents.length, Icon: Files, tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Indexed', value: totals.indexed, Icon: CheckCircle2, tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Total chunks', value: totals.chunks, Icon: Layers, tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Est. tokens', value: totals.tokens.toLocaleString('en-US'), Icon: BrainCircuit, tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
+          { label: 'Total size', value: formatBytes(totals.bytes), Icon: HardDrive, tint: 'border border-amber-400/40 bg-slate-900 text-amber-300' },
         ].map((stat) => {
           const StatIcon = stat.Icon;
           return (
@@ -862,7 +861,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
           {!groupedDocuments.hasCategories ? (
             <>
               {documents.length > 0 && (
-                <div className="flex items-center gap-3 border-b border-amber-200 bg-gradient-to-r from-amber-50 via-amber-50/60 to-transparent px-4 py-2.5">
+                <div className="flex items-center gap-3 border-b border-slate-700 bg-slate-900 px-4 py-2.5">
                   <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-700 ring-1 ring-amber-200">
                     <AlertTriangle size={13} />
                   </div>
@@ -873,7 +872,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                     type="button"
                     onClick={handleClassify}
                     disabled={isClassifying}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-600 disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-amber-400 disabled:opacity-60"
                   >
                     {isClassifying ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                     {isClassifying ? 'Classifying...' : 'AI Classify'}
@@ -901,7 +900,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                 const uncatCollapsed = !!collapsedGroups[uncatKey];
                 return (
                   <div>
-                    <div className="flex w-full items-center gap-2.5 border-l-4 border-amber-400 bg-gradient-to-r from-amber-50 via-amber-50/60 to-transparent px-4 py-2.5">
+                    <div className="flex w-full items-center gap-2.5 border-l-4 border-amber-400 bg-slate-900 px-4 py-2.5">
                       <button
                         type="button"
                         onClick={() => toggleGroup(uncatKey)}
@@ -915,10 +914,10 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                         <div className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-100 text-amber-700 ring-1 ring-amber-200">
                           <AlertTriangle size={12} />
                         </div>
-                        <span className="text-xs font-black uppercase tracking-wider text-amber-800">
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-300">
                           Uncategorized
                         </span>
-                        <span className="text-[10px] font-medium text-amber-700/70">
+                        <span className="text-[10px] font-medium text-amber-200/70">
                           ({groupedDocuments.uncategorized.length} docs)
                         </span>
                       </button>
@@ -952,12 +951,12 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                       >
                         {isDeletingAll ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                       </button>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm ring-1 ring-amber-200">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-950 px-2 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm ring-1 ring-amber-400/40">
                         {groupedDocuments.uncategorized.length} dok
                       </span>
                     </div>
                     {!uncatCollapsed && (
-                      <ul className="divide-y divide-slate-100 bg-amber-50/20">
+                      <ul className="divide-y divide-slate-700 bg-slate-900/40">
                         {groupedDocuments.uncategorized.map((document) =>
                           renderDocumentRow(document, {
                             selectedDocumentId,
@@ -978,12 +977,10 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                 const catKey = `cat:${group.category}`;
                 const catCollapsed = !!collapsedGroups[catKey];
                 const totalDocs = group.subgroups.reduce((sum, sg) => sum + sg.docs.length, 0);
-                const color = getCategoryColor(group.category);
                 return (
                   <div key={group.category}>
                     <div
-                      className="flex w-full items-center gap-2.5 border-l-4 px-4 py-2.5 transition-colors"
-                      style={{ background: color.gradient, borderLeftColor: color.border }}
+                      className="flex w-full items-center gap-2.5 border-l-4 border-amber-400 bg-slate-900 px-4 py-2.5 transition-colors"
                     >
                       <button
                         type="button"
@@ -991,19 +988,16 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                         className="flex flex-1 items-center gap-2.5 text-left"
                       >
                         {catCollapsed ? (
-                          <ChevronRight size={14} style={{ color: color.iconText }} />
+                          <ChevronRight size={14} className="text-amber-300" />
                         ) : (
-                          <ChevronDown size={14} style={{ color: color.iconText }} />
+                          <ChevronDown size={14} className="text-amber-300" />
                         )}
                         {catCollapsed ? (
-                          <Folder size={16} style={{ color: color.iconText }} />
+                          <Folder size={16} className="text-amber-300" />
                         ) : (
-                          <FolderOpen size={16} style={{ color: color.iconText }} />
+                          <FolderOpen size={16} className="text-amber-300" />
                         )}
-                        <span
-                          className="text-xs font-black uppercase tracking-wider"
-                          style={{ color: color.textStrong }}
-                        >
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-300">
                           {group.category}
                         </span>
                       </button>
@@ -1016,8 +1010,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                         disabled={isReindexingAll}
                         title={`„${group.category}” folder(s) újrachunkolása (${totalDocs} db)`}
                         aria-label={`„${group.category}” folder(s) újrachunkolása`}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border bg-white text-slate-600 hover:bg-slate-50 hover:text-indigo-600 disabled:opacity-60"
-                        style={{ borderColor: color.border }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-amber-400/40 bg-slate-950 text-slate-300 hover:bg-slate-800 hover:text-amber-300 disabled:opacity-60"
                       >
                         {isReindexingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
                       </button>
@@ -1030,15 +1023,11 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                         disabled={isDeletingAll}
                         title={`„${group.category}” folder(s) törlése (${totalDocs} db)`}
                         aria-label={`„${group.category}” folder(s) törlése`}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 disabled:opacity-60"
-                        style={{ borderColor: color.border }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-amber-400/40 bg-slate-950 text-slate-300 hover:bg-slate-800 hover:text-amber-300 disabled:opacity-60"
                       >
                         {isDeletingAll ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                       </button>
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold shadow-sm ring-1"
-                        style={{ color: color.text, boxShadow: `0 0 0 1px ${color.ring}` }}
-                      >
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-950 px-2 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm ring-1 ring-amber-400/40">
                         {totalDocs} dok
                       </span>
                     </div>
