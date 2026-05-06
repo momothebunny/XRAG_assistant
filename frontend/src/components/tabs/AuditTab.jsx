@@ -2032,6 +2032,9 @@ const BenchmarkPanel = () => {
             );
           })()}
 
+          {/* ── Metric glossary ── */}
+          {bmReport.status === 'finished' && <MetricGlossary />}
+
           {bmReport.status === 'finished' && <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Per-question breakdown</p>
             {[...new Set(bmReport.results.map(r => r.question_index))].sort((a, b) => a - b).map(qi => {
@@ -2079,8 +2082,6 @@ const BenchmarkPanel = () => {
             })}
           </div>}
 
-          {/* ── Metric glossary ── */}
-          {bmReport.status === 'finished' && <MetricGlossary />}
         </div>
       )}
       {hfOpen && (
