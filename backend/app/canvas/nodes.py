@@ -17,9 +17,12 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections import deque
 from dataclasses import dataclass, field
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable
+from urllib.parse import urldefrag, urljoin, urlparse
 
 import httpx
 
@@ -693,11 +696,277 @@ def _exec_upload(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) 
 
 
 def _exec_url(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
-    depth = int(node.config.get("depth", 2))
+    def _int_cfg(cfg_obj: dict[str, Any], key: str, default: int) -> int:
+        raw_value = cfg_obj.get(key, default)
+        if raw_value is None:
+            return default
+        try:
+            return int(raw_value)
+        except (TypeError, ValueError):
+            return default
+
+    class _ScrapeParser(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__()
+            self.links: list[str] = []
+            self._text_parts: list[str] = []
+            self._title_parts: list[str] = []
+            self._skip_stack: list[str] = []
+            self._in_title = False
+
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            tag_l = tag.lower()
+            if tag_l in {"script", "style", "noscript", "svg", "canvas"}:
+                self._skip_stack.append(tag_l)
+            if tag_l == "title":
+                self._in_title = True
+            if tag_l == "a":
+                href = dict(attrs).get("href")
+                if href:
+                    self.links.append(href)
+            if tag_l in {"p", "div", "br", "li", "section", "article", "h1", "h2", "h3", "h4"}:
+                self._text_parts.append("\n")
+
+        def handle_endtag(self, tag: str) -> None:
+            tag_l = tag.lower()
+            if self._skip_stack and self._skip_stack[-1] == tag_l:
+                self._skip_stack.pop()
+            if tag_l == "title":
+                self._in_title = False
+            if tag_l in {"p", "div", "li", "section", "article", "h1", "h2", "h3", "h4"}:
+                self._text_parts.append("\n")
+
+        def handle_data(self, data: str) -> None:
+            if self._skip_stack:
+                return
+            text = data.strip()
+            if not text:
+                return
+            if self._in_title:
+                self._title_parts.append(text)
+            self._text_parts.append(text)
+
+        @property
+        def title(self) -> str:
+            return re.sub(r"\s+", " ", " ".join(self._title_parts)).strip()
+
+        @property
+        def text(self) -> str:
+            return re.sub(r"\s+", " ", " ".join(self._text_parts)).strip()
+
+    def _normalized_entry_url(raw_url: str) -> str | None:
+        value = (raw_url or "").strip()
+        if not value:
+            return None
+        parsed = urlparse(value)
+        if not parsed.scheme:
+            value = f"https://{value}"
+            parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return None
+        return value
+
+    def _first_url(cfg: dict[str, Any]) -> str:
+        single = str(cfg.get("url") or "").strip()
+        if single:
+            return single
+        raw_urls = cfg.get("urls")
+        if isinstance(raw_urls, list):
+            for item in raw_urls:
+                candidate = str(item or "").strip()
+                if candidate:
+                    return candidate
+        if isinstance(raw_urls, str):
+            return raw_urls.strip()
+        return ""
+
+    def _compile_pattern(pattern: str, name: str, warnings: list[str]) -> re.Pattern[str] | None:
+        value = (pattern or "").strip()
+        if not value:
+            return None
+        try:
+            return re.compile(value)
+        except re.error as exc:
+            warnings.append(f"Invalid {name} regex ignored: {exc}")
+            return None
+
+    def _is_allowed_url(
+        candidate_url: str,
+        seed_host: str,
+        include_pattern: re.Pattern[str] | None,
+        exclude_pattern: re.Pattern[str] | None,
+        follow_external: bool,
+    ) -> bool:
+        parsed = urlparse(candidate_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return False
+        if not follow_external and parsed.netloc != seed_host:
+            return False
+        if include_pattern and not include_pattern.search(candidate_url):
+            return False
+        if exclude_pattern and exclude_pattern.search(candidate_url):
+            return False
+        return True
+
+    def _fetch_robots_disallow(client: httpx.Client, start_url: str) -> list[str]:
+        parsed = urlparse(start_url)
+        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+        try:
+            response = client.get(robots_url)
+        except httpx.HTTPError:
+            return []
+        if response.status_code >= 400:
+            return []
+        rules: list[str] = []
+        applies = False
+        for raw in response.text.splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or ":" not in line:
+                continue
+            key, value = [part.strip() for part in line.split(":", 1)]
+            key_l = key.lower()
+            if key_l == "user-agent":
+                applies = value == "*"
+            elif key_l == "disallow" and applies and value:
+                rules.append(value)
+        return rules
+
+    def _is_blocked_by_robots(target_url: str, disallow_rules: list[str]) -> bool:
+        if not disallow_rules:
+            return False
+        path = urlparse(target_url).path or "/"
+        for rule in disallow_rules:
+            if rule == "/":
+                return True
+            if path.startswith(rule):
+                return True
+        return False
+
+    def _to_document(url: str, parser: _ScrapeParser, index: int, depth_level: int) -> dict[str, Any] | None:
+        text = parser.text
+        if not text:
+            return None
+        fallback_title = f"{urlparse(url).netloc}{urlparse(url).path}".rstrip("/") or url
+        return {
+            "id": f"web-{index}",
+            "title": parser.title or fallback_title,
+            "url": url,
+            "text": text,
+            "depth": depth_level,
+        }
+
+    cfg = node.config or {}
+    raw_url = _first_url(cfg)
+    start_url = _normalized_entry_url(raw_url)
+    depth = max(0, min(6, _int_cfg(cfg, "depth", 2)))
+    max_pages = max(1, min(200, _int_cfg(cfg, "maxPages", 20)))
+    follow_external_links = bool(cfg.get("followExternalLinks", False))
+    ignore_robots_txt = bool(cfg.get("ignoreRobotsTxt", False))
+    include_pattern_raw = str(cfg.get("includePattern") or "")
+    exclude_pattern_raw = str(cfg.get("excludePattern") or "")
+
+    warnings: list[str] = []
+    if not start_url:
+        return {
+            "documents": [],
+            "metadata": {
+                "step_type": "url_scraper",
+                "warnings": ["Entry URL is missing or invalid."],
+            },
+        }
+
+    include_pattern = _compile_pattern(include_pattern_raw, "includePattern", warnings)
+    exclude_pattern = _compile_pattern(exclude_pattern_raw, "excludePattern", warnings)
+
+    seed_host = urlparse(start_url).netloc
+    queue: deque[tuple[str, int]] = deque([(start_url, 0)])
+    visited: set[str] = set()
+    documents: list[dict[str, Any]] = []
+    errors: list[str] = []
+
+    with httpx.Client(
+        timeout=15.0,
+        follow_redirects=True,
+        headers={"User-Agent": "XRAG-Canvas-URLScraper/1.0"},
+    ) as client:
+        disallow_rules = [] if ignore_robots_txt else _fetch_robots_disallow(client, start_url)
+
+        while queue and len(documents) < max_pages:
+            current_url, level = queue.popleft()
+            current_url, _ = urldefrag(current_url)
+            if current_url in visited:
+                continue
+            visited.add(current_url)
+
+            if not _is_allowed_url(
+                current_url,
+                seed_host,
+                include_pattern,
+                exclude_pattern,
+                follow_external_links,
+            ):
+                continue
+
+            if not ignore_robots_txt and _is_blocked_by_robots(current_url, disallow_rules):
+                continue
+
+            try:
+                response = client.get(current_url)
+            except httpx.HTTPError as exc:
+                errors.append(f"{current_url} ({exc.__class__.__name__})")
+                continue
+
+            if response.status_code >= 400:
+                errors.append(f"{current_url} (HTTP {response.status_code})")
+                continue
+
+            content_type = (response.headers.get("content-type") or "").lower()
+            if "text/html" not in content_type and "application/xhtml+xml" not in content_type:
+                continue
+
+            parser = _ScrapeParser()
+            parser.feed(response.text)
+            document = _to_document(current_url, parser, len(documents), level)
+            if document is not None:
+                documents.append(document)
+
+            if level >= depth:
+                continue
+
+            for href in parser.links:
+                absolute = urljoin(current_url, href)
+                absolute, _ = urldefrag(absolute)
+                if absolute in visited:
+                    continue
+                if _is_allowed_url(
+                    absolute,
+                    seed_host,
+                    include_pattern,
+                    exclude_pattern,
+                    follow_external_links,
+                ):
+                    queue.append((absolute, level + 1))
+
+    # Surface only a small sample of crawl errors to keep trace output concise.
+    if len(errors) > 3:
+        errors = errors[:3] + [f"... and {len(errors) - 3} more"]
+
     return {
-        "documents": [
-            {"id": f"web-{depth}", "title": "scraped://example.com", "text": "Sample crawled web content used for retrieval demo."},
-        ]
+        "documents": documents,
+        "metadata": {
+            "step_type": "url_scraper",
+            "entry_url": start_url,
+            "depth": depth,
+            "max_pages": max_pages,
+            "follow_external_links": follow_external_links,
+            "ignore_robots_txt": ignore_robots_txt,
+            "visited_count": len(visited),
+            "document_count": len(documents),
+            "warnings": warnings,
+            "errors": errors,
+            "render_js_requested": bool(cfg.get("renderJs", False)),
+            "content_selector_requested": str(cfg.get("contentSelector") or ""),
+        },
     }
 
 
@@ -2529,7 +2798,26 @@ _REGISTRATIONS: list[NodeSpec] = [
         },
         _exec_upload,
     ),
-    NodeSpec("input-url", "Input", "URL Scraper", "Web crawler ingest", [], ["documents"], {"depth": 2}, _exec_url),
+    NodeSpec(
+        "input-url",
+        "Input",
+        "URL Scraper",
+        "Web crawler ingest",
+        [],
+        ["documents"],
+        {
+            "url": "",
+            "depth": 2,
+            "maxPages": 20,
+            "contentSelector": "",
+            "includePattern": "",
+            "excludePattern": "",
+            "followExternalLinks": False,
+            "renderJs": False,
+            "ignoreRobotsTxt": False,
+        },
+        _exec_url,
+    ),
     NodeSpec(
         "process-chunking",
         "Process",

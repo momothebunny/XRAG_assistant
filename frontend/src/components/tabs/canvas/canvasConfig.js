@@ -100,7 +100,17 @@ export const NODE_LIBRARY = [
     description: 'Web crawler ingestion',
     icon: Globe,
     colorClass: 'bg-violet-50 border-violet-200 text-violet-700',
-    config: { depth: 2 },
+    config: {
+      url: '',
+      depth: 2,
+      maxPages: 20,
+      contentSelector: '',
+      includePattern: '',
+      excludePattern: '',
+      followExternalLinks: false,
+      renderJs: false,
+      ignoreRobotsTxt: false,
+    },
   },
   {
     key: 'process-chunking',
