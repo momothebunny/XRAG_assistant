@@ -1,4 +1,4 @@
-"""Node executor registry for the canvas runtime.
+﻿"""Node executor registry for the canvas runtime.
 
 Each executor is a small callable with a Langflow-inspired signature:
 
@@ -161,6 +161,7 @@ def _load_vector_providers() -> dict[str, dict[str, Any]]:
         catalog[provider_id] = {
             "metrics": set(entry.get("supportedMetrics", [])),
             "default_env": entry.get("defaultApiKeyEnvVar"),
+            "credential_fields": entry.get("credentialFields", []),
         }
     return catalog
 
@@ -233,6 +234,36 @@ def _load_rerankers() -> dict[str, dict[str, Any]]:
 
 
 KNOWN_RERANKERS: dict[str, dict[str, Any]] = _load_rerankers()
+
+
+# ---------------------------------------------------------------------------
+# Retriever provider catalog — loaded from
+# ``backend/data/retriever_providers_registry.json`` and shared with
+# `RetrieverSettingsPanel`.
+# ---------------------------------------------------------------------------
+
+_RETRIEVER_PROVIDERS_REGISTRY_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "retriever_providers_registry.json"
+)
+
+
+def _load_retriever_providers() -> dict[str, dict[str, Any]]:
+    """Project the retriever registry into ``{provider_id: spec}`` for lookup."""
+    try:
+        raw = json.loads(_RETRIEVER_PROVIDERS_REGISTRY_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+    catalog: dict[str, dict[str, Any]] = {}
+    for entry in raw.get("providers", []):
+        provider_id = str(entry.get("id", "")).lower()
+        if not provider_id:
+            continue
+        catalog[provider_id] = entry
+    return catalog
+
+
+KNOWN_RETRIEVER_PROVIDERS: dict[str, dict[str, Any]] = _load_retriever_providers()
 
 
 @dataclass
@@ -854,7 +885,20 @@ def _exec_query_rewriter(node: CanvasNode, context: RunContext, inputs: dict[str
 
 
 def _exec_retriever(node: CanvasNode, context: RunContext, inputs: dict[str, Any]) -> dict[str, Any]:
+    retriever_provider = str(node.config.get("retrieverProvider", "vector-store")).lower()
+    provider_spec = KNOWN_RETRIEVER_PROVIDERS.get(retriever_provider)
+
     strategy = str(node.config.get("strategy", "similarity")).lower()
+    if provider_spec:
+        allowed = {
+            str(item).lower()
+            for item in (provider_spec.get("allowedStrategies") or [])
+            if item
+        }
+        default_strategy = str(provider_spec.get("defaultStrategy") or "").lower()
+        if strategy not in allowed and default_strategy:
+            strategy = default_strategy
+
     top_k = int(node.config.get("topK", 8))
     threshold = float(node.config.get("similarityThreshold", 0.0))
     include_metadata = bool(node.config.get("includeMetadata", True))
@@ -1028,6 +1072,10 @@ def _exec_retriever(node: CanvasNode, context: RunContext, inputs: dict[str, Any
         warnings.append("Retriever has no upstream chunks to rank.")
     if strategy not in {"similarity", "similarity_with_threshold", "mmr", "hybrid"}:
         warnings.append(f"Unknown retriever strategy '{strategy}', falling back to 'similarity'.")
+    if provider_spec is None:
+        warnings.append(
+            f"Unknown retriever provider '{retriever_provider}', using generic retriever behavior."
+        )
     if upstream_store is None and upstream_model is None:
         warnings.append("Retriever is not wired to a Vector DB or Embedding upstream.")
     if upstream_is_pinecone and not pinecone_used:
@@ -1036,11 +1084,50 @@ def _exec_retriever(node: CanvasNode, context: RunContext, inputs: dict[str, Any
         elif not pinecone_index.is_available():
             warnings.append("Pinecone provider selected but PINECONE_API_KEY/SDK not available.")
 
+    credential_fields = (
+        provider_spec.get("credentialFields", []) if isinstance(provider_spec, dict) else []
+    )
+    required_env_vars = [
+        str(field.get("env_var", "")).strip()
+        for field in credential_fields
+        if field.get("required", True) and str(field.get("env_var", "")).strip()
+    ]
+    missing_env_vars = [env_var for env_var in required_env_vars if not os.environ.get(env_var)]
+    if missing_env_vars:
+        warnings.append(
+            "Retriever provider credentials missing: " + ", ".join(sorted(set(missing_env_vars)))
+        )
+
+    provider_metadata = {
+        key: val
+        for key, val in node.config.items()
+        if key
+        not in {
+            "strategy",
+            "topK",
+            "similarityThreshold",
+            "includeMetadata",
+            "includeScores",
+            "metadataFilter",
+            "mmrLambda",
+            "mmrFetchK",
+            "hybridAlpha",
+            "embeddingProfile",
+            "vectorStore",
+            "retrieverProvider",
+            "providerCredentialEnvVars",
+        }
+    }
+
     return {
         "chunks": selected,
         "top_k": top_k,
         "query": query,
         "strategy": strategy,
+        "retriever_provider": retriever_provider,
+        "provider_metadata": provider_metadata,
+        "provider_credential_env_vars": required_env_vars,
+        "provider_credentials_configured": len(missing_env_vars) == 0,
         "store": upstream_store,
         "dimensions": upstream_dim,
         "metric": upstream_metric,
@@ -1690,11 +1777,30 @@ def _exec_vector_store(node: CanvasNode, context: RunContext, inputs: dict[str, 
 
     # 5. Credential presence — we NEVER log or echo the secret value, only
     #    whether the env-var the user pointed us at is currently set.
+    credential_fields = provider_spec.get("credential_fields", []) if provider_spec else []
+    required_credential_env_vars = [
+        str(field.get("env_var"))
+        for field in credential_fields
+        if field.get("env_var") and field.get("required", True)
+    ]
     api_key_env_var = node.config.get("apiKeyEnvVar") or (
         provider_spec["default_env"] if provider_spec else None
     )
     secret_configured: bool | None
-    if api_key_env_var:
+    if required_credential_env_vars:
+        missing_credential_env_vars = [
+            env_var for env_var in required_credential_env_vars if not os.getenv(env_var)
+        ]
+        secret_configured = not missing_credential_env_vars
+        if missing_credential_env_vars:
+            warnings.append(
+                "Required backend environment variables are missing for this "
+                f"provider: {', '.join(missing_credential_env_vars)}. "
+                "Vector store will run in simulation mode."
+            )
+        if len(required_credential_env_vars) == 1:
+            api_key_env_var = required_credential_env_vars[0]
+    elif api_key_env_var:
         secret_configured = bool(os.getenv(str(api_key_env_var)))
         if not secret_configured:
             warnings.append(
@@ -1730,6 +1836,7 @@ def _exec_vector_store(node: CanvasNode, context: RunContext, inputs: dict[str, 
         ],
         # Credential audit (no secret leaked — only the env-var name + flag)
         "api_key_env_var": api_key_env_var,
+        "credential_env_vars": required_credential_env_vars,
         "secret_configured": secret_configured,
         # Validation result
         "warnings": warnings,
@@ -2346,6 +2453,7 @@ _REGISTRATIONS: list[NodeSpec] = [
         ["chunks", "text"],
         ["chunks"],
         {
+            "retrieverProvider": "vector-store",
             "strategy": "similarity",
             "topK": 8,
             "similarityThreshold": 0.72,
@@ -2413,8 +2521,8 @@ _REGISTRATIONS: list[NodeSpec] = [
     NodeSpec(
         "storage-vector",
         "Storage",
-        "Vector Database",
-        "Hybrid vector index (Pinecone/Chroma/Qdrant/Weaviate/Milvus/pgvector/FAISS)",
+        "Vector Store",
+        "22 providers: Pinecone, Chroma, Qdrant, Weaviate, Milvus, pgvector, MongoDB Atlas, Redis, Supabase, Elasticsearch, OpenSearch, Meilisearch, Vectara, Astra, Couchbase, Upstash, SingleStore, Zep + more",
         # STRICT input contract: only an upstream Embedding can write here.
         # The frontend type validator enforces this so the user can't wire a
         # raw Chunking node directly into a Vector DB.

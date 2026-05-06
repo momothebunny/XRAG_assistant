@@ -1,0 +1,273 @@
+{
+  "$schema_version": "1.0.0",
+  "$description": "Provider-first embedding catalog. Each entry declares credential fields, provider-specific additional params, and model list.",
+  "providers": [
+    {
+      "id": "openai",
+      "label": "OpenAI Embedding",
+      "badge": "OpenAI",
+      "description": "OpenAI API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "OPENAI_API_KEY", "label": "OpenAI API Key", "placeholder": "sk-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [],
+      "models": [
+        { "id": "text-embedding-3-large",  "label": "text-embedding-3-large",          "dimensions": 3072, "maxTokens": 8191 },
+        { "id": "text-embedding-3-small",  "label": "text-embedding-3-small",          "dimensions": 1536, "maxTokens": 8191 },
+        { "id": "text-embedding-ada-002",  "label": "text-embedding-ada-002 (Legacy)", "dimensions": 1536, "maxTokens": 8191 }
+      ]
+    },
+    {
+      "id": "openai_custom",
+      "label": "OpenAI Custom Embedding",
+      "badge": "Custom",
+      "description": "OpenAI-compatible API at a custom base URL (proxy / fine-tuned endpoint).",
+      "credentialFields": [
+        { "env_var": "OPENAI_API_KEY", "label": "OpenAI-compatible API Key", "placeholder": "sk-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "openaiBaseUrl", "label": "Custom base URL", "type": "text", "placeholder": "https://my-proxy.example.com/v1", "required": true }
+      ],
+      "models": []
+    },
+    {
+      "id": "azure_openai",
+      "label": "Azure OpenAI Embedding",
+      "badge": "Azure",
+      "description": "Azure OpenAI API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "AZURE_OPENAI_API_KEY", "label": "Azure OpenAI API Key", "placeholder": "azure-key", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "azureEndpoint",   "label": "Azure endpoint",   "type": "text", "placeholder": "https://<name>.openai.azure.com/", "required": true },
+        { "key": "azureDeployment", "label": "Deployment name",  "type": "text", "placeholder": "my-embed-deployment",              "required": true },
+        { "key": "azureApiVersion", "label": "API version",      "type": "text", "placeholder": "2024-02-01",                       "required": false }
+      ],
+      "models": [
+        { "id": "text-embedding-3-large", "label": "text-embedding-3-large", "dimensions": 3072, "maxTokens": 8191 },
+        { "id": "text-embedding-3-small", "label": "text-embedding-3-small", "dimensions": 1536, "maxTokens": 8191 }
+      ]
+    },
+    {
+      "id": "aws_bedrock",
+      "label": "AWS Bedrock Embedding",
+      "badge": "AWS",
+      "description": "AWSBedrock embedding models to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "AWS_ACCESS_KEY_ID",     "label": "AWS Access Key ID",     "placeholder": "AKIA...",   "required": true, "secret": false },
+        { "env_var": "AWS_SECRET_ACCESS_KEY", "label": "AWS Secret Access Key", "placeholder": "********", "required": true, "secret": true  }
+      ],
+      "additionalFields": [
+        { "key": "awsRegion", "label": "AWS Region", "type": "select",
+          "options": ["us-east-1","us-west-2","eu-west-1","eu-central-1","ap-southeast-1","ap-northeast-1"], "required": true }
+      ],
+      "models": [
+        { "id": "amazon.titan-embed-text-v2:0",    "label": "Titan Embed Text v2",                    "dimensions": 1024, "maxTokens": 8192 },
+        { "id": "amazon.titan-embed-text-v1",       "label": "Titan Embed Text v1",                    "dimensions": 1536, "maxTokens": 8192 },
+        { "id": "cohere.embed-english-v3",          "label": "Cohere Embed English v3 (Bedrock)",      "dimensions": 1024, "maxTokens": 512  },
+        { "id": "cohere.embed-multilingual-v3",     "label": "Cohere Embed Multilingual v3 (Bedrock)", "dimensions": 1024, "maxTokens": 512  }
+      ]
+    },
+    {
+      "id": "baidu_qianfan",
+      "label": "Baidu Qianfan Embedding",
+      "badge": "Baidu",
+      "description": "Baidu Qianfan API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "QIANFAN_AK", "label": "Qianfan Access Key", "placeholder": "AK-...", "required": true, "secret": false },
+        { "env_var": "QIANFAN_SK", "label": "Qianfan Secret Key", "placeholder": "SK-...", "required": true, "secret": true  }
+      ],
+      "additionalFields": [],
+      "models": [
+        { "id": "embedding-v1", "label": "Embedding V1",  "dimensions": 384,  "maxTokens": 384 },
+        { "id": "bge-large-zh", "label": "BGE Large ZH",  "dimensions": 1024, "maxTokens": 512 }
+      ]
+    },
+    {
+      "id": "cohere",
+      "label": "Cohere Embedding",
+      "badge": "Cohere",
+      "description": "Cohere API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "COHERE_API_KEY", "label": "Cohere API Key", "placeholder": "co-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "cohereInputType", "label": "Input type", "type": "select",
+          "options": ["search_document","search_query","classification","clustering"], "required": true }
+      ],
+      "models": [
+        { "id": "embed-english-v3.0",       "label": "embed-english-v3.0",       "dimensions": 1024, "maxTokens": 512 },
+        { "id": "embed-multilingual-v3.0",  "label": "embed-multilingual-v3.0",  "dimensions": 1024, "maxTokens": 512 },
+        { "id": "embed-english-light-v3.0", "label": "embed-english-light-v3.0", "dimensions": 384,  "maxTokens": 512 }
+      ]
+    },
+    {
+      "id": "google_gemini",
+      "label": "Google Gemini Embedding",
+      "badge": "Google",
+      "description": "Google Generative API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "GOOGLE_API_KEY", "label": "Google API Key", "placeholder": "AIzaSy...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "geminiTaskType", "label": "Task type", "type": "select",
+          "options": ["RETRIEVAL_DOCUMENT","RETRIEVAL_QUERY","SEMANTIC_SIMILARITY","CLASSIFICATION","CLUSTERING"], "required": false }
+      ],
+      "models": [
+        { "id": "text-embedding-004", "label": "text-embedding-004", "dimensions": 768, "maxTokens": 2048 },
+        { "id": "embedding-001",      "label": "embedding-001",      "dimensions": 768, "maxTokens": 2048 }
+      ]
+    },
+    {
+      "id": "google_vertexai",
+      "label": "Google VertexAI Embedding",
+      "badge": "VertexAI",
+      "description": "Google vertexAI API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "GOOGLE_APPLICATION_CREDENTIALS", "label": "Service Account JSON path", "placeholder": "/path/to/sa.json", "required": true, "secret": false }
+      ],
+      "additionalFields": [
+        { "key": "vertexProjectId", "label": "GCP Project ID", "type": "text",   "placeholder": "my-gcp-project", "required": true  },
+        { "key": "vertexLocation",  "label": "Location",       "type": "select",
+          "options": ["us-central1","europe-west1","asia-east1","us-east1"], "required": true },
+        { "key": "vertexTaskType",  "label": "Task type",      "type": "select",
+          "options": ["RETRIEVAL_DOCUMENT","RETRIEVAL_QUERY","SEMANTIC_SIMILARITY","CLASSIFICATION","CLUSTERING"], "required": false }
+      ],
+      "models": [
+        { "id": "text-embedding-004",              "label": "text-embedding-004",              "dimensions": 768, "maxTokens": 2048 },
+        { "id": "textembedding-gecko@003",          "label": "textembedding-gecko@003",          "dimensions": 768, "maxTokens": 3072 },
+        { "id": "text-multilingual-embedding-002", "label": "text-multilingual-embedding-002", "dimensions": 768, "maxTokens": 2048 }
+      ]
+    },
+    {
+      "id": "huggingface",
+      "label": "HuggingFace Inference Embedding",
+      "badge": "HF",
+      "description": "HuggingFace Inference API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "HUGGINGFACEHUB_API_TOKEN", "label": "HuggingFace API Token", "placeholder": "hf_...", "required": false, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "hfEndpointUrl", "label": "Custom endpoint URL (optional)", "type": "text",
+          "placeholder": "https://api-inference.huggingface.co/pipeline/feature-extraction/...", "required": false }
+      ],
+      "models": [
+        { "id": "BAAI/bge-m3",                               "label": "BAAI/bge-m3 (multilingual)",  "dimensions": 1024, "maxTokens": 8192 },
+        { "id": "BAAI/bge-large-en-v1.5",                    "label": "BAAI/bge-large-en-v1.5",      "dimensions": 1024, "maxTokens": 512  },
+        { "id": "intfloat/multilingual-e5-large",             "label": "multilingual-e5-large",       "dimensions": 1024, "maxTokens": 512  },
+        { "id": "sentence-transformers/all-MiniLM-L6-v2",    "label": "all-MiniLM-L6-v2",            "dimensions": 384,  "maxTokens": 256  }
+      ]
+    },
+    {
+      "id": "ibm_watsonx",
+      "label": "IBM Watsonx Embedding",
+      "badge": "IBM",
+      "description": "Generate embeddings for a given text using open source model on IBM Watsonx.",
+      "credentialFields": [
+        { "env_var": "WATSONX_API_KEY", "label": "Watsonx API Key", "placeholder": "ibm-api-key", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "watsonxProjectId", "label": "Project ID",    "type": "text", "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",         "required": true },
+        { "key": "watsonxUrl",       "label": "Watsonx URL",   "type": "text", "placeholder": "https://us-south.ml.cloud.ibm.com",           "required": true }
+      ],
+      "models": [
+        { "id": "ibm/slate-30m-english-rtrvr",  "label": "Slate 30M English Retriever",  "dimensions": 384, "maxTokens": 512 },
+        { "id": "ibm/slate-125m-english-rtrvr", "label": "Slate 125M English Retriever", "dimensions": 768, "maxTokens": 512 }
+      ]
+    },
+    {
+      "id": "jina",
+      "label": "Jina Embedding",
+      "badge": "Jina",
+      "description": "JinaAI API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "JINA_API_KEY", "label": "Jina API Key", "placeholder": "jina_...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "jinaTask", "label": "Task", "type": "select",
+          "options": ["retrieval.passage","retrieval.query","text-matching","classification","separation"], "required": false }
+      ],
+      "models": [
+        { "id": "jina-embeddings-v3",       "label": "jina-embeddings-v3",                "dimensions": 1024, "maxTokens": 8192 },
+        { "id": "jina-embeddings-v2-base-en","label": "jina-embeddings-v2-base-en",       "dimensions": 768,  "maxTokens": 8192 },
+        { "id": "jina-clip-v1",             "label": "jina-clip-v1 (multimodal)",          "dimensions": 768,  "maxTokens": 8192 }
+      ]
+    },
+    {
+      "id": "localai",
+      "label": "LocalAI Embedding",
+      "badge": "Local",
+      "description": "Use local embedding models via llama.cpp / LocalAI server.",
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "localaiBaseUrl", "label": "LocalAI base URL", "type": "text", "placeholder": "http://localhost:8080/v1", "required": true }
+      ],
+      "models": [
+        { "id": "nomic-embed-text",    "label": "nomic-embed-text",  "dimensions": 768, "maxTokens": 8192 },
+        { "id": "all-minilm-l6-v2",   "label": "all-minilm-l6-v2",  "dimensions": 384, "maxTokens": 256  }
+      ]
+    },
+    {
+      "id": "mistralai",
+      "label": "MistralAI Embedding",
+      "badge": "Mistral",
+      "description": "MistralAI API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "MISTRAL_API_KEY", "label": "Mistral API Key", "placeholder": "...", "required": true, "secret": true }
+      ],
+      "additionalFields": [],
+      "models": [
+        { "id": "mistral-embed", "label": "mistral-embed", "dimensions": 1024, "maxTokens": 8192 }
+      ]
+    },
+    {
+      "id": "ollama",
+      "label": "Ollama Embedding",
+      "badge": "Ollama",
+      "description": "Generate embeddings for a given text using open source model on Ollama.",
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "ollamaBaseUrl", "label": "Ollama base URL", "type": "text", "placeholder": "http://localhost:11434", "required": true }
+      ],
+      "models": [
+        { "id": "nomic-embed-text", "label": "nomic-embed-text",  "dimensions": 768,  "maxTokens": 8192 },
+        { "id": "mxbai-embed-large","label": "mxbai-embed-large", "dimensions": 1024, "maxTokens": 512  },
+        { "id": "all-minilm",       "label": "all-minilm",        "dimensions": 384,  "maxTokens": 256  }
+      ]
+    },
+    {
+      "id": "togetherai",
+      "label": "TogetherAI Embedding",
+      "badge": "Together",
+      "description": "TogetherAI Embedding models to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "TOGETHER_API_KEY", "label": "Together API Key", "placeholder": "together-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [],
+      "models": [
+        { "id": "togethercomputer/m2-bert-80M-8k-retrieval",  "label": "M2-BERT 80M 8k Retrieval",  "dimensions": 768, "maxTokens": 8192  },
+        { "id": "togethercomputer/m2-bert-80M-32k-retrieval", "label": "M2-BERT 80M 32k Retrieval", "dimensions": 768, "maxTokens": 32768 },
+        { "id": "BAAI/bge-large-en-v1.5",                     "label": "BGE Large EN v1.5",         "dimensions": 1024,"maxTokens": 512   }
+      ]
+    },
+    {
+      "id": "voyageai",
+      "label": "VoyageAI Embedding",
+      "badge": "Voyage",
+      "description": "Voyage AI API to generate embeddings for a given text.",
+      "credentialFields": [
+        { "env_var": "VOYAGE_API_KEY", "label": "Voyage API Key", "placeholder": "pa-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "voyageInputType", "label": "Input type", "type": "select",
+          "options": ["document","query"], "required": false }
+      ],
+      "models": [
+        { "id": "voyage-3",                   "label": "voyage-3",                   "dimensions": 1024, "maxTokens": 32000 },
+        { "id": "voyage-3-lite",              "label": "voyage-3-lite",              "dimensions": 512,  "maxTokens": 32000 },
+        { "id": "voyage-large-2-instruct",    "label": "voyage-large-2-instruct",    "dimensions": 1536, "maxTokens": 16000 },
+        { "id": "voyage-code-3",              "label": "voyage-code-3",              "dimensions": 1024, "maxTokens": 32000 }
+      ]
+    }
+  ]
+}

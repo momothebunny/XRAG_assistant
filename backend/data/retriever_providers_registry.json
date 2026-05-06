@@ -1,0 +1,222 @@
+{
+  "$schema_version": "1.0.0",
+  "$description": "Single source of truth for process-retriever provider modes and provider-specific settings/credentials.",
+  "providers": [
+    {
+      "id": "vector-store",
+      "label": "Vector Store Retriever",
+      "initials": "VS",
+      "badge": "Default",
+      "description": "Search in the connected vector store and return top-k chunks.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "similarity_with_threshold", "mmr", "hybrid"],
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "topK", "label": "Top K", "type": "number", "min": 1, "max": 100, "step": 1, "required": true },
+        { "key": "includeScores", "label": "Include scores", "type": "boolean" },
+        { "key": "includeMetadata", "label": "Include metadata", "type": "boolean" }
+      ]
+    },
+    {
+      "id": "similarity-threshold",
+      "label": "Similarity Score Threshold Retriever",
+      "initials": "ST",
+      "badge": "Strict",
+      "description": "Return only chunks above a configured similarity threshold.",
+      "defaultStrategy": "similarity_with_threshold",
+      "allowedStrategies": ["similarity_with_threshold"],
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "topK", "label": "Top K", "type": "number", "min": 1, "max": 100, "step": 1, "required": true },
+        { "key": "similarityThreshold", "label": "Similarity threshold", "type": "number", "min": 0, "max": 1, "step": 0.01, "required": true }
+      ]
+    },
+    {
+      "id": "rrf",
+      "label": "Reciprocal Rank Fusion Retriever",
+      "initials": "RF",
+      "badge": "Fusion",
+      "description": "Fuse candidate lists from multiple queries using reciprocal rank fusion.",
+      "defaultStrategy": "hybrid",
+      "allowedStrategies": ["hybrid"],
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "rrfK", "label": "RRF K", "type": "number", "min": 10, "max": 200, "step": 1, "required": true },
+        { "key": "fusionQueries", "label": "Fusion queries", "type": "number", "min": 2, "max": 12, "step": 1, "required": true }
+      ]
+    },
+    {
+      "id": "multi-query",
+      "label": "Multi Query Retriever",
+      "initials": "MQ",
+      "badge": "LLM",
+      "description": "Generate multiple query variants and merge their retrieval results.",
+      "defaultStrategy": "hybrid",
+      "allowedStrategies": ["hybrid", "similarity"],
+      "credentialFields": [
+        { "env_var": "OPENROUTER_API_KEY", "label": "OpenRouter API Key", "placeholder": "sk-or-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "variants", "label": "Query variants", "type": "number", "min": 2, "max": 12, "step": 1, "required": true },
+        { "key": "multiQueryModel", "label": "Generator model", "type": "text", "placeholder": "openai/gpt-4o-mini", "required": true }
+      ]
+    },
+    {
+      "id": "hyde",
+      "label": "HyDE Retriever",
+      "initials": "HD",
+      "badge": "LLM",
+      "description": "Generate hypothetical answer then retrieve against that synthetic query.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "mmr"],
+      "credentialFields": [
+        { "env_var": "OPENROUTER_API_KEY", "label": "OpenRouter API Key", "placeholder": "sk-or-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "hydeModel", "label": "HyDE model", "type": "text", "placeholder": "openai/gpt-4o-mini", "required": true },
+        { "key": "hydeHypotheses", "label": "Hypotheses", "type": "number", "min": 1, "max": 8, "step": 1, "required": true }
+      ]
+    },
+    {
+      "id": "llm-filter",
+      "label": "LLM Filter Retriever",
+      "initials": "LF",
+      "badge": "Post-filter",
+      "description": "Use an LLM to filter initially retrieved chunks for final relevance.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "mmr"],
+      "credentialFields": [
+        { "env_var": "OPENROUTER_API_KEY", "label": "OpenRouter API Key", "placeholder": "sk-or-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "llmFilterModel", "label": "Filter model", "type": "text", "placeholder": "openai/gpt-4o-mini", "required": true },
+        { "key": "llmFilterKeep", "label": "Max kept chunks", "type": "number", "min": 1, "max": 30, "step": 1, "required": true }
+      ]
+    },
+    {
+      "id": "prompt",
+      "label": "Prompt Retriever",
+      "initials": "PR",
+      "badge": "Template",
+      "description": "Retrieve prompt templates and examples by semantic similarity.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "similarity_with_threshold"],
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "promptNamespace", "label": "Prompt namespace", "type": "text", "placeholder": "default", "required": true },
+        { "key": "promptTopK", "label": "Template top K", "type": "number", "min": 1, "max": 25, "step": 1, "required": true }
+      ]
+    },
+    {
+      "id": "custom",
+      "label": "Custom Retriever",
+      "initials": "CR",
+      "badge": "Bring your own",
+      "description": "Custom retrieval backend with user-defined response mapping.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "similarity_with_threshold", "mmr", "hybrid"],
+      "credentialFields": [
+        { "env_var": "CUSTOM_RETRIEVER_API_KEY", "label": "Custom API Key", "placeholder": "api-key", "required": false, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "customEndpoint", "label": "Endpoint URL", "type": "text", "placeholder": "https://retriever.example.com/search", "required": true },
+        { "key": "customPayloadPath", "label": "Results JSON path", "type": "text", "placeholder": "data.items", "required": true }
+      ]
+    },
+    {
+      "id": "embeddings-filter",
+      "label": "Embeddings Filter Retriever",
+      "initials": "EF",
+      "badge": "Compressor",
+      "description": "Drop unrelated documents by vector distance before final ranking.",
+      "defaultStrategy": "similarity_with_threshold",
+      "allowedStrategies": ["similarity_with_threshold"],
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "filterThreshold", "label": "Filter threshold", "type": "number", "min": 0, "max": 1, "step": 0.01, "required": true },
+        { "key": "maxDiscardRatio", "label": "Max discard ratio", "type": "number", "min": 0, "max": 0.95, "step": 0.05, "required": true }
+      ]
+    },
+    {
+      "id": "extract-metadata",
+      "label": "Extract Metadata Retriever",
+      "initials": "EM",
+      "badge": "Metadata",
+      "description": "Extract keywords/metadata from query and use it as retrieval filter.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "hybrid"],
+      "credentialFields": [],
+      "additionalFields": [
+        { "key": "metadataKeys", "label": "Metadata keys", "type": "text", "placeholder": "source,lang,doc_type", "required": true },
+        { "key": "strictMetadataMatch", "label": "Strict metadata match", "type": "boolean" }
+      ]
+    },
+    {
+      "id": "aws-bedrock-kb",
+      "label": "AWS Bedrock Knowledge Base Retriever",
+      "initials": "BK",
+      "badge": "AWS",
+      "description": "Connect to AWS Bedrock Knowledge Base API and retrieve relevant chunks.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "hybrid"],
+      "credentialFields": [
+        { "env_var": "AWS_ACCESS_KEY_ID", "label": "AWS Access Key ID", "placeholder": "AKIA...", "required": true, "secret": false },
+        { "env_var": "AWS_SECRET_ACCESS_KEY", "label": "AWS Secret Access Key", "placeholder": "********", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "bedrockKnowledgeBaseId", "label": "Knowledge Base ID", "type": "text", "placeholder": "kb-xxxxxxxx", "required": true },
+        { "key": "bedrockRegion", "label": "AWS Region", "type": "select", "options": ["us-east-1", "us-west-2", "eu-west-1", "eu-central-1"], "required": true },
+        { "key": "bedrockResultCount", "label": "Result count", "type": "number", "min": 1, "max": 50, "step": 1, "required": true }
+      ]
+    },
+    {
+      "id": "azure-rerank",
+      "label": "Azure Rerank Retriever",
+      "initials": "AZ",
+      "badge": "Azure",
+      "description": "Use Azure-hosted reranking to reorder retrieved documents.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "hybrid"],
+      "credentialFields": [
+        { "env_var": "AZURE_AI_SEARCH_API_KEY", "label": "Azure API Key", "placeholder": "azure-key", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "azureEndpoint", "label": "Azure endpoint", "type": "text", "placeholder": "https://<service>.search.windows.net", "required": true },
+        { "key": "azureIndexName", "label": "Index name", "type": "text", "placeholder": "xrag-index", "required": true },
+        { "key": "azureApiVersion", "label": "API version", "type": "text", "placeholder": "2024-07-01", "required": true }
+      ]
+    },
+    {
+      "id": "cohere-rerank",
+      "label": "Cohere Rerank Retriever",
+      "initials": "CO",
+      "badge": "Cohere",
+      "description": "Rerank candidate chunks with Cohere Rerank.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "mmr"],
+      "credentialFields": [
+        { "env_var": "COHERE_API_KEY", "label": "Cohere API Key", "placeholder": "co-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "cohereModel", "label": "Cohere model", "type": "text", "placeholder": "rerank-v3.5", "required": true },
+        { "key": "cohereTopN", "label": "Top N", "type": "number", "min": 1, "max": 50, "step": 1, "required": true }
+      ]
+    },
+    {
+      "id": "voyage-rerank",
+      "label": "Voyage AI Rerank Retriever",
+      "initials": "VO",
+      "badge": "Voyage",
+      "description": "Rerank candidate chunks with Voyage AI ranking models.",
+      "defaultStrategy": "similarity",
+      "allowedStrategies": ["similarity", "mmr"],
+      "credentialFields": [
+        { "env_var": "VOYAGE_API_KEY", "label": "Voyage API Key", "placeholder": "pa-...", "required": true, "secret": true }
+      ],
+      "additionalFields": [
+        { "key": "voyageModel", "label": "Voyage model", "type": "text", "placeholder": "rerank-2", "required": true },
+        { "key": "voyageTopN", "label": "Top N", "type": "number", "min": 1, "max": 50, "step": 1, "required": true }
+      ]
+    }
+  ]
+}

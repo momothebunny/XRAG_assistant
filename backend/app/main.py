@@ -371,6 +371,34 @@ def get_rerankers_registry() -> dict:
         raise HTTPException(status_code=500, detail=f"Registry is malformed: {exc}") from exc
 
 
+@app.get("/api/registry/retriever-providers")
+def get_retriever_providers_registry() -> dict:
+    """Return the retriever provider catalog used by process-retriever UI/runtime."""
+    registry_path = DATA_DIR / "retriever_providers_registry.json"
+    if not registry_path.exists():
+        raise HTTPException(status_code=404, detail="Retriever provider registry not found")
+    try:
+        return json.loads(registry_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Registry is malformed: {exc}") from exc
+
+
+@app.get("/api/registry/embedding-providers")
+def get_embedding_providers_registry() -> dict:
+    """Return the provider-first embedding catalog used by the EmbeddingSettingsPanel.
+
+    Each entry carries credentialFields, additionalFields and a model list so
+    the frontend can render provider → model → params without hard-coding anything.
+    """
+    registry_path = DATA_DIR / "embedding_providers_registry.json"
+    if not registry_path.exists():
+        raise HTTPException(status_code=404, detail="Embedding provider registry not found")
+    try:
+        return json.loads(registry_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Registry is malformed: {exc}") from exc
+
+
 @app.get("/api/canvas/flows", response_model=list[FlowSummary])
 def list_canvas_flows() -> list[FlowSummary]:
     return canvas_store.list_flows()

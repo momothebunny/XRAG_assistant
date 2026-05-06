@@ -1,69 +1,343 @@
 {
-  "$schema_version": "1.0.0",
-  "$description": "Single source of truth for the storage-vector node. Consumed by both the backend executor (provider/metric/api-key validation) and the frontend VectorDatabaseSettingsPanel (provider picker UI). Add a provider here and it appears everywhere — no code change required.",
+  "$schema_version": "3.0.0",
+  "$description": "Single source of truth for the storage-vector node. Consumed by both the backend executor (provider/metric/api-key validation) and the frontend VectorDatabaseSettingsPanel (provider picker UI). Add a provider here and it appears everywhere - no code change required.",
   "providers": [
     {
       "id": "pinecone",
       "label": "Pinecone",
+      "initials": "PC",
       "badge": "Managed",
       "description": "Serverless or pod-based managed vector DB.",
-      "fields": ["indexName", "namespace", "cloud", "region", "environment", "apiKeyEnvVar", "hybridSearch"],
+      "fields": ["indexName", "namespace", "cloud", "region", "environment", "hybridSearch"],
       "supportedMetrics": ["cosine", "dotproduct", "euclidean"],
-      "defaultApiKeyEnvVar": "PINECONE_API_KEY"
+      "defaultApiKeyEnvVar": "PINECONE_API_KEY",
+      "credentialTitle": "Pinecone API",
+      "credentialFields": [
+        { "env_var": "PINECONE_API_KEY", "label": "Pinecone API Key", "placeholder": "pcsk_...", "required": true, "secret": true }
+      ]
     },
     {
       "id": "chroma",
       "label": "Chroma",
-      "badge": "Local · OSS",
+      "initials": "CH",
+      "badge": "OSS - Local",
       "description": "Embeddable, runs in-process or via local server.",
       "fields": ["collection", "persistDirectory", "url"],
       "supportedMetrics": ["cosine", "l2", "ip"],
-      "defaultApiKeyEnvVar": null
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "Chroma API",
+      "credentialFields": [
+        { "env_var": "CHROMA_API_KEY", "label": "Chroma API Key", "placeholder": "chroma-key", "required": true, "secret": true },
+        { "env_var": "CHROMA_TENANT", "label": "Chroma Tenant", "placeholder": "default_tenant", "required": true, "secret": false },
+        { "env_var": "CHROMA_DATABASE", "label": "Chroma Database", "placeholder": "default_database", "required": true, "secret": false }
+      ]
     },
     {
       "id": "qdrant",
       "label": "Qdrant",
-      "badge": "OSS · Hybrid",
-      "description": "High-perf Rust DB with native sparse + dense hybrid.",
-      "fields": ["collection", "url", "apiKeyEnvVar", "shards", "replicas", "hybridSearch"],
+      "initials": "QD",
+      "badge": "OSS - Hybrid",
+      "description": "High-performance vector DB with native sparse plus dense hybrid.",
+      "fields": ["collection", "url", "shards", "replicas", "hybridSearch"],
       "supportedMetrics": ["cosine", "euclidean", "dot"],
-      "defaultApiKeyEnvVar": "QDRANT_API_KEY"
+      "defaultApiKeyEnvVar": "QDRANT_API_KEY",
+      "credentialTitle": "Qdrant API",
+      "credentialFields": [
+        { "env_var": "QDRANT_API_KEY", "label": "Qdrant API Key", "placeholder": "qdrant-key", "required": true, "secret": true }
+      ]
     },
     {
       "id": "weaviate",
       "label": "Weaviate",
-      "badge": "Hybrid · OSS",
+      "initials": "WV",
+      "badge": "Hybrid - OSS",
       "description": "GraphQL-native, hybrid search with BM25 baked in.",
-      "fields": ["collection", "url", "apiKeyEnvVar", "hybridSearch"],
+      "fields": ["collection", "url", "hybridSearch"],
       "supportedMetrics": ["cosine", "l2-squared", "dot"],
-      "defaultApiKeyEnvVar": "WEAVIATE_API_KEY"
+      "defaultApiKeyEnvVar": "WEAVIATE_API_KEY",
+      "credentialTitle": "Weaviate API",
+      "credentialFields": [
+        { "env_var": "WEAVIATE_API_KEY", "label": "Weaviate API Key", "placeholder": "weaviate-key", "required": true, "secret": true }
+      ]
     },
     {
       "id": "milvus",
       "label": "Milvus",
-      "badge": "OSS · Scale",
+      "initials": "MV",
+      "badge": "OSS - Scale",
       "description": "Distributed billion-scale vector store.",
       "fields": ["collection", "url", "shards", "replicas"],
       "supportedMetrics": ["cosine", "l2", "ip"],
-      "defaultApiKeyEnvVar": null
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "Milvus Auth",
+      "credentialNotice": {
+        "text": "You can find the Milvus authentication values in your Milvus deployment settings."
+      },
+      "credentialFields": [
+        { "env_var": "MILVUS_USERNAME", "label": "Milvus User", "placeholder": "root", "required": true, "secret": false },
+        { "env_var": "MILVUS_PASSWORD", "label": "Milvus Password", "placeholder": "password", "required": true, "secret": true }
+      ]
     },
     {
       "id": "pgvector",
-      "label": "pgvector",
-      "badge": "Postgres",
-      "description": "Bring vector search to existing Postgres.",
-      "fields": ["indexName", "url", "apiKeyEnvVar"],
+      "label": "Postgres",
+      "initials": "PG",
+      "badge": "SQL - pgvector",
+      "description": "Bring vector search to existing Postgres via pgvector.",
+      "fields": ["indexName", "url"],
       "supportedMetrics": ["cosine", "l2", "ip"],
-      "defaultApiKeyEnvVar": "POSTGRES_URL"
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "Postgres API",
+      "credentialFields": [
+        { "env_var": "POSTGRES_USERNAME", "label": "User", "placeholder": "<POSTGRES_USERNAME>", "required": true, "secret": false },
+        { "env_var": "POSTGRES_PASSWORD", "label": "Password", "placeholder": "<POSTGRES_PASSWORD>", "required": true, "secret": true }
+      ]
     },
     {
-      "id": "faiss",
-      "label": "FAISS",
-      "badge": "In-memory",
-      "description": "Local Facebook AI similarity search index.",
+      "id": "astra",
+      "label": "Astra (DataStax)",
+      "initials": "AS",
+      "badge": "Managed - Cloud",
+      "description": "DataStax Astra DB serverless Cassandra with vector support.",
+      "fields": ["collection", "url"],
+      "supportedMetrics": ["cosine", "dot", "euclidean"],
+      "defaultApiKeyEnvVar": "ASTRA_DB_APPLICATION_TOKEN",
+      "credentialTitle": "Astra DB API",
+      "credentialFields": [
+        { "env_var": "ASTRA_DB_APPLICATION_TOKEN", "label": "Astra DB Application Token", "placeholder": "AstraCS:...", "required": true, "secret": true },
+        { "env_var": "ASTRA_DB_API_ENDPOINT", "label": "Astra DB API Endpoint", "placeholder": "https://...apps.astra.datastax.com", "required": true, "secret": false }
+      ]
+    },
+    {
+      "id": "couchbase",
+      "label": "Couchbase",
+      "initials": "CB",
+      "badge": "Multi-model",
+      "description": "Distributed NoSQL with integrated vector search.",
+      "fields": ["indexName", "url"],
+      "supportedMetrics": ["cosine", "dot", "euclidean"],
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "Couchbase API",
+      "credentialFields": [
+        { "env_var": "COUCHBASE_CONNECTION_STRING", "label": "Couchbase Connection String", "placeholder": "couchbases://cluster.example.com", "required": true, "secret": false },
+        { "env_var": "COUCHBASE_USERNAME", "label": "Couchbase Username", "placeholder": "Administrator", "required": true, "secret": false },
+        { "env_var": "COUCHBASE_PASSWORD", "label": "Couchbase Password", "placeholder": "password", "required": true, "secret": true }
+      ]
+    },
+    {
+      "id": "docstore",
+      "label": "Document Store (Vector)",
+      "initials": "DS",
+      "badge": "In-Process",
+      "description": "In-memory or file-backed document store with vector search.",
       "fields": ["persistDirectory"],
       "supportedMetrics": ["cosine", "l2", "ip"],
-      "defaultApiKeyEnvVar": null
+      "defaultApiKeyEnvVar": null,
+      "credentialFields": []
+    },
+    {
+      "id": "elasticsearch",
+      "label": "Elasticsearch",
+      "initials": "ES",
+      "badge": "OSS - Cloud",
+      "description": "ANN vector search built into Elasticsearch 8+.",
+      "fields": ["indexName", "url", "hybridSearch"],
+      "supportedMetrics": ["cosine", "dot", "l2"],
+      "defaultApiKeyEnvVar": "ELASTICSEARCH_API_KEY",
+      "credentialTitle": "Elasticsearch API",
+      "credentialNotice": {
+        "text": "Refer to the official Elasticsearch guide to create and manage API keys."
+      },
+      "credentialFields": [
+        { "env_var": "ELASTICSEARCH_ENDPOINT", "label": "Elasticsearch Endpoint", "placeholder": "https://cluster.example.com:9200", "required": true, "secret": false },
+        { "env_var": "ELASTICSEARCH_API_KEY", "label": "Elasticsearch API Key", "placeholder": "ApiKey ...", "required": true, "secret": true }
+      ]
+    },
+    {
+      "id": "inmemory",
+      "label": "In-Memory Vector Store",
+      "initials": "IM",
+      "badge": "Dev - No-persist",
+      "description": "Ephemeral in-process store. Good for testing and prototyping.",
+      "fields": [],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": null,
+      "credentialFields": []
+    },
+    {
+      "id": "kendra",
+      "label": "AWS Kendra",
+      "initials": "KN",
+      "badge": "Managed - AWS",
+      "description": "Managed ML-powered enterprise search service by AWS.",
+      "fields": ["indexName", "region"],
+      "supportedMetrics": ["cosine"],
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "AWS security credentials",
+      "credentialNotice": {
+        "text": "When unspecified, credentials can still be sourced from the runtime environment according to the default AWS SDK behavior."
+      },
+      "credentialFields": [
+        { "env_var": "AWS_ACCESS_KEY_ID", "label": "AWS Access Key", "placeholder": "<AWS_ACCESS_KEY_ID>", "required": false, "secret": false },
+        { "env_var": "AWS_SECRET_ACCESS_KEY", "label": "AWS Secret Access Key", "placeholder": "<AWS_SECRET_ACCESS_KEY>", "required": false, "secret": true },
+        { "env_var": "AWS_SESSION_TOKEN", "label": "AWS Session Key", "placeholder": "<AWS_SESSION_TOKEN>", "required": false, "secret": true },
+        { "env_var": "AWS_ROLE_ARN", "label": "Role ARN", "placeholder": "arn:aws:iam::123456789012:role/role-name", "required": false, "secret": false },
+        { "env_var": "AWS_EXTERNAL_ID", "label": "External ID", "placeholder": "unique-external-id", "required": false, "secret": false }
+      ]
+    },
+    {
+      "id": "meilisearch",
+      "label": "Meilisearch",
+      "initials": "ML",
+      "badge": "OSS - Fast",
+      "description": "Typo-tolerant search engine with vector support.",
+      "fields": ["indexName", "url"],
+      "supportedMetrics": ["cosine"],
+      "defaultApiKeyEnvVar": "MEILI_SEARCH_API_KEY",
+      "credentialTitle": "Meilisearch API",
+      "credentialNotice": {
+        "text": "Use a search key for query-time access; an admin key is only needed for management operations."
+      },
+      "credentialFields": [
+        { "env_var": "MEILI_SEARCH_API_KEY", "label": "Meilisearch Search API Key", "placeholder": "search-key", "required": true, "secret": true },
+        { "env_var": "MEILI_ADMIN_API_KEY", "label": "Meilisearch Admin API Key", "placeholder": "admin-key", "required": false, "secret": true }
+      ]
+    },
+    {
+      "id": "mongodb",
+      "label": "MongoDB Atlas",
+      "initials": "MG",
+      "badge": "Managed - Cloud",
+      "description": "Atlas Vector Search hybrid vector plus full-text on MongoDB.",
+      "fields": ["collection", "url"],
+      "supportedMetrics": ["cosine", "euclidean", "dot"],
+      "defaultApiKeyEnvVar": "MONGODB_ATLAS_URI",
+      "credentialTitle": "MongoDB ATLAS",
+      "credentialFields": [
+        { "env_var": "MONGODB_ATLAS_URI", "label": "ATLAS Connection URL", "placeholder": "mongodb+srv://<user>:<pwd>@cluster.mongodb.net/?retryWrites=true&w=majority", "required": true, "secret": true }
+      ]
+    },
+    {
+      "id": "opensearch",
+      "label": "OpenSearch",
+      "initials": "OS",
+      "badge": "OSS - AWS",
+      "description": "k-NN plugin for distributed vector search.",
+      "fields": ["indexName", "url", "hybridSearch"],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "OpenSearch",
+      "credentialFields": [
+        { "env_var": "OPENSEARCH_URL", "label": "OpenSearch URL", "placeholder": "https://cluster.example.com:9200", "required": true, "secret": false },
+        { "env_var": "OPENSEARCH_USERNAME", "label": "User", "placeholder": "<OPENSEARCH_USERNAME>", "required": false, "secret": false },
+        { "env_var": "OPENSEARCH_PASSWORD", "label": "Password", "placeholder": "<OPENSEARCH_PASSWORD>", "required": false, "secret": true }
+      ]
+    },
+    {
+      "id": "redis",
+      "label": "Redis",
+      "initials": "RD",
+      "badge": "In-Memory - Fast",
+      "description": "RediSearch module for blazing-fast vector similarity search.",
+      "fields": ["indexName", "url"],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "Redis API",
+      "credentialFields": [
+        { "env_var": "REDIS_HOST", "label": "Redis Host", "placeholder": "127.0.0.1", "required": true, "secret": false },
+        { "env_var": "REDIS_PORT", "label": "Port", "placeholder": "6379", "required": true, "secret": false },
+        { "env_var": "REDIS_USERNAME", "label": "User", "placeholder": "<REDIS_USERNAME>", "required": true, "secret": false },
+        { "env_var": "REDIS_PASSWORD", "label": "Password", "placeholder": "<REDIS_PASSWORD>", "required": true, "secret": true },
+        { "env_var": "REDIS_USE_SSL", "label": "Use SSL", "placeholder": "true", "required": false, "secret": false }
+      ]
+    },
+    {
+      "id": "singlestore",
+      "label": "SingleStore",
+      "initials": "SS",
+      "badge": "SQL - Real-time",
+      "description": "Distributed SQL database with native vector operations.",
+      "fields": ["collection", "url"],
+      "supportedMetrics": ["cosine", "dot", "euclidean"],
+      "defaultApiKeyEnvVar": null,
+      "credentialTitle": "SingleStore API",
+      "credentialFields": [
+        { "env_var": "SINGLESTORE_USERNAME", "label": "User", "placeholder": "<SINGLESTORE_USERNAME>", "required": true, "secret": false },
+        { "env_var": "SINGLESTORE_PASSWORD", "label": "Password", "placeholder": "<SINGLESTORE_PASSWORD>", "required": true, "secret": true }
+      ]
+    },
+    {
+      "id": "supabase",
+      "label": "Supabase",
+      "initials": "SB",
+      "badge": "OSS - Postgres",
+      "description": "pgvector through Supabase, backed by Postgres.",
+      "fields": ["collection", "url"],
+      "supportedMetrics": ["cosine", "l2", "ip"],
+      "defaultApiKeyEnvVar": "SUPABASE_API_KEY",
+      "credentialTitle": "Supabase API",
+      "credentialFields": [
+        { "env_var": "SUPABASE_API_KEY", "label": "Supabase API Key", "placeholder": "sbp_...", "required": true, "secret": true }
+      ]
+    },
+    {
+      "id": "upstash",
+      "label": "Upstash Vector",
+      "initials": "UV",
+      "badge": "Serverless",
+      "description": "Pay-per-request serverless vector database.",
+      "fields": ["indexName", "url"],
+      "supportedMetrics": ["cosine", "euclidean"],
+      "defaultApiKeyEnvVar": "UPSTASH_VECTOR_REST_TOKEN",
+      "credentialTitle": "Upstash Vector API",
+      "credentialFields": [
+        { "env_var": "UPSTASH_VECTOR_REST_URL", "label": "Upstash Vector REST URL", "placeholder": "https://...upstash.io", "required": true, "secret": false },
+        { "env_var": "UPSTASH_VECTOR_REST_TOKEN", "label": "Upstash Vector REST Token", "placeholder": "token", "required": true, "secret": true }
+      ]
+    },
+    {
+      "id": "vectara",
+      "label": "Vectara",
+      "initials": "VC",
+      "badge": "Managed",
+      "description": "Grounded generation platform with built-in vector store.",
+      "fields": ["collection"],
+      "supportedMetrics": ["cosine"],
+      "defaultApiKeyEnvVar": "VECTARA_API_KEY",
+      "credentialTitle": "Vectara API",
+      "credentialFields": [
+        { "env_var": "VECTARA_CUSTOMER_ID", "label": "Vectara Customer ID", "placeholder": "customer-id", "required": true, "secret": false },
+        { "env_var": "VECTARA_CORPUS_ID", "label": "Vectara Corpus ID", "placeholder": "corpus-id", "required": true, "secret": false },
+        { "env_var": "VECTARA_API_KEY", "label": "Vectara API Key", "placeholder": "api-key", "required": true, "secret": true }
+      ]
+    },
+    {
+      "id": "zep-oss",
+      "label": "Zep Collection (OSS)",
+      "initials": "ZO",
+      "badge": "Open Source",
+      "description": "Self-hosted Zep memory plus vector collection store.",
+      "fields": ["collection", "url"],
+      "supportedMetrics": ["cosine", "l2"],
+      "defaultApiKeyEnvVar": null,
+      "credentialFields": []
+    },
+    {
+      "id": "zep-cloud",
+      "label": "Zep Collection (Cloud)",
+      "initials": "ZC",
+      "badge": "Cloud",
+      "description": "Managed Zep cloud with vector plus memory collections.",
+      "fields": ["collection"],
+      "supportedMetrics": ["cosine"],
+      "defaultApiKeyEnvVar": "ZEP_API_KEY",
+      "credentialTitle": "Zep Memory API",
+      "credentialNotice": {
+        "text": "Refer to the official Zep guide to create an API key."
+      },
+      "credentialFields": [
+        { "env_var": "ZEP_API_KEY", "label": "API Key", "placeholder": "zep_...", "required": true, "secret": true }
+      ]
     }
   ],
   "metricLabels": {
