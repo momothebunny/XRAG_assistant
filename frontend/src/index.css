@@ -880,12 +880,25 @@ input[type="range"].accent-slate-500   { --xrag-thumb: #64748b; }
   border-color: rgb(71 85 105) !important;
 }
 
-.xrag-audit-theme [class*="text-slate-"],
+/* Base text: slate → light grey/white, NOT amber — keeps benchmark tables readable */
+.xrag-audit-theme [class*="text-slate-4"],
+.xrag-audit-theme [class*="text-slate-5"] {
+  color: rgb(148 163 184) !important;   /* muted labels */
+}
+.xrag-audit-theme [class*="text-slate-6"],
+.xrag-audit-theme [class*="text-slate-7"],
+.xrag-audit-theme [class*="text-slate-8"],
+.xrag-audit-theme [class*="text-slate-9"] {
+  color: rgb(226 232 240) !important;   /* body / heading text */
+}
+
+/* Accent text (indigo, sky) → amber only for interactive/heading elements */
 .xrag-audit-theme [class*="text-indigo-"],
 .xrag-audit-theme [class*="text-sky-"] {
   color: rgb(252 211 77) !important;
 }
 
+/* White text in dot badges stays dark (white on amber bg) */
 .xrag-audit-theme [class*="text-white"] {
   color: rgb(15 23 42) !important;
 }

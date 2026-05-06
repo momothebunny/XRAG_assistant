@@ -103,6 +103,28 @@ class CanvasFlowRunner:
                 )
             )
 
+            # ── Early abort on missing API key ─────────────────────────────
+            # If a node fails because no API key is configured there is no
+            # point running the rest of the flow — every downstream LLM/embed
+            # call will fail for the same reason. Abort immediately and surface
+            # a clear message so the user knows what to fix.
+            if status == "error" and error:
+                _lower = error.lower()
+                if "api_key" in _lower or "api key" in _lower or "openrouter_api_key" in _lower:
+                    # Append a synthetic aborted-flow record so the trace shows why we stopped.
+                    trace.append(
+                        NodeRunRecord(
+                            node_id="__abort__",
+                            template_key="__abort__",
+                            label="Flow aborted — missing API key",
+                            duration_ms=0,
+                            status="error",
+                            error="Flow execution stopped early: no API key is configured. "
+                                  "Add your OpenRouter API key in Settings → API Keys.",
+                        )
+                    )
+                    break
+
         total_ms = int((time.perf_counter() - flow_started) * 1000)
         answer = self._extract_final_answer(flow, node_outputs, context)
         reasoning = " -> ".join(record.label for record in trace if record.status == "ok")

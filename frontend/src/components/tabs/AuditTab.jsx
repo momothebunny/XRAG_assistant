@@ -38,15 +38,17 @@ const MAX_Q = 15;
 
 // ── Small helpers ─────────────────────────────────────────────────────────
 
+// Distinct flow accent colours – chosen for legibility on the dark audit bg.
+// Each entry drives: numbered dot bg, border accent, label text, subtle row tint.
 const ACCENT_PALETTE = [
-  { bg: 'bg-indigo-600', light: 'bg-indigo-50', border: 'border-indigo-300', text: 'text-indigo-700', badge: 'bg-indigo-100 text-indigo-800' },
-  { bg: 'bg-amber-600', light: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800' },
-  { bg: 'bg-sky-600',    light: 'bg-sky-50',    border: 'border-sky-300',    text: 'text-sky-700',    badge: 'bg-sky-100 text-sky-800'    },
-  { bg: 'bg-emerald-600',light: 'bg-emerald-50',border: 'border-emerald-300',text: 'text-emerald-700',badge: 'bg-emerald-100 text-emerald-800' },
-  { bg: 'bg-rose-600',   light: 'bg-rose-50',   border: 'border-rose-300',   text: 'text-rose-700',   badge: 'bg-rose-100 text-rose-800'   },
-  { bg: 'bg-amber-600',  light: 'bg-amber-50',  border: 'border-amber-300',  text: 'text-amber-700',  badge: 'bg-amber-100 text-amber-800'  },
-  { bg: 'bg-amber-600',light: 'bg-amber-50',border: 'border-amber-300',text: 'text-amber-700',badge: 'bg-amber-100 text-amber-800' },
-  { bg: 'bg-teal-600',   light: 'bg-teal-50',   border: 'border-teal-300',   text: 'text-teal-700',   badge: 'bg-teal-100 text-teal-800'   },
+  { bg: 'bg-violet-500',  border: 'border-violet-400',  text: 'text-violet-300',  rowBg: 'bg-violet-900/20'  },
+  { bg: 'bg-amber-500',   border: 'border-amber-400',   text: 'text-amber-300',   rowBg: 'bg-amber-900/20'   },
+  { bg: 'bg-sky-500',     border: 'border-sky-400',     text: 'text-sky-300',     rowBg: 'bg-sky-900/20'     },
+  { bg: 'bg-emerald-500', border: 'border-emerald-400', text: 'text-emerald-300', rowBg: 'bg-emerald-900/20' },
+  { bg: 'bg-rose-500',    border: 'border-rose-400',    text: 'text-rose-300',    rowBg: 'bg-rose-900/20'    },
+  { bg: 'bg-cyan-500',    border: 'border-cyan-400',    text: 'text-cyan-300',    rowBg: 'bg-cyan-900/20'    },
+  { bg: 'bg-fuchsia-500', border: 'border-fuchsia-400', text: 'text-fuchsia-300', rowBg: 'bg-fuchsia-900/20' },
+  { bg: 'bg-lime-500',    border: 'border-lime-400',    text: 'text-lime-300',    rowBg: 'bg-lime-900/20'    },
 ];
 
 const labelAccent = (label) => {
@@ -487,8 +489,9 @@ const ReportView = ({ report, onClose }) => {
 
 // ── Benchmark Panel ─────────────────────────────────────────────────────
 
-const mColor = (v) => { const p = v * 100; return p >= 80 ? 'text-emerald-400' : p >= 50 ? 'text-amber-400' : 'text-rose-400'; };
-const mBg = (v) => { const p = v * 100; return p >= 80 ? 'bg-emerald-400' : p >= 50 ? 'bg-amber-400' : 'bg-rose-400'; };
+// Metric signal colours — bright enough to read on dark navy background.
+const mColor = (v) => { const p = v * 100; return p >= 80 ? 'text-emerald-400' : p >= 50 ? 'text-amber-300' : 'text-rose-400'; };
+const mBg = (v) => { const p = v * 100; return p >= 80 ? 'bg-emerald-400' : p >= 50 ? 'bg-amber-300' : 'bg-rose-400'; };
 
 const METRIC_GROUPS = [
   {
