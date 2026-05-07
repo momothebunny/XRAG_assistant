@@ -1313,6 +1313,14 @@ const CanvasBoard = () => {
 
   const [paletteTab, setPaletteTab] = useState('nodes'); // 'nodes' | 'blueprints' | 'custom'
   const [nodeSettingsOpen, setNodeSettingsOpen] = useState(false);
+  const MOBILE_LAYOUT_QUERY = '(max-width: 1023px)';
+  const [isMobileLayout, setIsMobileLayout] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
+    return window.matchMedia(MOBILE_LAYOUT_QUERY).matches;
+  });
+  const [mobilePanel, setMobilePanel] = useState(null); // null | 'palette' | 'inspector'
 
   // ── Custom user-defined nodes ──────────────────────────────────────────
   const [customNodes, setCustomNodes] = useState([]);
@@ -1608,6 +1616,33 @@ const CanvasBoard = () => {
   useEffect(() => {
     localStorage.setItem(CANVAS_DRAFTS_STORAGE_KEY, JSON.stringify(savedDrafts));
   }, [savedDrafts]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQueryList = window.matchMedia(MOBILE_LAYOUT_QUERY);
+    const handleMobileLayoutChange = (event) => {
+      setIsMobileLayout(event.matches);
+    };
+
+    setIsMobileLayout(mediaQueryList.matches);
+
+    if (typeof mediaQueryList.addEventListener === 'function') {
+      mediaQueryList.addEventListener('change', handleMobileLayoutChange);
+      return () => mediaQueryList.removeEventListener('change', handleMobileLayoutChange);
+    }
+
+    mediaQueryList.addListener(handleMobileLayoutChange);
+    return () => mediaQueryList.removeListener(handleMobileLayoutChange);
+  }, [MOBILE_LAYOUT_QUERY]);
+
+  useEffect(() => {
+    if (!isMobileLayout && mobilePanel) {
+      setMobilePanel(null);
+    }
+  }, [isMobileLayout, mobilePanel]);
 
   const saveCanvasDraft = () => {
     const label = draftName.trim() || `RAG draft ${new Date().toLocaleString()}`;
@@ -4467,14 +4502,57 @@ const CanvasBoard = () => {
   }, [nodes, previewedSubGraphId]);
 
   return (
-    <div data-xrag-tab="canvas" className="xrag-canvas-theme h-full w-full overflow-visible bg-slate-950 p-4 md:p-6">
+    <div data-xrag-tab="canvas" className="xrag-canvas-theme h-full w-full overflow-visible bg-slate-950 p-2 sm:p-4 md:p-6">
+      {isMobileLayout && (
+        <div className="mb-2 flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/80 p-1.5 backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={() => setMobilePanel('palette')}
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-amber-300 hover:bg-amber-500/20"
+          >
+            Node Palette
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobilePanel('inspector')}
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/70 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-200 hover:bg-slate-700"
+          >
+            Inspector
+          </button>
+        </div>
+      )}
+
+      {isMobileLayout && mobilePanel && (
+        <button
+          type="button"
+          aria-label="Close mobile panel"
+          onClick={() => setMobilePanel(null)}
+          className="fixed inset-0 z-[2147482400] bg-slate-950/65 backdrop-blur-[2px]"
+        />
+      )}
+
       <div className="flex h-full w-full min-w-0 gap-2 bg-slate-950">
         <aside
-          className="relative flex-none overflow-visible"
-          style={{ width: paletteWidth }}
+          className={isMobileLayout
+            ? `fixed inset-y-2 left-2 z-[2147482500] w-[min(92vw,380px)] transition-transform duration-300 ${mobilePanel === 'palette' ? 'translate-x-0' : '-translate-x-[110%] pointer-events-none'}`
+            : 'relative flex-none overflow-visible'}
+          style={isMobileLayout ? undefined : { width: paletteWidth }}
         >
           <div className="h-full rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-[0_8px_30px_rgba(0,0,0,0.35)] overflow-hidden">
             <div className="h-full">
+              {isMobileLayout && (
+                <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-amber-300">Node Palette</p>
+                  <button
+                    type="button"
+                    onClick={() => setMobilePanel(null)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700 bg-slate-900/80 text-slate-300"
+                    aria-label="Close palette"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
               {/* Tab switcher — dark with amber sliding pill (keeps brand identity) */}
               <div className="relative flex border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm p-1.5 gap-1">
                 <span
@@ -4845,14 +4923,32 @@ const CanvasBoard = () => {
           aria-orientation="vertical"
           aria-label="Resize node palette"
           onPointerDown={beginResize('palette')}
-          className="group relative flex-none w-1.5 cursor-col-resize self-stretch"
+          className="group relative hidden lg:flex flex-none w-1.5 cursor-col-resize self-stretch"
         >
           <div className="absolute inset-y-2 left-1/2 -translate-x-1/2 w-0.5 rounded-full bg-slate-200 group-hover:bg-indigo-400 group-active:bg-indigo-500 transition-colors" />
         </div>
 
-        <section className="min-h-0 flex-1 min-w-0 rounded-3xl border border-slate-700/50 shadow-sm overflow-hidden" style={{ background: '#1e2030' }}>
+        <section className="min-h-0 flex-1 min-w-0 rounded-2xl lg:rounded-3xl border border-slate-700/50 shadow-sm overflow-hidden" style={{ background: '#1e2030' }}>
           <div className="h-12 border-b border-slate-700/40 px-4 flex items-center justify-between" style={{ background: '#1e2030' }}>
             <p className="text-xs font-black text-slate-400 uppercase tracking-wider">RAG Architecture Canvas</p>
+            {isMobileLayout && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobilePanel('palette')}
+                  className="inline-flex items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300"
+                >
+                  Nodes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobilePanel('inspector')}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-200"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
           </div>
 
           <div
@@ -5451,15 +5547,30 @@ const CanvasBoard = () => {
           aria-orientation="vertical"
           aria-label="Resize node inspector"
           onPointerDown={beginResize('inspector')}
-          className="group relative flex-none w-1.5 cursor-col-resize self-stretch"
+          className="group relative hidden lg:flex flex-none w-1.5 cursor-col-resize self-stretch"
         >
           <div className="absolute inset-y-2 left-1/2 -translate-x-1/2 w-0.5 rounded-full bg-slate-200 group-hover:bg-indigo-400 group-active:bg-indigo-500 transition-colors" />
         </div>
 
         <aside
-          className="@container rounded-3xl border border-slate-700/50 shadow-sm p-3 overflow-y-auto space-y-4 flex-none"
-          style={{ width: inspectorWidth, background: '#131822' }}
+          className={isMobileLayout
+            ? `@container fixed inset-y-2 right-2 z-[2147482500] w-[min(92vw,420px)] rounded-3xl border border-slate-700/50 shadow-sm p-3 overflow-y-auto space-y-4 transition-transform duration-300 ${mobilePanel === 'inspector' ? 'translate-x-0' : 'translate-x-[110%] pointer-events-none'}`
+            : '@container rounded-3xl border border-slate-700/50 shadow-sm p-3 overflow-y-auto space-y-4 flex-none'}
+          style={isMobileLayout ? { background: '#131822' } : { width: inspectorWidth, background: '#131822' }}
         >
+          {isMobileLayout && (
+            <div className="mb-1 flex items-center justify-between rounded-xl border border-slate-700/60 bg-slate-900/70 px-3 py-2">
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-200">Inspector</p>
+              <button
+                type="button"
+                onClick={() => setMobilePanel(null)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700 bg-slate-900/80 text-slate-300"
+                aria-label="Close inspector"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
           {/* Inspector header — merged with Save / Browse / Run controls.
               Gold/amber themed. The list of saved architectures lives only
               in the Browse modal (FolderOpen icon). */}
