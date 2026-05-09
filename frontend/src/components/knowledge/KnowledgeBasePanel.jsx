@@ -18,10 +18,22 @@ const formatBytes = (bytes) => {
 };
 
 const renderDocumentRow = (document, ctx) => {
-  const { selectedDocumentId, setSelectedDocumentId, handleReindex, handleDelete, handleReplace, handleFactCheck, factCheckingId, indent } = ctx;
+  const {
+    selectedDocumentId,
+    setSelectedDocumentId,
+    handleReindex,
+    handleDelete,
+    handleReplace,
+    handleFactCheck,
+    handleChangeCheck,
+    factCheckingId,
+    changeCheckingId,
+    indent,
+  } = ctx;
   const status = STATUS_BADGES[document.status] || STATUS_BADGES.pending;
   const StatusIcon = status.Icon;
   const isSelected = selectedDocumentId === document.id;
+  const hasChangeWarnings = (document.change_issues_count || 0) > 0;
   return (
     <li
       key={document.id}
@@ -58,6 +70,15 @@ const renderDocumentRow = (document, ctx) => {
             <Layers size={10} />
             {document.chunk_count} chunks
           </span>
+          {hasChangeWarnings && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 ring-1 ring-rose-200"
+              title={document.change_summary || 'Potential contradiction detected.'}
+            >
+              <AlertTriangle size={10} />
+              {document.change_issues_count} conflict
+            </span>
+          )}
           {document.created_at ? (
             <span
               className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200"
@@ -109,6 +130,20 @@ const renderDocumentRow = (document, ctx) => {
         type="button"
         onClick={(event) => {
           event.stopPropagation();
+          handleChangeCheck(document.id);
+        }}
+        disabled={changeCheckingId === document.id}
+        title="AI change-check – contradiction scan"
+        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
+      >
+        {changeCheckingId === document.id
+          ? <Loader2 size={12} className="animate-spin" />
+          : <AlertTriangle size={12} />}
+      </button>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
           handleReindex(document.id);
         }}
         title="Re-chunk with selected flow"
@@ -154,6 +189,7 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
   const [isReindexingAll, setIsReindexingAll] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [factCheckingId, setFactCheckingId] = useState(null);
+  const [changeCheckingId, setChangeCheckingId] = useState(null);
   const [factCheckResult, setFactCheckResult] = useState(null); // {doc, result}
   const fileInputRef = useRef(null);
   const replaceInputRef = useRef(null);
@@ -557,6 +593,23 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
     }
   };
 
+  const handleChangeCheck = async (documentId) => {
+    setChangeCheckingId(documentId);
+    setErrorMessage('');
+    try {
+      await xragApi.changeCheckKnowledgeDocument(documentId);
+      await refreshDocuments();
+      if (selectedDocumentId === documentId) {
+        const detail = await xragApi.getKnowledgeDocument(documentId);
+        setSelectedDocumentDetail(detail);
+      }
+    } catch (error) {
+      setErrorMessage(`Change-check failed: ${error.message}`);
+    } finally {
+      setChangeCheckingId(null);
+    }
+  };
+
   const toggleGroup = (key) => {
     setCollapsedGroups((previous) => ({ ...previous, [key]: !previous[key] }));
   };
@@ -628,6 +681,20 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
       { bytes: 0, chunks: 0, tokens: 0, errors: 0, indexed: 0 }
     );
   }, [documents]);
+
+  const contradictionChunkIds = useMemo(() => {
+    const issues = selectedDocumentDetail?.change_analysis?.issues || [];
+    const selectedId = selectedDocumentDetail?.id;
+    if (!selectedId || !issues.length) return new Set();
+    const marked = new Set();
+    issues.forEach((issue) => {
+      const left = issue?.left;
+      const right = issue?.right;
+      if (left?.document_id === selectedId && left?.chunk_id) marked.add(left.chunk_id);
+      if (right?.document_id === selectedId && right?.chunk_id) marked.add(right.chunk_id);
+    });
+    return marked;
+  }, [selectedDocumentDetail]);
 
   const selectedFlow = flows.find((flow) => flow.id === selectedFlowId);
 
@@ -889,6 +956,8 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                     handleReplace,
                     handleFactCheck,
                     factCheckingId,
+                    handleChangeCheck,
+                    changeCheckingId,
                   })
                 )}
               </ul>
@@ -966,6 +1035,8 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                             handleReplace,
                             handleFactCheck,
                             factCheckingId,
+                            handleChangeCheck,
+                            changeCheckingId,
                           })
                         )}
                       </ul>
@@ -1091,6 +1162,8 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                                     handleReplace,
                                     handleFactCheck,
                                     factCheckingId,
+                                    handleChangeCheck,
+                                    changeCheckingId,
                                     indent: hasSubName,
                                   })
                                 )}
@@ -1184,12 +1257,59 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                 </div>
               )}
 
+              {selectedDocumentDetail.change_status && selectedDocumentDetail.change_status !== 'not_checked' && (
+                <div
+                  className={`rounded-xl border px-3 py-2 ${
+                    selectedDocumentDetail.change_status === 'contradictions'
+                      ? 'border-rose-200 bg-rose-50'
+                      : selectedDocumentDetail.change_status === 'error'
+                      ? 'border-amber-200 bg-amber-50'
+                      : 'border-emerald-200 bg-emerald-50'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-slate-700">
+                      <AlertTriangle size={12} /> Change management
+                    </span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-700 ring-1 ring-slate-200">
+                      {(selectedDocumentDetail.change_issues_count || 0)} conflict(s)
+                    </span>
+                    {selectedDocumentDetail.change_last_checked_at ? (
+                      <span className="text-[10px] font-medium text-slate-500">
+                        checked {new Date(selectedDocumentDetail.change_last_checked_at).toLocaleString('en-US')}
+                      </span>
+                    ) : null}
+                  </div>
+                  {selectedDocumentDetail.change_summary && (
+                    <p className="mt-1.5 text-[11px] text-slate-700">{selectedDocumentDetail.change_summary}</p>
+                  )}
+                  {(selectedDocumentDetail.change_analysis?.issues || []).length > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                      {selectedDocumentDetail.change_analysis.issues.slice(0, 6).map((issue, idx) => (
+                        <div key={idx} className="rounded-lg border border-white/80 bg-white/80 px-2 py-1.5 text-[10px] text-slate-700">
+                          <p className="font-semibold text-slate-800">{issue.explanation}</p>
+                          <p className="mt-0.5 text-slate-600">
+                            #{issue.left?.chunk_index ?? '?'} ↔ #{issue.right?.chunk_index ?? '?'}
+                            {' · '}
+                            {issue.left?.document_name || 'Unknown'} vs {issue.right?.document_name || 'Unknown'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Chunk list */}
               <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
                 {selectedDocumentDetail.chunks.slice(0, 50).map((chunk) => (
                   <div
                     key={chunk.id}
-                    className="group rounded-xl border border-slate-200 bg-white p-3 transition-all hover:border-indigo-300 hover:shadow-sm"
+                    className={`group rounded-xl border bg-white p-3 transition-all hover:shadow-sm ${
+                      contradictionChunkIds.has(chunk.id)
+                        ? 'border-rose-300 hover:border-rose-400'
+                        : 'border-slate-200 hover:border-indigo-300'
+                    }`}
                   >
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -1207,6 +1327,11 @@ const KnowledgeBasePanel = ({ onAfterClassify } = {}) => {
                         <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
                           ~{chunk.token_estimate} tok
                         </span>
+                        {contradictionChunkIds.has(chunk.id) && (
+                          <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-700 ring-1 ring-rose-200">
+                            <AlertTriangle size={10} className="inline-block mr-1" /> conflict
+                          </span>
+                        )}
                       </div>
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-700 whitespace-pre-wrap break-words">

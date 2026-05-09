@@ -242,6 +242,11 @@ export const xragApi = {
       `/api/knowledge/documents/${encodeURIComponent(documentId)}/fact-check`,
       { method: 'POST' }
     ),
+  changeCheckKnowledgeDocument: (documentId) =>
+    requestJson(
+      `/api/knowledge/documents/${encodeURIComponent(documentId)}/change-check`,
+      { method: 'POST', timeoutMs: 90000 }
+    ),
   compareDocumentsSummary: (docIdA, docIdB) =>
     requestJson('/api/knowledge/compare-summary', {
       method: 'POST',

@@ -4,8 +4,11 @@ from .models import (
     KnowledgeDocument,
     KnowledgeDocumentSummary,
     KnowledgeChunk,
+    KnowledgeChangeAnalysis,
+    KnowledgeContradictionIssue,
+    KnowledgeContradictionRef,
     UploadResponse,
-        UrlSource,
+    UrlSource,
 )
 from .store import KnowledgeStore
 from .processor import KnowledgeProcessor
@@ -19,7 +22,11 @@ __all__ = [
     "KnowledgeDocument",
     "KnowledgeDocumentSummary",
     "KnowledgeChunk",
+    "KnowledgeChangeAnalysis",
+    "KnowledgeContradictionIssue",
+    "KnowledgeContradictionRef",
     "UploadResponse",
+    "UrlSource",
     "KnowledgeStore",
     "KnowledgeProcessor",
     "ClassificationRequest",

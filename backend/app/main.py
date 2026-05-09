@@ -33,6 +33,9 @@ from .audit.benchmark_store import BenchmarkStore
 from .knowledge import (
     ClassificationRequest,
     ClassificationResult,
+    KnowledgeChangeAnalysis,
+    KnowledgeContradictionIssue,
+    KnowledgeContradictionRef,
     KnowledgeDocument,
     KnowledgeDocumentSummary,
     KnowledgeProcessor,
@@ -581,7 +584,12 @@ async def upload_knowledge_documents(
                 updated_at=int(time() * 1000),
             )
 
-        summaries.append(knowledge_store.upsert_document(document))
+        summary = knowledge_store.upsert_document(document)
+        if document.status == "indexed" and document.chunks:
+            checked = _persist_change_analysis(document.id)
+            if checked is not None:
+                summary = checked
+        summaries.append(summary)
         _push_to_pinecone(document)
         # Include the just-uploaded doc in the conflict-set so subsequent
         # files in the same batch can still detect duplicates against it.
@@ -601,6 +609,18 @@ def get_knowledge_document(document_id: str) -> KnowledgeDocument:
     if document is None:
         raise HTTPException(status_code=404, detail=f"Document '{document_id}' not found")
     return document
+
+
+@app.post("/api/knowledge/documents/{document_id}/change-check", response_model=KnowledgeDocumentSummary)
+def change_check_document(document_id: str) -> KnowledgeDocumentSummary:
+    """Run AI contradiction analysis and persist warning metadata."""
+    document = knowledge_store.get_document(document_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail=f"Document '{document_id}' not found")
+    summary = _persist_change_analysis(document_id)
+    if summary is None:
+        raise HTTPException(status_code=404, detail=f"Document '{document_id}' not found")
+    return summary
 
 
 @app.post("/api/knowledge/documents/{document_id}/fact-check", response_model=FactCheckResult)
@@ -757,6 +777,267 @@ def _call_llm_for_fact_check(
     raise ValueError(f"Unsupported provider for fact-check: {provider}")
 
 
+def _call_llm_for_change_analysis(
+    *,
+    provider: str,
+    model_name: str,
+    api_key: str,
+    base_url: str | None,
+    system_prompt: str,
+    analysis_payload: str,
+) -> str:
+    """Call the configured LLM and return the raw text response."""
+    if provider == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        llm = ChatGoogleGenerativeAI(
+            model=model_name,
+            temperature=0.1,
+            google_api_key=api_key,
+        )
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"Chunk catalog to analyze:\n\n{analysis_payload}"),
+        ])
+        return response.content
+
+    if provider == "openai":
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        llm = ChatOpenAI(
+            model=model_name,
+            temperature=0.1,
+            api_key=api_key,
+            base_url=base_url,
+        )
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"Chunk catalog to analyze:\n\n{analysis_payload}"),
+        ])
+        return response.content
+
+    raise ValueError(f"Unsupported provider for change-analysis: {provider}")
+
+
+def _chunk_quote(text: str, max_chars: int = 220) -> str:
+    compact = re.sub(r"\s+", " ", (text or "")).strip()
+    if len(compact) <= max_chars:
+        return compact
+    return compact[: max_chars - 1] + "…"
+
+
+def _chunk_terms(text: str) -> set[str]:
+    tokens = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9_\-]{4,}", (text or "").lower())
+    return set(tokens)
+
+
+def _pick_related_documents(
+    target: KnowledgeDocument,
+    candidates: list[KnowledgeDocument],
+    *,
+    max_docs: int = 4,
+) -> list[KnowledgeDocument]:
+    target_text = " ".join(chunk.text for chunk in target.chunks[:12])
+    target_terms = _chunk_terms(f"{target.name} {target.relative_path} {target_text}")
+    scored: list[tuple[int, int, KnowledgeDocument]] = []
+    for doc in candidates:
+        sample = " ".join(chunk.text for chunk in doc.chunks[:8])
+        terms = _chunk_terms(f"{doc.name} {doc.relative_path} {sample}")
+        overlap = len(target_terms & terms)
+        scored.append((overlap, doc.updated_at or 0, doc))
+    scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    picked = [doc for overlap, _, doc in scored if overlap > 0][:max_docs]
+    if picked:
+        return picked
+    return [doc for _, _, doc in scored[:max_docs]]
+
+
+def _analyse_document_changes(document: KnowledgeDocument) -> KnowledgeChangeAnalysis:
+    checked_at = int(time() * 1000)
+    if document.status != "indexed" or not document.chunks:
+        return KnowledgeChangeAnalysis(
+            status="not_checked",
+            summary="Change-analysis skipped: document is not indexed or has no chunks.",
+            issues=[],
+            checked_at=checked_at,
+            scanned_chunk_count=0,
+        )
+
+    settings: AssistantSettings = store.get_settings()
+    provider = rag_engine._resolve_provider(settings)
+    model_name = rag_engine._resolve_model_name(provider, settings.llm.model)
+    api_key = rag_engine._resolve_api_key(provider, settings)
+    if not api_key:
+        return KnowledgeChangeAnalysis(
+            status="error",
+            summary="Change-analysis unavailable: no LLM API key configured.",
+            issues=[],
+            checked_at=checked_at,
+            model=f"{provider}:{model_name}",
+            scanned_chunk_count=0,
+        )
+
+    other_docs: list[KnowledgeDocument] = []
+    for summary in knowledge_store.list_documents():
+        if summary.id == document.id or summary.status != "indexed":
+            continue
+        full = knowledge_store.get_document(summary.id)
+        if full and full.chunks:
+            other_docs.append(full)
+    related_docs = _pick_related_documents(document, other_docs, max_docs=4)
+
+    catalog: list[dict] = []
+    for chunk in document.chunks[:28]:
+        catalog.append(
+            {
+                "document_id": document.id,
+                "document_name": document.name,
+                "chunk_id": chunk.id,
+                "chunk_index": chunk.index,
+                "text": _chunk_quote(chunk.text, max_chars=500),
+            }
+        )
+    for peer in related_docs:
+        for chunk in peer.chunks[:12]:
+            catalog.append(
+                {
+                    "document_id": peer.id,
+                    "document_name": peer.name,
+                    "chunk_id": chunk.id,
+                    "chunk_index": chunk.index,
+                    "text": _chunk_quote(chunk.text, max_chars=420),
+                }
+            )
+
+    if len(catalog) < 2:
+        return KnowledgeChangeAnalysis(
+            status="ok",
+            summary="Not enough chunk context for contradiction detection.",
+            issues=[],
+            checked_at=checked_at,
+            model=f"{provider}:{model_name}",
+            scanned_chunk_count=len(catalog),
+        )
+
+    system_prompt = (
+        "You are a strict change-management contradiction auditor for knowledge chunks. "
+        "Find only real contradictions (opposite facts, incompatible numbers/dates, "
+        "policy/version conflicts, or mutually exclusive instructions). "
+        "Do not flag stylistic differences. "
+        "Return STRICT JSON only in this exact shape:\n"
+        "{\n"
+        "  \"summary\": \"<one short paragraph>\",\n"
+        "  \"issues\": [\n"
+        "    {\n"
+        "      \"severity\": \"low|medium|high\",\n"
+        "      \"explanation\": \"<why they conflict>\",\n"
+        "      \"recommendation\": \"<action to resolve>\",\n"
+        "      \"left\": {\"document_id\":\"...\",\"chunk_id\":\"...\",\"quote\":\"...\"},\n"
+        "      \"right\": {\"document_id\":\"...\",\"chunk_id\":\"...\",\"quote\":\"...\"}\n"
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "Rules: keep at most 12 issues, prioritize high-impact contradictions, and only use document_id/chunk_id values that exist in the provided catalog."
+    )
+
+    payload_text = json.dumps({"target_document_id": document.id, "catalog": catalog}, ensure_ascii=False)
+    try:
+        raw_json = _call_llm_for_change_analysis(
+            provider=provider,
+            model_name=model_name,
+            api_key=api_key,
+            base_url=settings.llm.base_url,
+            system_prompt=system_prompt,
+            analysis_payload=payload_text,
+        )
+        cleaned = raw_json.strip()
+        if cleaned.startswith("```"):
+            cleaned = "\n".join(cleaned.split("\n")[1:])
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+        parsed = json.loads(cleaned)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Change-analysis LLM call failed for %s: %s", document.id, exc)
+        return KnowledgeChangeAnalysis(
+            status="error",
+            summary=f"Change-analysis failed: {exc}",
+            issues=[],
+            checked_at=checked_at,
+            model=f"{provider}:{model_name}",
+            scanned_chunk_count=len(catalog),
+        )
+
+    by_chunk_id: dict[str, dict] = {item["chunk_id"]: item for item in catalog}
+    issues: list[KnowledgeContradictionIssue] = []
+    for raw_issue in parsed.get("issues", [])[:12]:
+        if not isinstance(raw_issue, dict):
+            continue
+        left_raw = raw_issue.get("left") or {}
+        right_raw = raw_issue.get("right") or {}
+        left_chunk_id = str(left_raw.get("chunk_id") or "").strip()
+        right_chunk_id = str(right_raw.get("chunk_id") or "").strip()
+        if not left_chunk_id or not right_chunk_id:
+            continue
+        if left_chunk_id not in by_chunk_id or right_chunk_id not in by_chunk_id:
+            continue
+        left_item = by_chunk_id[left_chunk_id]
+        right_item = by_chunk_id[right_chunk_id]
+        left_ref = KnowledgeContradictionRef(
+            document_id=left_item["document_id"],
+            document_name=left_item["document_name"],
+            chunk_id=left_item["chunk_id"],
+            chunk_index=int(left_item["chunk_index"]),
+            quote=_chunk_quote(str(left_raw.get("quote") or left_item["text"]), max_chars=240),
+        )
+        right_ref = KnowledgeContradictionRef(
+            document_id=right_item["document_id"],
+            document_name=right_item["document_name"],
+            chunk_id=right_item["chunk_id"],
+            chunk_index=int(right_item["chunk_index"]),
+            quote=_chunk_quote(str(right_raw.get("quote") or right_item["text"]), max_chars=240),
+        )
+        issues.append(
+            KnowledgeContradictionIssue(
+                severity=str(raw_issue.get("severity") or "medium").lower(),
+                explanation=str(raw_issue.get("explanation") or "Potential contradiction."),
+                recommendation=str(raw_issue.get("recommendation") or ""),
+                left=left_ref,
+                right=right_ref,
+            )
+        )
+
+    summary = str(parsed.get("summary") or "Change-analysis complete.")
+    status = "contradictions" if issues else "ok"
+    return KnowledgeChangeAnalysis(
+        status=status,
+        summary=summary,
+        issues=issues,
+        checked_at=checked_at,
+        model=f"{provider}:{model_name}",
+        scanned_chunk_count=len(catalog),
+    )
+
+
+def _persist_change_analysis(document_id: str) -> KnowledgeDocumentSummary | None:
+    document = knowledge_store.get_document(document_id)
+    if document is None:
+        return None
+    analysis = _analyse_document_changes(document)
+    updated = document.model_copy(
+        update={
+            "change_status": analysis.status,
+            "change_issues_count": len(analysis.issues),
+            "change_last_checked_at": analysis.checked_at,
+            "change_summary": analysis.summary,
+            "change_analysis": analysis,
+            "updated_at": int(time() * 1000),
+        }
+    )
+    return knowledge_store.upsert_document(updated)
+
+
 @app.delete("/api/knowledge/documents/{document_id}")
 def delete_knowledge_document(document_id: str) -> dict[str, bool]:
     deleted = knowledge_store.delete_document(document_id)
@@ -821,6 +1102,10 @@ def reindex_knowledge_document(document_id: str, flow_id: str | None = None) -> 
             }
         )
     summary = knowledge_store.upsert_document(updated)
+    if updated.status == "indexed" and updated.chunks:
+        checked = _persist_change_analysis(document_id)
+        if checked is not None:
+            summary = checked
     # Re-push freshly chunked content to Pinecone (delete old vectors first).
     if pinecone_index.is_available():
         try:
@@ -924,6 +1209,10 @@ async def replace_knowledge_document(
         )
 
     summary = knowledge_store.upsert_document(updated)
+    if updated.status == "indexed" and updated.chunks:
+        checked = _persist_change_analysis(document_id)
+        if checked is not None:
+            summary = checked
     if pinecone_index.is_available():
         try:
             pinecone_index.delete_document(document_id)
